@@ -1,0 +1,25 @@
+.toolbar {
+    position: relative;
+    background-color: #EEE;
+    display: block;
+    height: 50px;
+  }
+  
+  .toolbar-button-container {
+    cursor: pointer;
+  }
+  
+  .toolbar-content {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .icon-container {
+    margin-right: 8px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+  }
+  

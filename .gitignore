@@ -1,0 +1,8 @@
+*.pyc
+.DS_Store
+.env
+.env.dev
+.env.prod
+constraintfree.geojson
+constraintfree.qmd
+frontend/node_modules
