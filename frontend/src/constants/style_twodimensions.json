@@ -14,7 +14,18 @@
           "buffer": 512,
           "url": "/data/allplanningconstraints.json",
           "attribution": "Source data copyright of multiple organisations - for list of data sources, see https://positiveplaces.org/datasets"
-        }  
+        },
+        "hillshadeSource": {
+          "type": "raster-dem",
+          "tiles": [
+              "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
+          ],
+          "minzoom": 0,
+          "maxzoom": 15,
+          "tileSize": 256,
+          "encoding": "terrarium",
+          "attribution": "United Kingdom terrain data © Environment Agency copyright and/or database right 2015. All rights reserved"
+      }
     },
     "glyphs": "/fonts/{fontstack}/{range}.pbf",
     "sprite": "/styles/basic/sprite",
@@ -26,6 +37,13 @@
         },
         "type": "background"
       },
+      {
+        "id": "hills",
+        "type": "hillshade",
+        "source": "hillshadeSource",
+        "layout": { "visibility": "visible" },
+        "paint": { "hillshade-shadow-color": "black" }
+      }, 
       {
         "filter": [
           "all",
@@ -1405,8 +1423,8 @@
             "visibility": "visible"
         },
         "paint": {
-            "fill-opacity": 0.7,
-            "fill-color": "white"
+            "fill-opacity": 0.3,
+            "fill-color": "orange"
         }
       },
       {
@@ -1427,7 +1445,7 @@
           },
           "paint": {
               "fill-pattern": "hatching_transparent",
-              "fill-opacity": 0.02
+              "fill-opacity": 0.1
           }
       },
       {

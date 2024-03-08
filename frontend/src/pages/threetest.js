@@ -26,6 +26,8 @@ class ThreeTest extends Component {
         super(props);
         this.mapRef = React.createRef();
         this.style_threedimensions = require('../constants/style_threedimensions.json');
+        this.style_twodimensions = require('../constants/style_twodimensions.json');
+        this.nonsatellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_twodimensions);  
         this.satellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_threedimensions);
     }
 
@@ -56,7 +58,25 @@ class ThreeTest extends Component {
         
         return newjson;
     }
-        
+  
+    onMapLoad = (event) => {
+      this.flyingRun();
+    }
+    
+    flyingRun = () => {
+      var halfinterval = 60000;
+      var degreesperiteration = 120;
+  
+      if (this.mapRef) {
+        var map = this.mapRef.current.getMap();
+        var centre = map.getCenter();
+        map.jumpTo({center: {lat: 51, lng: 0}, zoom: 15});
+        var newbearing = parseInt(map.getBearing() + degreesperiteration);
+        console.log("About to rotateTo", newbearing, centre);
+        map.rotateTo(parseFloat(newbearing), {around: centre, easing(t) {return t;}, duration: halfinterval});  
+      }
+    }
+  
   render() {
     return (
         <div className="App" style={{width:"100vw", height:"100vh"}}>
@@ -64,13 +84,14 @@ class ThreeTest extends Component {
             <div className="map-wrap">
                 <Map ref={this.mapRef}
                     antialias
+                    onLoad={this.onMapLoad} 
                     mapStyle={this.satellitelayer}
                     terrain={{source: "terrainSource", exaggeration: 1.1 }}
                     initialViewState={{
                     longitude: 0,
                     latitude: 51,
-                    pitch: 60,
-                    zoom: 13,
+                    pitch: 85,
+                    zoom: 15,
                     maxPitch: 85
                     }} >
                     <Canvas latitude={51} longitude={0}>

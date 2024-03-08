@@ -52,6 +52,16 @@ export const fetchNearestTurbine = (position) => {
       })
       .then(res => {
         if (res.status === 200) {
+          // res.data = {
+          //   currentlat: 50.9289206,
+          //   currentlng: -0.147542,
+          //   distance_km: 1.17721090648,
+          //   distance_m: 1177.21090648,
+          //   distance_mi: 0.7314849444742703,
+          //   turbinelat: 50.91889617443655,
+          //   turbinelng: -0.14215200414820078
+          // };
+
           return dispatch({type: 'FETCH_NEARESTTURBINE', data: res.data});
         }         
       })

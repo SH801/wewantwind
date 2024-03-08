@@ -21,5 +21,7 @@ export const initialStateGlobal = {
     distance_m: null,
     distance_km: null,
     distance_mi: null,
-    geojson: null
+    geojson: null,
+    centre: null,
+    zoom: null,
 };

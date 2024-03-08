@@ -1,23 +1,24 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
+import { Tooltip } from 'react-tooltip';
 
-import { IonApp, IonHeader } from '@ionic/react';
-import toast from 'react-hot-toast';
+import { IonApp, IonHeader, IonContent } from '@ionic/react';
 import { Toaster } from 'react-hot-toast';
 import Toolbar from '../components/toolbar';
 
 import { global } from "../actions";
 import { point, bearing } from '@turf/turf';
 import { initShaders, initVertexBuffers } from './webgl';
-// import maplibregl from '!maplibre-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+import maplibregl from '!maplibre-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 
 import { useLoader, useFrame} from "@react-three/fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import 'maplibre-gl/dist/maplibre-gl.css';
 import Map, {Marker} from 'react-map-gl/maplibre';
-import { Canvas, useMap } from "react-three-map/maplibre";
-import { Mesh, boxGeometry, meshBasicMaterial } from "three";
+import { Canvas } from "react-three-map/maplibre";
+import { FlyToggle } from '../components/flytoggle';
+import { RecordVideo } from '../components/recordvideo';
 
 import { 
   TILESERVER_BASEURL
@@ -25,30 +26,32 @@ import {
 
 var turf = require('@turf/turf');
 
-const Model = () => {
-  const gltf = useLoader(GLTFLoader, "./windturbine.gltf");
-  return (
-    <>
-      <primitive object={gltf.scene} scale={1} />
-    </>
-  );
-};
-
-function MyAnimatedBox() {
-  const gltf = useLoader(GLTFLoader, "./windturbine_blades.gltf");
+function WindTurbine() {
+  const tower_gltf = useLoader(GLTFLoader, "./windturbine_tower.gltf");
+  const blades_gltf = useLoader(GLTFLoader, "./windturbine_blades.gltf");
   const myMesh = React.useRef();
 
   useFrame(({ clock }) => {
     const a = clock.getElapsedTime();
-    myMesh.current.rotation.x = a;
+    myMesh.current.rotation.x = -a;
   });
 
   return (
-    <mesh ref={myMesh}>
-      <primitive object={gltf.scene} scale={1} />
+    <>
+    <mesh position={[0, 2.42, 0]} scale={2}>
+      <mesh position={[0, -2.42, 0]}>
+        <primitive object={tower_gltf.scene} scale={1} />
+      </mesh>
+      <mesh ref={myMesh} position={[0, 1, 0]}>
+        <primitive object={blades_gltf.scene} scale={1} />
+      </mesh>
     </mesh>
+    </>
   )
 }
+
+
+
 /**
  * Main template class for App 
  */
@@ -56,6 +59,8 @@ class NearestTurbine extends Component {
 
     constructor(props) {
       super(props);
+      this.state = {maploaded: false, altitude: null, flying: false, flyingcentre: null, draggablesubmap: true};
+      this.updatealtitude = false;
       this.ignoremovend = false;
       this.mapRef = React.createRef();
       this.submapRef = React.createRef();
@@ -63,6 +68,8 @@ class NearestTurbine extends Component {
       this.style_twodimensions = require('../constants/style_twodimensions.json');
       this.satellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_threedimensions);
       this.nonsatellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_twodimensions);
+      this.flytoggle = new FlyToggle({mapcontainer: this});
+      this.recordvideo = new RecordVideo({mapcontainer: this});
 
       if ((this.props.global.currentlng === null) || 
           (this.props.global.currentlat === null) || 
@@ -72,6 +79,11 @@ class NearestTurbine extends Component {
       } 
     }
 
+    updateSubmapPosition = () => {
+      var cameraposition = this.getCameraPosition();
+      this.props.setGlobalState({currentlat: cameraposition.lat, currentlng: cameraposition.lng});
+    }
+  
     incorporateBaseDomain = (baseurl, json) => {
 
       let newjson = JSON.parse(JSON.stringify(json));
@@ -130,37 +142,61 @@ class NearestTurbine extends Component {
       return model;
     }
     
+    getCameraPosition = () => {
+      var map = this.mapRef.current.getMap();
+      const pitch = map.transform._pitch;
+      const altitude = Math.cos(pitch) * map.transform.cameraToCenterDistance;
+      const latOffset = Math.tan(pitch) * map.transform.cameraToCenterDistance;
+      const latPosPointInPixels = map.transform.centerPoint.add(new maplibregl.Point(0, latOffset));
+      const latLong = map.transform.pointLocation(latPosPointInPixels);
+      const verticalScaleConstant = map.transform.worldSize / (2 * Math.PI * 6378137 * Math.abs(Math.cos(latLong.lat * (Math.PI / 180))));
+      const altitudeInMeters = altitude / verticalScaleConstant;
+      return { lng: latLong.lng, lat: latLong.lat, altitude: altitudeInMeters, pitch: pitch * 180 / Math.PI };
+    }
+
+    setCameraPosition = (camPos) => {
+      var map = this.mapRef.current.getMap();
+      // map.jumpTo({center: {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}});
+      var { lng, lat, altitude, pitch, bearing } = camPos;
+      altitude += map.queryTerrainElevation({lat: lat, lng: lng}) || 0;
+      const pitch_ = pitch * Math.PI / 180;
+      const cameraToCenterDistance = 0.5 / Math.tan(map.transform._fov / 2) * map.transform.height;
+      const pixelAltitude = Math.abs(Math.cos(pitch_) * cameraToCenterDistance);
+      const metersInWorldAtLat = (2 * Math.PI * 6378137 * Math.abs(Math.cos(lat * (Math.PI / 180))));
+      const worldsize = (pixelAltitude / altitude) * metersInWorldAtLat;
+      const zoom = Math.log(worldsize / map.transform.tileSize) / Math.LN2;
+      const latOffset = Math.tan(pitch_) * cameraToCenterDistance;
+      const newPixelPoint = new maplibregl.Point(map.transform.width / 2, map.transform.height / 2 + latOffset);
+      const newLongLat = new maplibregl.LngLat(lng, lat);
+      map.transform.zoom = zoom;
+      map.transform.pitch = pitch;
+      map.transform.bearing = bearing;
+      map.transform.setLocationAtPoint(newLongLat, newPixelPoint);
+      console.log(camPos, newLongLat);
+
+      map.setBearing(map.getBearing());
+      var centre = map.getCenter();
+      console.log(centre);
+    }
+
     onMapLoad = (event) => {
+      
       var map = this.mapRef.current.getMap();
       if ((this.props.global.currentlng !== null) && 
           (this.props.global.currentlat !== null) && 
           (this.props.global.turbinelng !== null) && 
           (this.props.global.turbinelat !== null)) {
-
-        // There's a pull request that fixes this for maplibre-gl:
-        // https://github.com/maplibre/maplibre-gl-js/pull/1427
-        // console.log("Setting position of camera");
-        // const camera = map.getFreeCameraOptions();
-        // console.log("Setting position of camera - step 1");
-        // const position = [this.props.global.currentlng, this.props.global.currentlat];
-        // console.log("Setting position of camera - step 2");
-        // const altitude = 50000;
-        
-        // camera.position = maplibregl.MercatorCoordinate.fromLngLat(position, altitude);
-        // console.log("Setting position of camera - step 3");
-
-        // camera.lookAtPoint([this.props.global.turbinelng, this.props.global.turbinelat]);
-        // console.log(camera);
-        // map.setFreeCameraOptions(camera);
-
         this.reorientToTurbine(map);
-      } 
-      
+      }  
+      this.setState({maploaded: true});
+      map.addControl(new maplibregl.AttributionControl(), 'bottom-left');
+      map.addControl(this.flytoggle, 'top-left'); 
+      map.addControl(this.recordvideo, 'top-left'); 
     }
     
     reorientToTurbine = (map) => {
       var pointbearing = this.getBearing({lat: this.props.global.currentlat, lng: this.props.global.currentlng}, {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng});
-      map.jumpTo({ center: [this.props.global.currentlng, this.props.global.currentlat], bearing: pointbearing, duration:0});
+      this.setCameraPosition({lng: this.props.global.currentlng, lat: this.props.global.currentlat, altitude: 50, pitch: 85, bearing: pointbearing});
     }
 
     reloadSubmap = (submap) => {
@@ -183,32 +219,33 @@ class NearestTurbine extends Component {
     }
 
     onEyeMarkerDragEnd = (event) => {
+      if (this.state.flying) return;
+
       const lnglat = event.target.getLngLat();
-      const submap = this.submapRef.current.getMap();
       this.props.setGlobalState({currentlat: lnglat.lat, currentlng: lnglat.lng}).then(() => {
         var map = this.mapRef.current.getMap();
         this.reorientToTurbine(map);
-        // submap.jumpTo({ center: [this.props.global.currentlng, this.props.global.currentlat], duration:0});
       });     
     }
 
     onTurbineMarkerDragEnd = (event) => {
+      if (this.state.flying) return;
+
       const lnglat = event.target.getLngLat();
-      const submap = this.submapRef.current.getMap();
-      const point = submap.project(lnglat);
-      const features = submap.queryRenderedFeatures(point);
+      // const submap = this.submapRef.current.getMap();
+      // const point = submap.project(lnglat);
+      // const features = submap.queryRenderedFeatures(point);
+      // if (features.length > 0) {
+      //   const firstfeature = features[0];
+      //   if (((firstfeature['source'] === 'allplanningconstraints') && (firstfeature['sourceLayer'] === 'all')) ||
+      //       ((firstfeature['source'] === 'openmaptiles') && (firstfeature['sourceLayer'] === 'water'))) {
 
-      if (features.length > 0) {
-        const firstfeature = features[0];
-        if (((firstfeature['source'] === 'allplanningconstraints') && (firstfeature['sourceLayer'] === 'all')) ||
-            ((firstfeature['source'] === 'openmaptiles') && (firstfeature['sourceLayer'] === 'water'))) {
-
-              if (firstfeature['sourceLayer'] === 'water') toast('Sorry, system not intended for offshore wind');
-              else toast('Sorry, intended position has planning constraints');
-            event.target.setLngLat({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng});
-            return;
-        }
-      }
+      //         if (firstfeature['sourceLayer'] === 'water') toast('Sorry, system not intended for offshore wind');
+      //         else toast('Sorry, intended position has planning constraints');
+      //       event.target.setLngLat({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng});
+      //       return;
+      //   }
+      // }
       this.props.setGlobalState({turbinelat: lnglat.lat, turbinelng: lnglat.lng}).then(() => {
         var map = this.mapRef.current.getMap();
         this.reorientToTurbine(map);
@@ -240,7 +277,24 @@ class NearestTurbine extends Component {
 
     }
     
+    onIdle = () => {
+      if (this.updatealtitude) {
+        this.updateAltitude();
+        this.updatealtitude = false;
+      }
+
+      if (this.state.flying) {
+        console.log("onIdle, triggering flyaround");
+        this.flyingRun();
+      }    
+    }
+
     onMapMoveEnd = (event) => {
+      // return;
+
+      if (this.state.flying) return;
+
+      this.updatealtitude = true;
 
       if (this.ignoremovend) {
         this.ignoremovend = false;
@@ -248,34 +302,84 @@ class NearestTurbine extends Component {
       }
 
       const targetmap = event.target;
-      const center = targetmap.getCenter();
+      const cameraposition = this.getCameraPosition();
       const submap = this.submapRef.current.getMap();
-      this.props.setGlobalState({currentlng: center.lng, currentlat: center.lat}).then(() => {
+      this.props.setGlobalState({currentlng: cameraposition.lng, currentlat: cameraposition.lat}).then(() => {
         this.ignoremovend = true;
         this.reorientToTurbine(targetmap);
         this.reloadSubmap(submap);
       });
     }
 
-    onSubmapMoveEnd = (event) => {
+    updateAltitude = () => {
+      if (this.mapRef.current !== null) {
+        const map = this.mapRef.current.getMap();
+        const altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}) || 0;
+        this.setState({altitude: altitude});
+      }
+    }
+
+    flyingStart = () => {
+      if (!this.state.flying) {
+        this.setState({flying: true, draggablesubmap: false}, () => {
+          this.submapInterval = setInterval(this.updateSubmapPosition, 200);
+          this.flyingRun();
+        });
+      }
+    }
+
+    flyingStop = () => {
+      this.setState({flying: false, draggablesubmap: true}, () => {  
+        clearInterval(this.submapInterval);
+        if (this.mapRef) {
+          var map = this.mapRef.current.getMap();
+          var centre = map.getCenter();
+          var zoom = map.getZoom();
+          map.jumpTo({center: centre, zoom: zoom});
+          var cameraposition = this.getCameraPosition();
+          this.props.setGlobalState({currentlat: cameraposition.lat, currentlng: cameraposition.lng, centre: null, zoom: null});
+        }
+      })
+    }
+
+    flyingRun = () => {
+      var halfinterval = 60000;
+      var degreesperiteration = 120;
+  
+      if (this.mapRef) {
+        var map = this.mapRef.current.getMap();
+        var centre = map.getCenter();
+        var zoom = map.getZoom();
+        if (this.props.global.centre) centre = this.props.global.centre;
+        else {
+          console.log("Centre is not set - using map's center");
+          this.props.setGlobalState({centre: centre});
+        }
+        if (this.props.global.zoom) zoom = this.props.global.zoom;
+        else this.props.setGlobalState({zoom: zoom});        
+        // map.jumpTo({center: centre, zoom: zoom});
+        var newbearing = parseInt(map.getBearing() + degreesperiteration);
+        console.log("About to rotateTo", newbearing, centre);
+        map.rotateTo(parseFloat(newbearing), {around: {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, easing(t) {return t;}, duration: halfinterval});  
+      }
     }
 
     render() {
         return (
           <IonApp>
-          <IonHeader>
+          <IonHeader translucent="true" className="ion-no-border">
             <Toolbar />
           </IonHeader>
-          <div className="map-wrap" style={{ position: "relative" }}>
+          <IonContent fullscreen="true">
+          <div class="map-wrap">
 
-          <Toaster position="bottom-center"  containerStyle={{bottom: 20}}/>
+          <Toaster position="bottom-center" containerStyle={{bottom: 20}}/>
 
             <div className="submap">
                 <div className="submap-centre" style={{}}>
                 </div>
                 <Map ref={this.submapRef}
                   onLoad={this.onSubmapLoad}
-                  onMoveEnd={this.onSubmapMoveEnd}
                   mapStyle={this.nonsatellitelayer}
                   attributionControl={false}
                   initialViewState={{
@@ -285,10 +389,10 @@ class NearestTurbine extends Component {
                     zoom: 18,
                     maxPitch: 10
                   }} >
-                  <Marker onDragEnd={this.onTurbineMarkerDragEnd} longitude={this.props.global.turbinelng} latitude={this.props.global.turbinelat} draggable="true" anchor="bottom" >
+                  <Marker onDragEnd={this.onTurbineMarkerDragEnd} longitude={this.props.global.turbinelng} latitude={this.props.global.turbinelat} draggable={this.state.draggablesubmap} anchor="bottom" >
                     <img alt="Wind turbine" width="40" src="./windturbine_black.png" />
                   </Marker>                  
-                  <Marker onDragEnd={this.onEyeMarkerDragEnd} longitude={this.props.global.currentlng} latitude={this.props.global.currentlat} draggable="true" anchor="center" >
+                  <Marker onDragEnd={this.onEyeMarkerDragEnd} longitude={this.props.global.currentlng} latitude={this.props.global.currentlat} draggable={this.state.draggablesubmap} anchor="center" >
                     <img alt="Your location" width="40" src="./eye.png" />
                   </Marker>                  
                   </Map>
@@ -300,26 +404,31 @@ class NearestTurbine extends Component {
                 onLoad={this.onMapLoad} 
                 onRender={this.onRender}
                 onMoveEnd={this.onMapMoveEnd}
+                onIdle={this.onIdle}
                 mapStyle={this.satellitelayer}
                 terrain={{source: "terrainSource", exaggeration: 1.1 }}
+                attributionControl={false}
                 initialViewState={{
-                  // longitude: this.props.global.currentlng,
-                  // latitude: this.props.global.currentlat,
+                  longitude: this.props.global.currentlng,
+                  latitude: this.props.global.currentlat,
                   pitch: 85,
                   zoom: 18,
                   maxPitch: 85
                 }} >
-                      <Canvas latitude={this.props.global.turbinelat} longitude={this.props.global.turbinelng}>
+                    <Tooltip id="ctrlpanel-tooltip" place="right" variant="light" style={{fontSize: "120%"}} />
+
+                    <Canvas latitude={this.props.global.turbinelat} longitude={this.props.global.turbinelng} altitude={this.state.altitude}>
                         <hemisphereLight args={["#ffffff", "#60666C"]} position={[1, 4.5, 3]} />
                         <object3D scale={25} rotation={[0, 1, 0]}>
-                          <MyAnimatedBox />
-                            {/* <Model /> */}
+                            <WindTurbine />
                         </object3D>
                     </Canvas>
                 </Map>
             </div> 
 
-        </div>
+          </div>
+          </IonContent>
+
         </IonApp>
   
             );
