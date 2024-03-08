@@ -150,7 +150,8 @@
 .wewantwind-link {
   text-decoration: none;
   margin:10px;
-  color: #666;
+  color: white;
+  text-shadow: 1px 1px 7px rgba(0, 0, 0, 0.88);
 }
 
 .alert-title.sc-ion-alert-md {
@@ -182,6 +183,10 @@
   .links-container {
     padding-top: 3px;
   }    
+
+  .maplibregl-ctrl-attrib {
+    bottom: 200px;
+  }
 }
 
 .submap-centre {

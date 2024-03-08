@@ -2,21 +2,19 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
-
 import { IonApp, IonHeader, IonContent } from '@ionic/react';
-import { Toaster } from 'react-hot-toast';
-import Toolbar from '../components/toolbar';
-
-import { global } from "../actions";
+import toast, { Toaster } from 'react-hot-toast';
 import { point, bearing } from '@turf/turf';
-import { initShaders, initVertexBuffers } from './webgl';
-import maplibregl from '!maplibre-gl'; // eslint-disable-line import/no-webpack-loader-syntax
-
 import { useLoader, useFrame} from "@react-three/fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import 'maplibre-gl/dist/maplibre-gl.css';
 import Map, {Marker} from 'react-map-gl/maplibre';
 import { Canvas } from "react-three-map/maplibre";
+import maplibregl from '!maplibre-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+
+import { global } from "../actions";
+import Toolbar from '../components/toolbar';
+import { initShaders, initVertexBuffers } from './webgl';
 import { FlyToggle } from '../components/flytoggle';
 import { RecordVideo } from '../components/recordvideo';
 
@@ -156,7 +154,6 @@ class NearestTurbine extends Component {
 
     setCameraPosition = (camPos) => {
       var map = this.mapRef.current.getMap();
-      // map.jumpTo({center: {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}});
       var { lng, lat, altitude, pitch, bearing } = camPos;
       altitude += map.queryTerrainElevation({lat: lat, lng: lng}) || 0;
       const pitch_ = pitch * Math.PI / 180;
@@ -172,15 +169,13 @@ class NearestTurbine extends Component {
       map.transform.pitch = pitch;
       map.transform.bearing = bearing;
       map.transform.setLocationAtPoint(newLongLat, newPixelPoint);
-      console.log(camPos, newLongLat);
-
       map.setBearing(map.getBearing());
-      var centre = map.getCenter();
-      console.log(centre);
     }
 
     onMapLoad = (event) => {
       
+      toast.success("Showing nearest potential wind site...", {duration: 4000});
+
       var map = this.mapRef.current.getMap();
       if ((this.props.global.currentlng !== null) && 
           (this.props.global.currentlat !== null) && 
@@ -373,7 +368,7 @@ class NearestTurbine extends Component {
           <IonContent fullscreen="true">
           <div class="map-wrap">
 
-          <Toaster position="bottom-center" containerStyle={{bottom: 20}}/>
+            <Toaster position="top-center" containerStyle={{top: 50}}/>
 
             <div className="submap">
                 <div className="submap-centre" style={{}}>
