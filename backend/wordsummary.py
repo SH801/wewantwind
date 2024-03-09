@@ -13,18 +13,6 @@ from reportlab.lib.units import cm, inch
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from django.http import HttpResponse, HttpResponseNotFound
-from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.gis.geos import Point
-from django.contrib.gis.db.models.functions import Distance
-from django.http import HttpResponse
-from django.core.serializers.json import DjangoJSONEncoder
-
-from .models import Site
-
-# Create your views here.
-
 
 cwd = os.path.dirname(os.path.realpath(__file__))
 
@@ -140,59 +128,6 @@ constraintslist = [
     }
 ]
 
-
-def OutputJson(json_array={'result': 'failure'}):
-    json_data = json.dumps(json_array, cls=DjangoJSONEncoder, indent=2)
-    return HttpResponse(json_data, content_type="text/json")
-
-def OutputError():
-    return OutputJson()
-
-def GetNearestTurbine(lat, lng):
-    centre = Point(lng, lat, srid=4326)    
-    sites = Site.objects.all().annotate(distance=Distance('centre' , centre )).order_by('distance')
-    if sites is None: return None
-
-    largestarea = None
-    largestindex = 0
-    num_to_check = 5
-    for i in range(num_to_check):
-        site = sites[i]
-        area_square_meters = site.geometry.area
-        # print(area_square_meters)
-        if ((largestarea is None) or (area_square_meters > largestarea)):
-            largestindex = i
-
-    site = sites[largestindex]
-    return site
-
-@csrf_exempt
-def NearestTurbine(request):
-    """
-    Get nearest turbine to supplied point
-    """
-
-    try:
-        latlng = json.loads(request.body)
-    except ValueError:
-        return OutputError()
-
-    # lng, lat = -0.147562, 50.8289154
-
-    site = GetNearestTurbine(latlng['lat'], latlng['lng'])
-    if site is None: return OutputError()
-
-    results = {}
-    results['currentlng'] = latlng['lng']
-    results['currentlat'] = latlng['lat']
-    results['turbinelat'] = site.centre.coords[1]
-    results['turbinelng'] = site.centre.coords[0]
-    results['distance_mi'] = site.distance.mi
-    results['distance_km'] = site.distance.km
-    results['distance_m'] = site.distance.m
-
-    return OutputJson(results)
-
 def processimages(id, coordinates, constraintslist, parameters):
     with open(cwd + '/styles/planningconstraint.json') as fp: planningconstraint = json.load(fp)
     with open(cwd + '/styles/planningconstraints.json') as fp: planningconstraints = json.load(fp)
@@ -202,7 +137,7 @@ def processimages(id, coordinates, constraintslist, parameters):
 
     # Modify planningconstraint template according to constraint color and duplicating for each listed layer
     for constraint in constraintslist:
-        # print(constraint['heading'])
+        print(constraint['heading'])
         alllayers = []
         constraintlayers = json.loads(json.dumps(planningconstraint))
         for layer in constraint['layers']:
@@ -303,11 +238,7 @@ def get_or_create_hyperlink_style(d):
     return "Hyperlink"
 
 
-def createworddoc(wordpath, readableposition, imagedirectory):
-    """
-    Creates word document containing constraints images downloaded to 'imagedirectory'
-    """
-
+def createworddoc(wordpath, imagedirectory):
     document = Document()
     sections = document.sections
     for section in sections:
@@ -327,11 +258,7 @@ def createworddoc(wordpath, readableposition, imagedirectory):
     font.size = Pt(25)
     style = document.styles['Heading 2']
     font = style.font
-    font.name = 'Open Sans ExtraBold'
-    font.size = Pt(15)
-    style = document.styles['Heading 3']
-    font = style.font
-    font.name = 'Open Sans Light'
+    font.name = 'Open Sans Extra Bold'
     font.size = Pt(15)
     style = document.styles['List Bullet']
     font = style.font
@@ -344,10 +271,6 @@ def createworddoc(wordpath, readableposition, imagedirectory):
     p = document.add_paragraph(style='Heading 1')
     p.paragraph_format.space_before = Pt(0)
     run = p.add_run('WeWantWind Turbine Siting Report')
-    run.font.color.rgb = RGBColor.from_string('000000')
-    p = document.add_paragraph(style='Heading 3')
-    p.paragraph_format.space_before = Pt(0)
-    run = p.add_run('Position: ' + readableposition)
     run.font.color.rgb = RGBColor.from_string('000000')
     p = document.add_paragraph('Below is a summary of all wind turbine planning constraints used to create your optimal wind turbine site.')
 
@@ -384,13 +307,8 @@ def createworddoc(wordpath, readableposition, imagedirectory):
 
     document.save(wordpath)
 
-def createpdfdoc(pdfpath, readableposition, imagedirectory):
-    """
-    Creates pdf document containing constraints images downloaded to 'imagedirectory'
-    """
-
+def createpdfdoc(pdfpath, imagedirectory):
     canvas = Canvas(pdfpath, pagesize=A4)
-    canvas.setTitle("WeWantWind Turbine Siting Report - " + readableposition)
 
     pdfmetrics.registerFont(TTFont('OpenSansLt', cwd + '/Open_Sans/static/OpenSans-Light.ttf'))
     pdfmetrics.registerFont(TTFont('OpenSans', cwd + '/Open_Sans/static/OpenSans-Medium.ttf'))
@@ -402,7 +320,7 @@ def createpdfdoc(pdfpath, readableposition, imagedirectory):
         canvas.setFont("OpenSansExtraBd", 25) #choose your font type and font size
         canvas.drawString(40, 11*72, "WeWantWind Turbine Siting Report")
         canvas.setFont("OpenSansLt", 23) #choose your font type and font size
-        canvas.drawString(40, 10.5*72, "Position: " + readableposition)
+        canvas.drawString(40, 10.5*72, "Planning and other constraints")
         canvas.setFont("OpenSansExtraBd", 15) #choose your font type and font size
         canvas.drawString(40, 9.8*72, constraint['heading'])
         canvas.setFont("OpenSansLt", 11) #choose your font type and font size
@@ -433,83 +351,21 @@ def createpdfdoc(pdfpath, readableposition, imagedirectory):
 
     canvas.save()
 
-def GetReport(type, lat, lng):
-    """
-    Return report object for specific type, lat, lng
-    """
 
-    precision = 5
-    id = str(uuid.uuid4())
-    lat, lng = round(lat, precision), round(lng, precision)
-    filestem = str(lat) + "_" + str(lng)
-    readableposition = str(lat) + "°N, " + str(lng) + "°W"
-    downloadsdirectory = cwd + '/downloads/'
-    pdfpath = downloadsdirectory + filestem + '.pdf'
-    wordpath = downloadsdirectory + filestem + '.docx'
-    # if True:
-    if (os.path.isfile(wordpath) is False) or (os.path.isfile(pdfpath) is False):
-        imagedirectory = processimages(id, [lng, lat], constraintslist, {'width': '600', 'height': '500', 'ratio': '3', 'zoom': '12', 'center': str(lng) + ',' + str(lat)})
-        if os.path.isfile(wordpath) is False: createworddoc(wordpath, readableposition, imagedirectory)
-        if os.path.isfile(pdfpath) is False: createpdfdoc(pdfpath, readableposition, imagedirectory)
-        shutil.rmtree(imagedirectory)
 
-    returnfile = wordpath
-    filestem = "WeWantWind Report - " + readableposition
-    mimetype = 'application/msword'
-    filename = filestem + ".docx"
-    if type == 'pdf': 
-        returnfile = pdfpath
-        mimetype = 'application/pdf'
-        filename = filestem + ".pdf"
+id = str(uuid.uuid4())
+lat = 51.12189892819
+lng = -0.2345678966
+# lat = 51
+# lng = 0
 
-    try:    
-        with open(returnfile, 'rb') as f:
-           file_data = f.read()
-        response = HttpResponse(file_data, content_type=mimetype)
-        response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
-
-    except IOError:
-        # handle file not exist case here
-        response = HttpResponseNotFound('<h1>File not exist</h1>')
-
-    return response
-
-@csrf_exempt
-def SiteReport(request):
-    """
-    Return site report as docs or pdf
-    """
-
-    type = request.GET.get('type','word')
-    lat = float(request.GET.get('lat', 51))
-    lng = float(request.GET.get('lng',0))
-
-    return GetReport(type, lat, lng)
-
-@csrf_exempt
-def NearestTurbineReport(request):
-    type = request.GET.get('type','word')
-    lat = float(request.GET.get('lat', 51))
-    lng = float(request.GET.get('lng',0))
-    site = GetNearestTurbine(lat, lng)
- 
-    return GetReport(type, site.centre.coords[1], site.centre.coords[0])
-
-@csrf_exempt
-def CreateGeoJSON(request):
-    lat = float(request.GET.get('lat', 0))
-    lng = float(request.GET.get('lng',0))
-    geojson = {
-        "type": "FeatureCollection",
-        "features": [
-            {
-            "type": "Feature",
-            "name": "WeWantWind Turbine",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [lng, lat]
-            },
-        }]
-    }
-
-    return OutputJson(geojson)
+filestem = str(lat) + "_" + str(lng)
+downloadsdirectory = cwd + '/downloads/'
+pdfpath = downloadsdirectory + filestem + '.pdf'
+wordpath = downloadsdirectory + filestem + '.docx'
+if True:
+# if (os.path.isfile(wordpath) is False) or (os.path.isfile(pdfpath) is False):
+    imagedirectory = processimages(id, [lng, lat], constraintslist, {'width': '600', 'height': '500', 'ratio': '3', 'zoom': '12', 'center': str(lng) + ',' + str(lat)})
+    if os.path.isfile(wordpath) is False: createworddoc(wordpath, imagedirectory)
+    if os.path.isfile(pdfpath) is False: createpdfdoc(pdfpath, imagedirectory)
+    shutil.rmtree(imagedirectory)

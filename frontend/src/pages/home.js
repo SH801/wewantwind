@@ -24,21 +24,21 @@ export class Home extends Component {
 
     selectNearestWindturbine = () => {
 
-      // this.props.fetchNearestTurbine({lat: 50.8289206, lng: -0.147542}).then(() => {
-      //   this.setState({calculatingnearestturbine: false});
-      //   this.props.history.push("nearestturbine");
-      // })   
+      this.props.fetchNearestTurbine({lat: 50.8289206, lng: -0.147542}).then(() => {
+        this.setState({calculatingnearestturbine: false});
+        this.props.history.push("nearestturbine");
+      })   
 
-      // return;
+      return;
 
-      if (navigator.geolocation) {
-        this.setState({calculatingposition: true});
-        navigator.geolocation.getCurrentPosition(this.foundCurrentPosition, this.notfoundCurrentPosition);
-      } else {
-        this.setState({calculatingposition: false});
+      // if (navigator.geolocation) {
+      //   this.setState({calculatingposition: true});
+      //   navigator.geolocation.getCurrentPosition(this.foundCurrentPosition, this.notfoundCurrentPosition);
+      // } else {
+      //   this.setState({calculatingposition: false});
 
-        console.log("Geolocation not supported");
-      }
+      //   console.log("Geolocation not supported");
+      // }
     }
 
     foundCurrentPosition = (position) => {

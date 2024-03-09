@@ -2,21 +2,39 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
-import { IonApp, IonHeader, IonContent } from '@ionic/react';
+import { 
+  IonApp, 
+  IonHeader, 
+  IonContent, 
+  IonList,
+  IonItem,
+  IonText, 
+  IonAlert,
+  IonModal, 
+  IonToolbar, 
+  IonTitle, 
+  IonButton, 
+  IonButtons, 
+  IonIcon 
+} from '@ionic/react';
+import { downloadOutline, closeOutline } from 'ionicons/icons';
 import toast, { Toaster } from 'react-hot-toast';
-import { point, bearing } from '@turf/turf';
+import { point, bearing, buffer, bbox } from '@turf/turf';
 import { useLoader, useFrame} from "@react-three/fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import 'maplibre-gl/dist/maplibre-gl.css';
-import Map, {Marker} from 'react-map-gl/maplibre';
+import Map, {Marker, ScaleControl} from 'react-map-gl/maplibre';
 import { Canvas } from "react-three-map/maplibre";
+import { v4 as uuidv4 } from 'uuid';
 import maplibregl from '!maplibre-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 
+import { DOMAIN_BASEURL } from '../constants';
 import { global } from "../actions";
 import Toolbar from '../components/toolbar';
 import { initShaders, initVertexBuffers } from './webgl';
 import { FlyToggle } from '../components/flytoggle';
 import { RecordVideo } from '../components/recordvideo';
+import { Download } from '../components/download';
 
 import { 
   TILESERVER_BASEURL
@@ -57,7 +75,16 @@ class NearestTurbine extends Component {
 
     constructor(props) {
       super(props);
-      this.state = {maploaded: false, altitude: null, flying: false, flyingcentre: null, draggablesubmap: true};
+      this.state = {
+        maploaded: false, 
+        altitude: null, 
+        flying: false, 
+        flyingcentre: null, 
+        draggablesubmap: true,
+        showdownload: false,
+        generatingfile: false,
+        progress: 0
+      };
       this.updatealtitude = false;
       this.ignoremovend = false;
       this.mapRef = React.createRef();
@@ -68,6 +95,7 @@ class NearestTurbine extends Component {
       this.nonsatellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_twodimensions);
       this.flytoggle = new FlyToggle({mapcontainer: this});
       this.recordvideo = new RecordVideo({mapcontainer: this});
+      this.download = new Download({mapcontainer: this});
 
       if ((this.props.global.currentlng === null) || 
           (this.props.global.currentlat === null) || 
@@ -132,6 +160,12 @@ class NearestTurbine extends Component {
       var submap = this.submapRef.current.getMap();
       submap.dragRotate.disable();
       submap.touchZoomRotate.disableRotation();
+      let scale = new maplibregl.ScaleControl({
+        maxWidth: 80,
+        unit: 'metric'
+      });
+      submap.addControl(scale, 'top-right');
+
     }
 
     loadModel = () => {
@@ -184,9 +218,11 @@ class NearestTurbine extends Component {
         this.reorientToTurbine(map);
       }  
       this.setState({maploaded: true});
+
       map.addControl(new maplibregl.AttributionControl(), 'bottom-left');
       map.addControl(this.flytoggle, 'top-left'); 
       map.addControl(this.recordvideo, 'top-left'); 
+      map.addControl(this.download, 'top-left'); 
     }
     
     reorientToTurbine = (map) => {
@@ -209,7 +245,7 @@ class NearestTurbine extends Component {
           const southWest = [this.props.global.turbinelng - pointdistance, this.props.global.turbinelat - pointdistance];
           const northEast = [this.props.global.turbinelng + pointdistance, this.props.global.turbinelat + pointdistance];
           const boundingBox = [southWest, northEast];
-          submap.fitBounds(boundingBox, {duration: 0, padding: {top: 20, bottom:20, left: 20, right: 20}});    
+          submap.fitBounds(boundingBox, {duration: 0, padding: {top: 65, bottom:65, left: 65, right: 65}});    
       }
     }
 
@@ -359,6 +395,103 @@ class NearestTurbine extends Component {
       }
     }
 
+    epsg4326toEpsg3857 = (coordinates) => {
+      let x = (coordinates[0] * 20037508.34) / 180;
+      let y =
+        Math.log(Math.tan(((90 + coordinates[1]) * Math.PI) / 360)) /
+        (Math.PI / 180);
+      y = (y * 20037508.34) / 180;
+      return [x, y];
+  }
+  
+  downloadFile = (type) => {
+
+      const anchor = document.createElement("a");
+      var lat = this.props.global.turbinelat;
+      var lng = this.props.global.turbinelng;
+      
+      const precision = 5
+      lat = lat.toFixed(precision);
+      lng = lng.toFixed(precision);
+      const readableposition = String(lat) + "°N, " + String(lng) + "°W"
+      const geojson = {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "properties": {
+                "name": "WeWantWind Wind Turbine Siting - " + readableposition
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [parseFloat(lng), parseFloat(lat)]
+            },
+          }]
+      };
+      
+      // const timesuffix = now.toISOString().substring(0,19).replaceAll('T', ' ').replaceAll(':', '-');
+      anchor.download = "WeWantWind - " + readableposition;
+  
+      switch (type) {
+        case 'qgis':
+          // anchor.download += '.gqs';
+          var turbinepoint = point([parseFloat(lng), parseFloat(lat)]);
+          var turbinebuffer = buffer(turbinepoint, 5, {units:'kilometers'});
+          var boundingbox = bbox(turbinebuffer);
+          var qgis = require("../constants/qgis_template.qgs");            
+          fetch(qgis)
+          .then(r => r.text())
+          .then(qgistext => {
+            anchor.download += ".qgs";
+            var bottomleft = [boundingbox[0], boundingbox[1]];
+            var topright = [boundingbox[2], boundingbox[3]];
+            var convertedbottomleft = this.epsg4326toEpsg3857(bottomleft);
+            var convertedtopright = this.epsg4326toEpsg3857(topright);
+            qgistext = qgistext.replaceAll("##XMIN##", convertedbottomleft[0]);
+            qgistext = qgistext.replaceAll("##YMIN##", convertedbottomleft[1]);
+            qgistext = qgistext.replaceAll("##XMAX##", convertedtopright[0]);
+            qgistext = qgistext.replaceAll("##YMAX##", convertedtopright[1]);
+            qgistext = qgistext.replaceAll("##CUSTOMGEOJSONURL##", DOMAIN_BASEURL + '/geojson/' + '?lat=' + String(lat) + '&amp;lng=' + String(lng));
+            qgistext = qgistext.replaceAll("##CUSTOMGEOJSONID##", uuidv4().replaceAll("-", "_"));
+            anchor.href =  URL.createObjectURL(new Blob([qgistext], {type: "application/x-qgis"}));
+            anchor.click();
+         });
+          break;
+        case 'word':
+        case 'pdf':
+          var mimetype = 'application/msword';
+          if (type === 'pdf') {
+            mimetype = 'application/pdf';
+            anchor.download += '.pdf';
+          } else {
+            anchor.download += '.docx';
+          }
+          const docurl = DOMAIN_BASEURL + '/sitereport' + '?type=' + type + '&lat=' + String(lat) + '&lng=' + String(lng);
+          this.setState({generatingfile: true, progress: 0});
+          var timer = setInterval(() => {
+            var currentstep = this.state.progress;
+            if (currentstep < 100) {
+              currentstep += 5;
+              this.setState({progress: currentstep});  
+            }
+          }, 1300);
+          fetch (docurl)
+          .then(r => r.blob())
+          .then(binarydoc => {
+            anchor.href =  URL.createObjectURL(binarydoc);
+            anchor.click();
+            this.setState({generatingfile: false});
+            clearInterval(timer);
+          })
+          break;
+        default:
+          anchor.download += '.geojson';
+          anchor.href =  URL.createObjectURL(new Blob([JSON.stringify(geojson, null, 2)], {type: "application/geo+json"}));
+          anchor.click();
+          break;
+      }
+    }
+
     render() {
         return (
           <IonApp>
@@ -368,10 +501,54 @@ class NearestTurbine extends Component {
           <IonContent fullscreen="true">
           <div class="map-wrap">
 
+          <IonAlert isOpen={this.state.generatingfile} backdropDismiss={false} header={"Generating new file, please wait... " + String(this.state.progress) + "%"} />            
+          <IonModal isOpen={this.state.showdownload} onDidDismiss={() => this.setState({showdownload: false})}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>Download planning files</IonTitle>
+              <IonButtons slot="end">
+                <IonButton onClick={() => this.setState({showdownload: false})}>Close</IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent>
+              <IonList lines="none">
+                <IonItem>
+                  <IonText>
+                    <IonButton onClick={() => {this.downloadFile('geojson')}} color="light" size="medium" fill="default">
+                    <IonIcon slot="start" icon={downloadOutline}></IonIcon>GeoJSON</IonButton>
+                  </IonText>
+                </IonItem>
+                <IonItem>
+                  <IonText>
+                    <IonButton onClick={() => {this.downloadFile('qgis')}} color="light" size="medium" fill="default">
+                    <IonIcon slot="start" icon={downloadOutline}></IonIcon>QGIS</IonButton>
+                  </IonText>                                            
+                </IonItem>
+                <IonItem>
+                  <IonText>
+                    <IonButton onClick={() => {this.downloadFile('word')}} color="light" size="medium" fill="default">
+                    <IonIcon slot="start" icon={downloadOutline}></IonIcon>Word</IonButton>
+                  </IonText>                  
+                </IonItem>
+                <IonItem>
+                  <IonText>
+                    <IonButton onClick={() => {this.downloadFile('pdf')}} color="light" size="medium" fill="default">
+                    <IonIcon slot="start" icon={downloadOutline}></IonIcon>PDF</IonButton>
+                  </IonText>
+                
+                </IonItem>
+
+              </IonList>
+          </IonContent>
+        </IonModal>
+
+
             <Toaster position="top-center" containerStyle={{top: 50}}/>
 
             <div className="submap">
-                <div className="submap-centre" style={{}}>
+                <div className="turbine-distance">
+                  Turbine distance: {this.props.global.distance_km.toFixed(1) + ' km'} / {this.props.global.distance_mi.toFixed(1) + ' miles'}
                 </div>
                 <Map ref={this.submapRef}
                   onLoad={this.onSubmapLoad}

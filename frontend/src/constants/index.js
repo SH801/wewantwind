@@ -19,3 +19,6 @@ export const API_URL = isDev() ? "http://localhost:8000" : "";
 
 // Base url of tile server
 export const TILESERVER_BASEURL = isDev() ? "http://localhost:8080" : "https://tiles.positiveplaces.org";
+
+// Base url of main website
+export const DOMAIN_BASEURL = isDev() ? "http://localhost:8000" : ("https://wewantwind.org");

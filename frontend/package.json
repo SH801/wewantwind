@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@ionic/react": "^7.7.3",
+    "@ramonak/react-progress-bar": "^5.2.0",
     "@react-three/drei": "^9.77.10",
     "@react-three/fiber": "^8.13.4",
     "@testing-library/jest-dom": "^5.11.4",

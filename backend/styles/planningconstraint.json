@@ -1,0 +1,44 @@
+[
+    { 
+        "id": "planningconstraints_fill_colour",
+        "source": "planningconstraints",
+        "source-layer": "",
+        "type": "fill",
+        "filter": [
+            "all",
+            [
+                "==",
+                "$type",
+                "Polygon"
+            ]
+        ],
+        "layout": {
+            "visibility": "visible"
+        },
+        "paint": {
+            "fill-opacity": 0.4,
+            "fill-color": ""
+        }
+    },
+    {
+        "id": "planningconstraints_fill_pattern",
+        "source": "planningconstraints",
+        "source-layer": "",
+        "type": "fill",
+        "filter": [
+            "all",
+            [
+                "==",
+                "$type",
+                "Polygon"
+            ]
+        ],
+        "layout": {
+            "visibility": "visible"
+        },
+        "paint": {
+            "fill-pattern": "hatching_transparent",
+            "fill-opacity": 0.2
+        }
+    }
+]
