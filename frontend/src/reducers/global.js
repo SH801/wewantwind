@@ -26,7 +26,6 @@ export default function selector(state=initialStateGlobal, action) {
 
         case 'GLOBAL_SET_STATE':
             Object.keys(action.object).forEach((key) => newState[key] = action.object[key]);       
-            var updatedistance = false;
 
             // If setting currentlat/lng or turbinelat/lng then update distance
             var currentpos = point([newState.currentlng, newState.currentlat]);
@@ -45,7 +44,6 @@ export default function selector(state=initialStateGlobal, action) {
                 newState['distance_mi'] = distance(currentpos, turbinepos, {units: 'miles'});
                 newState['distance_km'] = distance(currentpos, turbinepos, {units: 'kilometers'});
                 newState['distance_m'] = 1000 * newState['distance_mi'];
-                console.log(newState['distance_mi'], newState['distance_km'], newState['distance_m']);
             }       
                     
             return newState;

@@ -17,13 +17,13 @@ import {
   IonButtons, 
   IonIcon 
 } from '@ionic/react';
-import { downloadOutline, closeOutline } from 'ionicons/icons';
+import { downloadOutline } from 'ionicons/icons';
 import toast, { Toaster } from 'react-hot-toast';
-import { point, bearing, buffer, bbox } from '@turf/turf';
+import { point, bearing, buffer, bbox, destination } from '@turf/turf';
 import { useLoader, useFrame} from "@react-three/fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import 'maplibre-gl/dist/maplibre-gl.css';
-import Map, {Marker, ScaleControl} from 'react-map-gl/maplibre';
+import Map, { Marker } from 'react-map-gl/maplibre';
 import { Canvas } from "react-three-map/maplibre";
 import { v4 as uuidv4 } from 'uuid';
 import maplibregl from '!maplibre-gl'; // eslint-disable-line import/no-webpack-loader-syntax
@@ -83,7 +83,8 @@ class NearestTurbine extends Component {
         draggablesubmap: true,
         showdownload: false,
         generatingfile: false,
-        progress: 0
+        progress: 0,
+        preflightposition: null
       };
       this.updatealtitude = false;
       this.ignoremovend = false;
@@ -202,6 +203,7 @@ class NearestTurbine extends Component {
       map.transform.zoom = zoom;
       map.transform.pitch = pitch;
       map.transform.bearing = bearing;
+      // console.log(cameraToCenterDistance, pixelAltitude, metersInWorldAtLat, worldsize, latOffset, newPixelPoint, newLongLat, lng, lat, zoom, pitch, bearing);
       map.transform.setLocationAtPoint(newLongLat, newPixelPoint);
       map.setBearing(map.getBearing());
     }
@@ -352,23 +354,28 @@ class NearestTurbine extends Component {
 
     flyingStart = () => {
       if (!this.state.flying) {
-        this.setState({flying: true, draggablesubmap: false}, () => {
+        this.setState({flying: true, draggablesubmap: false, preflightposition: {lat: this.props.global.currentlat, lng: this.props.global.currentlng }}, () => {          
           this.submapInterval = setInterval(this.updateSubmapPosition, 200);
+          // Start camera from specific position high up and certain bearing from wind turbine
+          var turbinepos = point([this.props.global.turbinelng, this.props.global.turbinelat]);
+          var viewingdistance = 0.6;
+          var viewingbearing = 0;
+          var options = {units: 'kilometres'};
+          var viewingpos = destination(turbinepos, viewingdistance, viewingbearing, options);
+          this.setCameraPosition({lng: viewingpos['geometry']['coordinates'][0], lat: viewingpos['geometry']['coordinates'][1], altitude: 600, pitch: 45, bearing: 180 + viewingbearing});
           this.flyingRun();
         });
       }
     }
 
     flyingStop = () => {
-      this.setState({flying: false, draggablesubmap: true}, () => {  
-        clearInterval(this.submapInterval);
+      clearInterval(this.submapInterval);
+      this.props.setGlobalState({currentlat: this.state.preflightposition.lat, currentlng: this.state.preflightposition.lng }).then(() => {
         if (this.mapRef) {
           var map = this.mapRef.current.getMap();
-          var centre = map.getCenter();
-          var zoom = map.getZoom();
-          map.jumpTo({center: centre, zoom: zoom});
-          var cameraposition = this.getCameraPosition();
-          this.props.setGlobalState({currentlat: cameraposition.lat, currentlng: cameraposition.lng, centre: null, zoom: null});
+          var pointbearing = this.getBearing({lat: this.props.global.currentlat, lng: this.props.global.currentlng}, {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng});
+          map.jumpTo({center: {lat: this.props.global.currentlat, lng: this.props.global.currentlng}, zoom: 18, pitch: 85, bearing: pointbearing});
+          this.setState({flying: false, draggablesubmap: true});
         }
       })
     }
@@ -451,7 +458,7 @@ class NearestTurbine extends Component {
             qgistext = qgistext.replaceAll("##YMIN##", convertedbottomleft[1]);
             qgistext = qgistext.replaceAll("##XMAX##", convertedtopright[0]);
             qgistext = qgistext.replaceAll("##YMAX##", convertedtopright[1]);
-            qgistext = qgistext.replaceAll("##CUSTOMGEOJSONURL##", DOMAIN_BASEURL + '/geojson/' + '?lat=' + String(lat) + '&amp;lng=' + String(lng));
+            qgistext = qgistext.replaceAll("##CUSTOMGEOJSONURL##", DOMAIN_BASEURL + '/geojson/?lat=' + String(lat) + '&amp;lng=' + String(lng));
             qgistext = qgistext.replaceAll("##CUSTOMGEOJSONID##", uuidv4().replaceAll("-", "_"));
             anchor.href =  URL.createObjectURL(new Blob([qgistext], {type: "application/x-qgis"}));
             anchor.click();
@@ -459,14 +466,12 @@ class NearestTurbine extends Component {
           break;
         case 'word':
         case 'pdf':
-          var mimetype = 'application/msword';
           if (type === 'pdf') {
-            mimetype = 'application/pdf';
             anchor.download += '.pdf';
           } else {
             anchor.download += '.docx';
           }
-          const docurl = DOMAIN_BASEURL + '/sitereport' + '?type=' + type + '&lat=' + String(lat) + '&lng=' + String(lng);
+          const docurl = DOMAIN_BASEURL + '/sitereport?type=' + type + '&lat=' + String(lat) + '&lng=' + String(lng);
           this.setState({generatingfile: true, progress: 0});
           var timer = setInterval(() => {
             var currentstep = this.state.progress;
