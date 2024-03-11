@@ -1423,8 +1423,8 @@
             "visibility": "visible"
         },
         "paint": {
-            "fill-opacity": 0.3,
-            "fill-color": "orange"
+            "fill-opacity": 0.5,
+            "fill-color": "yellow"
         }
       },
       {
@@ -1445,7 +1445,7 @@
           },
           "paint": {
               "fill-pattern": "hatching_transparent",
-              "fill-opacity": 0.1
+              "fill-opacity": 0.05
           }
       },
       {

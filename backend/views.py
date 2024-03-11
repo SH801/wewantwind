@@ -5,6 +5,7 @@ import json
 import requests
 import shutil
 import uuid
+from PIL import Image
 from matplotlib import colors
 from pprint import pprint
 from docx.shared import Cm, Pt, RGBColor
@@ -238,12 +239,21 @@ def processimages(id, coordinates, constraintslist, parameters):
         newplanningconstraints['style']['layers'] = newlayers
         for key in parameters: newplanningconstraints[key] = parameters[key]
 
+        foreground = Image.open(cwd + "/scale.png")
+        # For some reason the meticulously sized scale doesn't seem to fit to the correct image size
+        # Possibly some quirk with the map renderer so need to scale 'by hand'!
+        scalescale = 1.5
+        foreground = foreground.resize((int(scalescale * foreground.size[0]), int(scalescale * foreground.size[1])), Image.Resampling.LANCZOS)
         # pprint(newplanningconstraints, indent=4)
         r = requests.post('http://localhost:81/render', json=newplanningconstraints, stream=True)
         if r.status_code == 200:
-            with open(imagedirectory + "/" + constraint['heading'] + '.png', 'wb') as f:
+            imagepath = imagedirectory + "/" + constraint['heading'] + '.png'
+            with open(imagepath, 'wb') as f:
                 r.raw.decode_content = True
                 shutil.copyfileobj(r.raw, f) 
+            background = Image.open(imagepath)
+            background.paste(foreground, ((600 * 3) - foreground.size[0], (500 * 3) - foreground.size[1]), foreground)
+            background.save(imagedirectory + "/" + constraint['heading'] + '.png')
 
     return imagedirectory
 

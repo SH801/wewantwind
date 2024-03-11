@@ -20,7 +20,7 @@ export class FlyToggle extends Component{
         this._btn.setAttribute('data-tooltip-content', 'Stop flying');
       } else {
         this._btn.className = 'wewantwind-ctrl-icon maplibregl-ctrl-flytoggle-takeoff';
-        this._btn.setAttribute('data-tooltip-content', 'Fly around turbine');
+        this._btn.setAttribute('data-tooltip-content', 'Zero carbon flight around turbine');
       }
       this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltip: true});}
       this._btn.onclick = function() { 
@@ -34,7 +34,7 @@ export class FlyToggle extends Component{
           _this._btn.className = 'wewantwind maplibregl-ctrl-flytoggle-landing';
           _this._mapcontainer.flyingStart();
         } else {
-          this.setAttribute('data-tooltip-content', 'Fly around turbine');
+          this.setAttribute('data-tooltip-content', 'Zero carbon flight around turbine');
           _this._btn.className = 'wewantwind maplibregl-ctrl-flytoggle-takeoff';
           _this._mapcontainer.flyingStop();
         } 

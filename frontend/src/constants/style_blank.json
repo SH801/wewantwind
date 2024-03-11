@@ -1,0 +1,22 @@
+{
+    "version": 8,
+    "name": "Basic preview",
+    "metadata": {
+      "openmaptiles:version": "3.x"
+    },
+    "sources": {
+    },
+    "glyphs": "/fonts/{fontstack}/{range}.pbf",
+    "sprite": "/styles/basic/sprite",
+    "layers": [
+      {
+        "id": "background",
+        "paint": {
+          "background-color": "white"
+        },
+        "type": "background"
+      }   
+    ],
+    "id": "basic-preview"
+}
+

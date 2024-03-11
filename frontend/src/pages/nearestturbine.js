@@ -157,18 +157,6 @@ class NearestTurbine extends Component {
       return bearing(point1, point2);
     }
 
-    onSubmapLoad = (event) => {
-      var submap = this.submapRef.current.getMap();
-      submap.dragRotate.disable();
-      submap.touchZoomRotate.disableRotation();
-      let scale = new maplibregl.ScaleControl({
-        maxWidth: 80,
-        unit: 'metric'
-      });
-      submap.addControl(scale, 'top-right');
-
-    }
-
     loadModel = () => {
       const gltf = useLoader(GLTFLoader, 'https://maplibre.org/maplibre-gl-js/docs/assets/34M_17/34M_17.gltf');
       const model = gltf.scene;
@@ -227,6 +215,17 @@ class NearestTurbine extends Component {
       map.addControl(this.download, 'top-left'); 
     }
     
+    onSubmapLoad = (event) => {
+      var submap = this.submapRef.current.getMap();
+      submap.dragRotate.disable();
+      submap.touchZoomRotate.disableRotation();
+      let scale = new maplibregl.ScaleControl({
+        maxWidth: 80,
+        unit: 'imperial'
+      });
+      submap.addControl(scale, 'top-right');
+    }
+
     reorientToTurbine = (map) => {
       var pointbearing = this.getBearing({lat: this.props.global.currentlat, lng: this.props.global.currentlng}, {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng});
       this.setCameraPosition({lng: this.props.global.currentlng, lat: this.props.global.currentlat, altitude: 50, pitch: 85, bearing: pointbearing});
@@ -553,7 +552,7 @@ class NearestTurbine extends Component {
 
             <div className="submap">
                 <div className="turbine-distance">
-                  Turbine distance: {this.props.global.distance_km.toFixed(1) + ' km'} / {this.props.global.distance_mi.toFixed(1) + ' miles'}
+                  Turbine distance: {this.props.global.distance_mi.toFixed(1) + ' miles'} / {this.props.global.distance_km.toFixed(1) + ' km'}
                 </div>
                 <Map ref={this.submapRef}
                   onLoad={this.onSubmapLoad}
