@@ -247,7 +247,8 @@ def processimages(id, coordinates, constraintslist, parameters):
     brightness = ImageEnhance.Brightness(contrast.enhance(0.8))
     brightness.enhance(1.2).save(imagepath)    
     background = Image.open(imagepath)
-    background.paste(windturbine, (int((int(parameters['width']) * 3 / 2) - (windturbine.size[0] / 2)), int((int(parameters['height']) * 3 / 2) - (windturbine.size[1]))), windturbine)
+    background.paste(windturbine, (int((int(threedimensionsparameters['width']) * 3 / 2) - (windturbine.size[0] / 2)), int(int(threedimensionsparameters['height']) * 3 / 2) - windturbine.size[1]), windturbine)
+
     background.save(imagepath)
 
     # Modify planningconstraint template according to constraint color and duplicating for each listed layer

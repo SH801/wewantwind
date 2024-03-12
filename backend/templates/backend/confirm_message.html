@@ -1,10 +1,10 @@
 {% autoescape off %}Dear {{ name }},
 
-We received a request using your email address to send a message to other local users on the WeWantWind platform. 
+We received a request using your email address to send a message to other local users on the WeWantWind platform. If you didn't make this request, please disregard this message. 
 
-If this wasn't you, please disregard this message. 
+If you made the request and still want to send a message, you must agree to sending your name and email address to other users. 
 
-If it was you and you still want to send a message to other local users, please click this link:
+If you agree, please click this link to send an introductory message containing your name and email address:
 <a href="http://{{ domain }}{% url 'confirmmessage' uidb64=uid token=token %}">http://{{ domain }}{% url 'confirmmessage' uidb64=uid token=token %}</a>
 
 If the link does not work, copy and paste this address into your browser directly:
