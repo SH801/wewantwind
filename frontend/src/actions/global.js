@@ -52,16 +52,6 @@ export const fetchNearestTurbine = (position) => {
       })
       .then(res => {
         if (res.status === 200) {
-          // res.data = {
-          //   currentlat: 50.9289206,
-          //   currentlng: -0.147542,
-          //   distance_km: 1.17721090648,
-          //   distance_m: 1177.21090648,
-          //   distance_mi: 0.7314849444742703,
-          //   turbinelat: 50.91889617443655,
-          //   turbinelng: -0.14215200414820078
-          // };
-
           return dispatch({type: 'FETCH_NEARESTTURBINE', data: res.data});
         }         
       })
@@ -69,3 +59,96 @@ export const fetchNearestTurbine = (position) => {
 }
 
 
+/**
+ * castVote
+ * 
+ * Sends provisional vote to server
+ * 
+ * @param {*} voteparameters
+ */
+export const castVote = (voteparameters) => {
+  return (dispatch, getState) => {
+    let headers = {"Content-Type": "application/json"};
+    let body = JSON.stringify(voteparameters);
+
+    return fetch(API_URL + "/vote/", {headers, method: "POST", body})
+      .then(res => {
+        if (res.status < 500) {
+          return res.json().then(data => {
+            return {status: res.status, data};
+          })
+        } else {
+          console.log("Server Error!");
+          throw res;
+        }
+      })
+      .then(res => {
+        if (res.status === 200) {
+          return dispatch({type: 'CAST_VOTE', data: res.data});
+        }         
+      })
+  }
+}
+
+/**
+ * getLocalPeople
+ * 
+ * Sends provisional vote to server
+ * 
+ * @param {*} position
+ */
+export const getLocalPeople = (position) => {
+  return (dispatch, getState) => {
+    let headers = {"Content-Type": "application/json"};
+    let body = JSON.stringify(position);
+
+    return fetch(API_URL + "/localpeople/", {headers, method: "POST", body})
+      .then(res => {
+        if (res.status < 500) {
+          return res.json().then(data => {
+            return {status: res.status, data};
+          })
+        } else {
+          console.log("Server Error!");
+          throw res;
+        }
+      })
+      .then(res => {
+        if (res.status === 200) {
+          console.log(res.data);
+          return dispatch({type: 'GET_LOCALPEOPLE', data: res.data});
+        }         
+      })
+  }
+}
+
+/**
+ * sendMessage
+ * 
+ * Sends provisional message to server
+ * 
+ * @param {*} messageparameters
+ */
+export const sendMessage = (messageparameters) => {
+  return (dispatch, getState) => {
+    let headers = {"Content-Type": "application/json"};
+    let body = JSON.stringify(messageparameters);
+
+    return fetch(API_URL + "/message/", {headers, method: "POST", body})
+      .then(res => {
+        if (res.status < 500) {
+          return res.json().then(data => {
+            return {status: res.status, data};
+          })
+        } else {
+          console.log("Server Error!");
+          throw res;
+        }
+      })
+      .then(res => {
+        if (res.status === 200) {
+          return dispatch({type: 'SEND_MESSAGE', data: res.data});
+        }         
+      })
+  }
+}

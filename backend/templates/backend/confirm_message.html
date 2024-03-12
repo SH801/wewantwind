@@ -1,0 +1,40 @@
+{% autoescape off %}Dear {{ name }},
+
+We received a request using your email address to send a message to other local users on the WeWantWind platform. 
+
+If this wasn't you, please disregard this message. 
+
+If it was you and you still want to send a message to other local users, please click this link:
+<a href="http://{{ domain }}{% url 'confirmmessage' uidb64=uid token=token %}">http://{{ domain }}{% url 'confirmmessage' uidb64=uid token=token %}</a>
+
+If the link does not work, copy and paste this address into your browser directly:
+http://{{ domain }}{% url 'confirmmessage' uidb64=uid token=token %}
+
+The content of the message will be as follows:
+
+---
+Dear [Recipient's name],
+
+The following user(s) are within {{ localdistance }} miles of you and would like to connect with local WeWantWind users:
+
+[Your name and email address]
+
+To contact any of them about either setting up a community wind group or getting involved with an existing group, drop them an email.
+
+To remove yourself from this mailing list, please click this link:
+[Mailing removal link for recipient]
+
+If the link does not work, copy and paste this address into your browser directly:
+[Mailing removal link for recipient]
+
+Best wishes,
+
+WeWantWind.org 
+---
+
+Best wishes,
+
+WeWantWind.org 
+{{ domain }}
+
+{% endautoescape %}

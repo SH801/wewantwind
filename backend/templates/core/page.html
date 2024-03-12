@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800,900" rel="stylesheet"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="WeWantWind.org"
+    />
+    <title>WeWantWind.org</title>
+</head>
+
+<body>
+
+  <div id="root"></div>
+
+  <!-- Load React. -->
+  <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+
+  <style>
+    .logo-word-we {
+        color: #F5C242;
+    }
+
+    .logo-word-want {
+        color: #D8DFCE;
+    }
+
+    .logo-word-wind {
+        color: #FFF;
+    }
+
+    .background-image {
+        background: url(/static/wewantwind.jpg) no-repeat center center fixed;
+        -webkit-background-size: cover;
+        -moz-background-size: cover;
+        -o-background-size: cover;
+        background-size: cover;
+        width: 100vw;
+        height: 100vh;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+    }
+
+    :root {
+        --ion-font-family: 'Open Sans';
+        --ion-font-weigth: 800;
+    }
+
+    .centred-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+    }
+
+    .wewantwind-largetext {
+        font-size: 300%;
+        color: #fff;
+        font-weight: 900;
+    }
+
+    .wewantwind-bodytext {
+        font-size: 120%;
+        color: #fff;
+        font-weight: 400;
+    }
+
+    .wewantwind-headertext {
+        font-weight: 900;
+        font-size:150%;
+        text-decoration: none!important;
+    }
+
+    .wewantwind-link {
+        text-decoration: none;
+        margin:10px;
+        color: white;
+        text-shadow: 1px 1px 7px rgba(0, 0, 0, 0.88);
+    }
+
+    .links-container {
+        padding-right: 20px;
+        padding-top: 10px;
+    }
+
+    .custom-ion-content {
+        position: absolute;
+        top: 0px;
+    }
+
+    .no-decoration {
+        text-decoration: none;
+    }
+
+    .toolbar {
+        position: relative;
+        display: block;
+        height: 50px;
+    }
+  
+    .toolbar-button-container {
+        cursor: pointer;
+    }
+  
+    .toolbar-content {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+  
+    .icon-container {
+        margin-right: 8px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+    }
+  
+  .wewantwind-headertext {
+        font-weight: 900;
+        font-size:150%;
+        text-decoration: none!important;
+    }
+
+    .text-align-center {
+        text-align: center!important;
+    }
+
+  </style>
+  <script type="text/babel">
+    'use strict';
+    class Page extends React.Component {
+      constructor(props) {
+        super(props);
+      }
+
+      render() {
+
+        return (
+            <ion-app>
+              <ion-header translucent="true" class="ion-no-border">
+                <ion-toolbar className="toolbar" color="translucent">
+                <div class="toolbar-content">
+                    <ion-title class="toolbar-title">
+                        <a href="/" className="no-decoration"><ion-text class="wewantwind-headertext"><span class="logo-word-we">we</span><span class="logo-word-want">want</span><span class="logo-word-wind">wind</span></ion-text></a>
+                    </ion-title>
+                    <div class="links-container" >
+                        <a href="/about" className="wewantwind-link">
+                            <ion-text>about</ion-text>
+                        </a>
+                        <a href="/explore" className="wewantwind-link">
+                            <ion-text>explore</ion-text>
+                        </a>
+                    </div>
+
+                </div>
+                </ion-toolbar>
+
+              </ion-header>
+              <ion-content fullscreen="true" class="custom-ion-content">
+                  <div className="centred-container background-image">
+                    <ion-grid>
+                      <ion-row>
+                          <ion-col size="12" class="text-align-center">
+                              <ion-text class="wewantwind-largetext">{% block title %}{% endblock %}</ion-text>
+                            </ion-col>
+                      </ion-row>
+                      <ion-row>
+                          <ion-col size="12" class="text-align-center">
+                              <ion-text class="wewantwind-bodytext">{% block body %}{% endblock %}</ion-text>
+                            </ion-col>
+                      </ion-row>
+                      <ion-row className="ion-align-items-center">
+                        <ion-col size="12" class="text-align-center">
+                        <a href="/"><ion-button shape="round">Go to main website</ion-button></a>
+                        </ion-col>
+                      </ion-row>
+                    </ion-grid>
+                    <ion-text>
+                    </ion-text>
+                  </div>
+              </ion-content>
+            </ion-app>
+        );        
+      }
+    }
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+
+    root.render(<Page />)
+  </script>
+</body>
+
+</html>

@@ -22,3 +22,6 @@ export const TILESERVER_BASEURL = isDev() ? "http://localhost:8080" : "https://t
 
 // Base url of main website
 export const DOMAIN_BASEURL = isDev() ? "http://localhost:8000" : ("https://wewantwind.org");
+
+// Distance for 'local' users in miles
+export const LOCAL_DISTANCE = 10;

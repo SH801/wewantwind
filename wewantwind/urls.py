@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include, re_path
 from backend import views
 
 urlpatterns = [
@@ -22,5 +22,13 @@ urlpatterns = [
     path('geojson/', views.CreateGeoJSON, name='creategeojson'),
     path('nearestturbine/', views.NearestTurbine, name='nearestturbine'),
     path('sitereport/', views.SiteReport, name='sitereport'),
-    path('nearestturbinereport/', views.NearestTurbineReport, name='nearestturbinereport')
+    path('nearestturbinereport/', views.NearestTurbineReport, name='nearestturbinereport'),
+    path('vote/', views.CastVote, name='castvote'),
+    path('localpeople/', views.LocalPeople, name='localpeople'),
+    path('message/', views.SendMessage, name='sendmessage'),
+    path('processqueue/', views.ProcessMessageQueue, name='processmessagequeue'),
+    path('test/', views.Test, name='test'),
+    re_path(r'^confirmvote/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9a-f]{1,32})/$', views.ConfirmVote, name='confirmvote'),
+    re_path(r'^confirmmessage/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9a-f]{1,32})/$', views.ConfirmMessage, name='confirmmessage'),
+    re_path(r'^removemailinglist/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9a-f]{1,32})/$', views.RemoveMailingList, name='removemailinglist'),
 ]

@@ -14,6 +14,8 @@
 
 // Set up initial state of some global variables using constants
 export const initialStateGlobal = {
+    startinglat: null,
+    startinglng: null,
     currentlat: null,
     currentlng: null,
     turbinelat: null,
@@ -21,6 +23,7 @@ export const initialStateGlobal = {
     distance_m: null,
     distance_km: null,
     distance_mi: null,
+    localpeople: null,
     geojson: null,
     centre: null,
     zoom: null,

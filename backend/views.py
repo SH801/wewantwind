@@ -5,9 +5,12 @@ import json
 import requests
 import shutil
 import uuid
-from PIL import Image
+import urllib
+from urllib.parse import urlparse
+from PIL import Image, ImageEnhance
 from matplotlib import colors
 from pprint import pprint
+from ipware import get_client_ip
 from docx.shared import Cm, Pt, RGBColor
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.units import cm, inch
@@ -19,13 +22,27 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.measure import Distance as RadiusDistance
 from django.http import HttpResponse
 from django.core.serializers.json import DjangoJSONEncoder
+from django.template.loader import render_to_string, get_template
+from django.core.mail import EmailMessage
+from django.contrib.gis.geos import Point
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.contrib.sites.shortcuts import get_current_site
+from django.utils.encoding import force_bytes
+from django.db.models import Q
+from time import sleep
 
-from .models import Site
+from .models import Site, Vote, Message
 
 # Create your views here.
 
+COORDINATE_PRECISION = 5
+LOCAL_DISTANCE = 10 # miles
+
+
+GOOGLE_RECAPTCHA_SECRET_KEY = os.environ.get("GOOGLE_RECAPTCHA_SECRET_KEY")
 
 cwd = os.path.dirname(os.path.realpath(__file__))
 
@@ -201,6 +218,38 @@ def processimages(id, coordinates, constraintslist, parameters):
     imagedirectory = cwd + '/downloads/' + id
     os.mkdir(imagedirectory) 
 
+    threedimensionsparameters = {'width': '600', 'height': '600', 'ratio': '3', 'zoom': '15', 'pitch': '45', 'bearing': '190', 'center': str(coordinates[0]) + ',' + str(coordinates[1])}
+
+    with open(cwd + '/styles/3d.json') as fp: threedimensions = json.load(fp)
+    threedimensions['style']['sources']['customgeojson'] = {
+        "type": "geojson",
+        "data": {"type": "FeatureCollection", "features": [{
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": coordinates
+            }
+    }]}}
+    for key in threedimensionsparameters: threedimensions[key] = threedimensionsparameters[key]
+
+    r = requests.post('http://localhost:81/render', json=threedimensions, stream=True)
+    if r.status_code == 200:
+        imagepath = imagedirectory + '/3d.png'
+        with open(imagepath, 'wb') as f:
+            r.raw.decode_content = True
+            shutil.copyfileobj(r.raw, f)
+
+    windturbine = Image.open(cwd + "/windturbine_bright.png")
+    windturbinescale = 0.4
+    windturbine = windturbine.resize((int(windturbinescale * windturbine.size[0]), int(windturbinescale * windturbine.size[1])), Image.Resampling.LANCZOS)
+    background = Image.open(imagepath)
+    contrast = ImageEnhance.Contrast(background)
+    brightness = ImageEnhance.Brightness(contrast.enhance(0.8))
+    brightness.enhance(1.2).save(imagepath)    
+    background = Image.open(imagepath)
+    background.paste(windturbine, (int((int(parameters['width']) * 3 / 2) - (windturbine.size[0] / 2)), int((int(parameters['height']) * 3 / 2) - (windturbine.size[1]))), windturbine)
+    background.save(imagepath)
+
     # Modify planningconstraint template according to constraint color and duplicating for each listed layer
     for constraint in constraintslist:
         # print(constraint['heading'])
@@ -358,7 +407,16 @@ def createworddoc(wordpath, readableposition, imagedirectory):
     p = document.add_paragraph(style='Heading 3')
     p.paragraph_format.space_before = Pt(0)
     run = p.add_run('Position: ' + readableposition)
+    p.paragraph_format.space_after = Pt(30)
     run.font.color.rgb = RGBColor.from_string('000000')
+
+    image = imagedirectory + '/3d.png'
+    document.add_picture(image, width=Cm(19))
+    paragraph = document.add_paragraph('Satellite images © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community, ESRI')
+    paragraph.paragraph_format.space_before = Pt(0)
+    paragraph.paragraph_format.space_after = Pt(0)
+    document.add_page_break()
+
     p = document.add_paragraph('Below is a summary of all wind turbine planning constraints used to create your optimal wind turbine site.')
 
     lastcontraint = constraintslist[-1]
@@ -384,7 +442,7 @@ def createworddoc(wordpath, readableposition, imagedirectory):
 
         image = imagedirectory + '/' + constraint['heading'] + '.png'
         document.add_picture(image, width=Cm(19))
-        paragraph = document.add_paragraph('Constraints data from multiple sources and copyright of respective data providers - for full list refer to ')
+        paragraph = document.add_paragraph('Constraints data from multiple sources and copyright of respective data providers - for full list, go to ')
         add_hyperlink(paragraph, 'ckan.wewantwind.org', "https://ckan.wewantwind.org")
         paragraph.paragraph_format.space_before = Pt(0)
         paragraph.paragraph_format.space_after = Pt(0)
@@ -406,6 +464,18 @@ def createpdfdoc(pdfpath, readableposition, imagedirectory):
     pdfmetrics.registerFont(TTFont('OpenSans', cwd + '/Open_Sans/static/OpenSans-Medium.ttf'))
     pdfmetrics.registerFont(TTFont('OpenSansBd', cwd + '/Open_Sans/static/OpenSans-SemiBold.ttf'))
     pdfmetrics.registerFont(TTFont('OpenSansExtraBd', cwd + '/Open_Sans/static/OpenSans-ExtraBold.ttf'))
+
+    canvas.setFont("OpenSansExtraBd", 25) #choose your font type and font size
+    canvas.drawString(40, 11*72, "WeWantWind Turbine Siting Report")
+    canvas.setFont("OpenSansLt", 23) #choose your font type and font size
+    canvas.drawString(40, 10.5*72, "Position: " + readableposition)
+
+    image = imagedirectory + '/3d.png'
+    canvas.drawInlineImage(image, 40 , 155, width=72*7,height=int(600 * 420 / 500))
+    canvas.setFont("OpenSansLt", 8) #choose your font type and font size
+    canvas.drawString(40, 142, 'Satellite images © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP,')
+    canvas.drawString(40, 130, 'and the GIS User Community, ESRI')
+    canvas.showPage()
 
     lastcontraint = constraintslist[-1]
     for constraint in constraintslist:
@@ -434,9 +504,9 @@ def createpdfdoc(pdfpath, readableposition, imagedirectory):
 
         image = imagedirectory + '/' + constraint['heading'] + '.png'
         canvas.drawInlineImage(image, 40 , vpos - (48 * 7) - 100, width=72*7,height=420)
-        canvas.setFont("OpenSansLt", 8)
+        canvas.setFont("OpenSansLt", 9)
         canvas.setFillColorRGB(0,0,0)
-        canvas.drawString(40, 40, 'Constraints data from multiple sources and copyright of respective data providers - for full list refer to https://ckan.wewantwind.org')
+        canvas.drawString(40, vpos - (48 * 7) - 112, 'Constraints data from multiple sources and copyright of respective data providers - for full list, go to https://ckan.wewantwind.org')
 
         if constraint != lastcontraint:
             canvas.showPage()
@@ -448,9 +518,8 @@ def GetReport(type, lat, lng):
     Return report object for specific type, lat, lng
     """
 
-    precision = 5
     id = str(uuid.uuid4())
-    lat, lng = round(lat, precision), round(lng, precision)
+    lat, lng = round(lat, COORDINATE_PRECISION), round(lng, COORDINATE_PRECISION)
     filestem = str(lat) + "_" + str(lng)
     readableposition = str(lat) + "°N, " + str(lng) + "°W"
     downloadsdirectory = cwd + '/downloads/'
@@ -523,3 +592,242 @@ def CreateGeoJSON(request):
     }
 
     return OutputJson(geojson)
+
+@csrf_exempt
+def CastVote(request):
+    """
+    Cast provisional vote and sent email requesting vote confirmation
+    """
+
+    try:
+        parameters = json.loads(request.body)
+    except ValueError:
+        return OutputError()
+
+    ''' Begin reCAPTCHA validation '''
+
+    recaptcha_response = parameters['recaptcha']
+    url = 'https://www.google.com/recaptcha/api/siteverify'
+    values = {
+        'secret': GOOGLE_RECAPTCHA_SECRET_KEY,
+        'response': recaptcha_response
+    }
+    recaptchadata = urllib.parse.urlencode(values).encode()
+    req =  urllib.request.Request(url, data=recaptchadata)
+    response = urllib.request.urlopen(req)
+    result = json.loads(response.read().decode())
+
+    ''' End reCAPTCHA validation '''
+    ip, is_routable = get_client_ip(request)
+
+    if result['success']:
+        token = uuid.uuid4().hex
+        # Save vote in database
+        provisionalvote = Vote( \
+            name=parameters['name'], \
+            email=parameters['email'].lower(), \
+            contactable=parameters['contactable'], \
+            userlocation=Point(parameters['userlocation']['lng'], parameters['userlocation']['lat']), \
+            site=Point(parameters['site']['lng'], parameters['site']['lat']), \
+            ip=ip, \
+            token=token)
+        provisionalvote.save()
+        # Attempt to send email
+        from_email = '"WeWantWind.org" <info@wewantwind.org>'
+        subject = "WeWantWind.org: Confirm your wind turbine vote"
+        current_site = get_current_site(request)
+        parameters['domain'] = current_site.domain
+        parameters['uid'] = urlsafe_base64_encode(force_bytes(provisionalvote.pk))
+        parameters['token'] = token
+        parameters['site'] = {'lat': round(parameters['site']['lat'], COORDINATE_PRECISION), 'lng': round(parameters['site']['lng'], COORDINATE_PRECISION)}
+        message = render_to_string('backend/confirm_vote.html', parameters)        
+        message = EmailMessage(subject, message, from_email=from_email, to=[parameters['email']])
+        message.send()
+    return OutputJson({'result': 'success'})
+
+@csrf_exempt
+def ConfirmVote(request, uidb64, token):
+    """
+    Confirm vote using link sent via email
+    """
+
+    sleep(0.5)
+
+    try:
+        id = urlsafe_base64_decode(uidb64).decode()
+        provisionalvote = Vote.objects.get(pk=id)
+        print(id, provisionalvote)
+    except (TypeError, ValueError, OverflowError, Vote.DoesNotExist):
+        provisionalvote = None
+
+    if (provisionalvote is not None) and (provisionalvote.token == token) and (provisionalvote.confirmed == False):
+        Vote.objects.filter(email=provisionalvote.email).filter(~Q(pk=id)).delete()
+        provisionalvote.confirmed = True
+        provisionalvote.save()
+        return render(request, 'backend/vote_confirmed.html')
+    else:
+        return render(request, 'backend/vote_not_confirmed.html')
+
+@csrf_exempt
+def LocalPeople(request):
+    """
+    Get number of local people within a predefined distance of supplied position
+    """
+
+    try:
+        parameters = json.loads(request.body)
+    except ValueError:
+        return OutputError()
+    
+    centre = Point(parameters['lng'], parameters['lat'], srid=4326)    
+    localpeople = Vote.objects.filter(confirmed=True, contactable=True, userlocation__distance_lte=(centre, RadiusDistance(mi=LOCAL_DISTANCE)))
+    localpeoplecount = 0
+    if localpeople is not None: localpeoplecount = len(localpeople)
+    return OutputJson({'localpeople': localpeoplecount})
+
+@csrf_exempt
+def SendMessage(request):
+    """
+    Create provisional message entry
+    """
+
+    try:
+        parameters = json.loads(request.body)
+    except ValueError:
+        return OutputError()
+
+    ''' Begin reCAPTCHA validation '''
+
+    recaptcha_response = parameters['recaptcha']
+    url = 'https://www.google.com/recaptcha/api/siteverify'
+    values = {
+        'secret': GOOGLE_RECAPTCHA_SECRET_KEY,
+        'response': recaptcha_response
+    }
+    recaptchadata = urllib.parse.urlencode(values).encode()
+    req =  urllib.request.Request(url, data=recaptchadata)
+    response = urllib.request.urlopen(req)
+    result = json.loads(response.read().decode())
+
+    ''' End reCAPTCHA validation '''
+    ip, is_routable = get_client_ip(request)
+
+    if result['success']:
+        token = uuid.uuid4().hex
+        # Save vote in database
+        provisionalmessage = Message( \
+            name=parameters['name'], \
+            email=parameters['email'].lower(), \
+            userlocation=Point(parameters['userlocation']['lng'], parameters['userlocation']['lat']), \
+            ip=ip, \
+            token=token)
+        provisionalmessage.save()
+        # Attempt to send email
+        from_email = '"WeWantWind.org" <info@wewantwind.org>'
+        subject = "WeWantWind.org: Confirm your message request"
+        current_site = get_current_site(request)
+        parameters['domain'] = current_site.domain
+        parameters['uid'] = urlsafe_base64_encode(force_bytes(provisionalmessage.pk))
+        parameters['token'] = token
+        parameters['localdistance'] = LOCAL_DISTANCE
+        message = render_to_string('backend/confirm_message.html', parameters)        
+        message = EmailMessage(subject, message, from_email=from_email, to=[parameters['email']])
+        message.send()
+    return OutputJson({'result': 'success'})
+
+@csrf_exempt
+def ProcessMessageQueue(request):
+    """
+    Process message queue
+    Run this once a day - around 8am - to prevent users getting deluged with emails
+    """
+
+    current_site = get_current_site(request)
+    from_email = '"WeWantWind.org" <info@wewantwind.org>'
+    subject = "WeWantWind.org: Introductory email from user(s) wanting to connect with other users"
+    pendingmessages = Message.objects.filter(sent=False)
+    outboundqueue = {}
+    for pendingmessage in pendingmessages:
+        print("Sending message from", pendingmessage.name, pendingmessage.ip)
+        parameters = {\
+            'domain': current_site.domain, \
+            'sourcename': pendingmessage.name, \
+            'sourceemail': pendingmessage.email \
+        }
+        localpeople = Vote.objects.filter(~Q(email=pendingmessage.email)).filter(confirmed=True, contactable=True, userlocation__distance_lte=(pendingmessage.userlocation, RadiusDistance(mi=LOCAL_DISTANCE)))
+        for localperson in localpeople:
+            name, email = localperson.name, localperson.email
+            if email not in outboundqueue:
+                outboundqueue[email] = {'name': name, 'pk': localperson.pk, 'people': []}
+            outboundqueue[email]['people'].append({'name': pendingmessage.name, 'email': pendingmessage.email})
+
+    messagessent = 0
+    for email in outboundqueue:
+        name = outboundqueue[email]['name']
+        peoplelist = ''
+        for person in outboundqueue[email]['people']:
+            peoplelist += person['name'].strip() + ": " + person['email'].strip() + "\n"
+        if peoplelist != '':
+            parameters = {'domain': current_site.domain, 'name': name, 'peoplelist': peoplelist}
+            parameters['uid'] = urlsafe_base64_encode(force_bytes(outboundqueue[email]['pk']))
+            parameters['token'] = uuid.uuid4().hex
+            parameters['localdistance'] = LOCAL_DISTANCE
+            Vote.objects.filter(pk=outboundqueue[email]['pk']).update(token=parameters['token'])
+            message = render_to_string('backend/standard_message.html', parameters)        
+            message = EmailMessage(subject, message, from_email=from_email, to=[email])
+            message.send()
+            messagessent += 1
+
+    # pprint(outboundqueue, indent=4)            
+    Message.objects.filter(sent=False).update(sent=True)
+
+    return OutputJson({'result': 'success', 'messagesent': messagessent})
+
+@csrf_exempt
+def ConfirmMessage(request, uidb64, token):
+    """
+    Confirm vote using link sent via email
+    """
+
+    sleep(0.5)
+
+    try:
+        id = urlsafe_base64_decode(uidb64).decode()
+        provisionalmessage = Message.objects.get(pk=id)
+    except (TypeError, ValueError, OverflowError, Message.DoesNotExist):
+        provisionalmessage = None
+
+    if (provisionalmessage is not None) and (provisionalmessage.token == token) and (provisionalmessage.confirmed == False):
+        Message.objects.filter(email=provisionalmessage.email).filter(~Q(pk=id)).delete()
+        provisionalmessage.confirmed = True
+        provisionalmessage.save()
+        return render(request, 'backend/message_confirmed.html')
+    else:
+        return render(request, 'backend/message_not_confirmed.html')
+
+@csrf_exempt
+def RemoveMailingList(request, uidb64, token):
+    """
+    Remove from mailing list
+    """
+
+    sleep(0.5)
+
+    try:
+        pk = urlsafe_base64_decode(uidb64).decode()
+        print('id', pk)
+        provisionalvote = Vote.objects.get(pk=pk)
+    except (TypeError, ValueError, OverflowError, Vote.DoesNotExist):
+        provisionalvote = None
+
+    if (provisionalvote is not None) and (provisionalvote.token == token) and (provisionalvote.contactable == True):
+        Message.objects.filter(email=provisionalvote.email).filter(~Q(pk=pk)).delete()
+        provisionalvote.contactable = False
+        provisionalvote.save()
+        return render(request, 'backend/mailinglist_confirmed.html')
+    else:
+        return render(request, 'backend/mailinglist_not_confirmed.html')
+
+@csrf_exempt
+def Test(request):
+    return render(request, 'backend/vote_not_confirmed.html')

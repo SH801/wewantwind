@@ -50,6 +50,8 @@ export default function selector(state=initialStateGlobal, action) {
 
         case 'FETCH_NEARESTTURBINE':
             newState = {...newState,             
+                startinglat: action.data.currentlat,
+                startinglng: action.data.currentlng,
                 currentlat: action.data.currentlat,
                 currentlng: action.data.currentlng,
                 turbinelat: action.data.turbinelat,
@@ -60,6 +62,18 @@ export default function selector(state=initialStateGlobal, action) {
             };
             return newState;
         
+        case 'CAST_VOTE':
+            newState = {...newState};
+            return newState;
+
+        case 'SEND_MESSAGE':
+            newState = {...newState};
+            return newState;
+
+        case 'GET_LOCALPEOPLE':
+            newState = {...newState, localpeople: action.data.localpeople};
+            return newState;
+                
         default:
             return state;
     }
