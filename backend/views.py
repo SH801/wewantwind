@@ -380,7 +380,7 @@ def createworddoc(wordpath, readableposition, imagedirectory):
     style = document.styles['Normal']
     font = style.font
     font.name = 'Open Sans Light'
-    font.size = Pt(9)
+    font.size = Pt(11)
     style = document.styles['Heading 1']
     font = style.font
     font.name = 'Open Sans ExtraBold'
@@ -816,7 +816,6 @@ def RemoveMailingList(request, uidb64, token):
 
     try:
         pk = urlsafe_base64_decode(uidb64).decode()
-        print('id', pk)
         provisionalvote = Vote.objects.get(pk=pk)
     except (TypeError, ValueError, OverflowError, Vote.DoesNotExist):
         provisionalvote = None

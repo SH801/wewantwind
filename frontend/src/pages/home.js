@@ -81,6 +81,11 @@ export class Home extends Component {
                         <IonButton shape="round" onClick={() => {this.selectNearestWindturbine()}}>Find nearest potential wind site</IonButton>
                         </IonCol>
                       </IonRow>
+                      <IonRow className="ion-align-items-center">
+                        <IonCol size="12" style={{textAlign: "center"}}>
+                        <a href="/explore"><IonButton shape="round">Explore wind sites</IonButton></a>
+                        </IonCol>
+                      </IonRow>
                     </IonGrid>
                     <IonText>
                     </IonText>

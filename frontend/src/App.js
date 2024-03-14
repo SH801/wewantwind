@@ -13,6 +13,7 @@ import { loadReCaptcha } from 'react-recaptcha-google'
 import WeWantWindApp from "./reducers";
 
 import NearestTurbine from './pages/nearestturbine.js';
+import Explore from './pages/explore.js';
 import Test from './pages/test.js';
 import { setupIonicReact } from '@ionic/react';
  
@@ -36,6 +37,7 @@ class App extends Component {
           <Switch>
             {/* <Route exact path="/test" render={(props) => (<Test />)} /> */}
             <Route exact path="/nearestturbine" render={(props) => (<NearestTurbine />)} />
+            <Route exact path="/explore" render={(props) => (<Explore />)} />
             {/* <Route path="/" render={(props) => (<Home />)} /> */}
             <Route path="/" render={(props) => (<Test />)} />
           </Switch>

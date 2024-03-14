@@ -28,23 +28,29 @@ export default function selector(state=initialStateGlobal, action) {
             Object.keys(action.object).forEach((key) => newState[key] = action.object[key]);       
 
             // If setting currentlat/lng or turbinelat/lng then update distance
-            var currentpos = point([newState.currentlng, newState.currentlat]);
-            var turbinepos = point([newState.turbinelng, newState.turbinelat]);
-            var updatedistance = false;
-            if ((action.object['currentlat'] !== undefined) && (action.object['currentlng'] !== undefined)) {
-                currentpos = point([action.object['currentlng'], action.object['currentlat']]);
-                updatedistance = true;
-            }
-            if ((action.object['turbinelat'] !== undefined) && (action.object['turbinelng'] !== undefined)) {
-                turbinepos = point([action.object['turbinelng'], action.object['turbinelat']]);
-                updatedistance = true;
-            }
+            if ((newState.currentlat !== null) &&
+                (newState.currentlng !== null) &&
+                (newState.turbinelat !== null) &&
+                (newState.turbinelng !== null))
+            {           
+                var currentpos = point([newState.currentlng, newState.currentlat]);
+                var turbinepos = point([newState.turbinelng, newState.turbinelat]);
+                var updatedistance = false;
+                if ((action.object['currentlat'] !== undefined) && (action.object['currentlng'] !== undefined)) {
+                    currentpos = point([action.object['currentlng'], action.object['currentlat']]);
+                    updatedistance = true;
+                }
+                if ((action.object['turbinelat'] !== undefined) && (action.object['turbinelng'] !== undefined)) {
+                    turbinepos = point([action.object['turbinelng'], action.object['turbinelat']]);
+                    updatedistance = true;
+                }
 
-            if (updatedistance) {
-                newState['distance_mi'] = distance(currentpos, turbinepos, {units: 'miles'});
-                newState['distance_km'] = distance(currentpos, turbinepos, {units: 'kilometers'});
-                newState['distance_m'] = 1000 * newState['distance_mi'];
-            }       
+                if (updatedistance) {
+                    newState['distance_mi'] = distance(currentpos, turbinepos, {units: 'miles'});
+                    newState['distance_km'] = distance(currentpos, turbinepos, {units: 'kilometers'});
+                    newState['distance_m'] = 1000 * newState['distance_mi'];
+                }       
+            }
                     
             return newState;
 
@@ -62,6 +68,10 @@ export default function selector(state=initialStateGlobal, action) {
             };
             return newState;
         
+        case 'FETCH_ENTITY':
+            newState = {...newState, zoom: action.zoom, centre: action.centre};
+            return newState;
+    
         case 'CAST_VOTE':
             newState = {...newState};
             return newState;

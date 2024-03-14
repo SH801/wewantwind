@@ -1,0 +1,115 @@
+{
+    "fill_colour": {
+        "id": "",
+        "source": "planningconstraints",
+        "source-layer": "",
+        "type": "fill",
+        "filter": [
+            "all",
+            [
+                "==",
+                "$type",
+                "Polygon"
+            ]
+        ],
+        "layout": {
+            "visibility": "none"
+        },
+        "paint": {
+            "fill-opacity": 0.5,
+            "fill-color": ""
+        }
+    },
+    "fill_pattern": {
+        "id": "",
+        "source": "planningconstraints",
+        "source-layer": "",
+        "type": "fill",
+        "filter": [
+            "all",
+            [
+                "==",
+                "$type",
+                "Polygon"
+            ]
+        ],
+        "layout": {
+            "visibility": "none"
+        },
+        "paint": {
+            "fill-pattern": "hatching_transparent",
+            "fill-opacity": 0.05
+        }
+    },
+    "buffer_colour": {
+        "id": "",
+        "source": "planningconstraints",
+        "source-layer": "",
+        "type": "line",
+        "filter": [
+            "all",
+            [
+                "==",
+                "$type",
+                "LineString"
+            ]
+        ],
+        "layout": {
+          "line-cap": "butt",
+          "line-join": "round",
+          "visibility": "none"
+        },
+        "paint": {
+          "line-opacity": 0.5,
+          "line-color": "",
+          "line-offset": 0,
+          "line-width": {
+            "type": "exponential",
+            "base": 2,
+            "stops": 
+            [
+                [7, 0.75],
+                [20, 6139]                
+            ]            
+          }
+        }    
+    },
+    "buffer_pattern": {
+        "id": "",
+        "source": "planningconstraints",
+        "source-layer": "",
+        "type": "line",
+        "filter": [
+            "all",
+            [
+                "==",
+                "$type",
+                "LineString"
+            ]
+        ],
+        "layout": {
+            "line-cap": "butt",
+            "line-join": "round",
+            "visibility": "none"
+        },
+        "paint": {
+            "line-pattern": "hatching_transparent",
+            "line-opacity": 0.2,
+            "line-offset": 0,
+            "line-width": {
+                "type": "exponential",
+                "base": 2,
+                "stops": 
+                [
+                    [7, 0.75],
+                    [20, 6139]
+                ]            
+            }
+        }
+    }
+}
+
+
+
+  
+

@@ -5,15 +5,32 @@
       "openmaptiles:version": "3.x"
     },
     "sources": {
+        "background": {
+          "type": "raster",
+          "tiles": ["https://www.google.com/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}"],
+          "tileSize": 256,
+          "attribution": "Imagery ©2023 Google, Imagery ©2023 Bluesky, Getmapping plc, Infoterra Ltd & Bluesky, Maxar Technologies, Map data ©2023"
+        },
         "openmaptiles": {
             "type": "vector",
             "url": "/data/openmaptiles.json"
-        },      
+        },    
         "planningconstraints": {
           "type": "vector",
           "buffer": 512,
           "url": "/data/planningconstraints.json",
           "attribution": "Source data copyright of multiple organisations - for list of data sources, see https://positiveplaces.org/datasets"
+        },  
+        "terrainSource": {
+          "type": "raster-dem",
+          "tiles": [
+              "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
+          ],
+          "minzoom": 0,
+          "maxzoom": 15,
+          "tileSize": 256,
+          "encoding": "terrarium",
+          "attribution": "United Kingdom terrain data © Environment Agency copyright and/or database right 2015. All rights reserved"
         },
         "hillshadeSource": {
           "type": "raster-dem",
@@ -25,20 +42,59 @@
           "tileSize": 256,
           "encoding": "terrarium",
           "attribution": "United Kingdom terrain data © Environment Agency copyright and/or database right 2015. All rights reserved"
-      }
+        },
+        "grid": {
+          "type": "vector",
+          "url": "/data/grid.json",
+          "attribution": "Electricity grid data from © OpenStreetMap contributors"
+        },      
+        "windspeed": {
+          "type": "vector",
+          "url": "/data/windspeed.json",
+          "attribution": "Estimated average wind speeds from NOABL Wind Speed Database © Department for Business, Enterprise & Regulatory Reform 1996"
+        },      
+        "renewables": {
+          "type": "vector",
+          "url": "/data/renewables.json",
+          "attribution": "Renewables data from © OpenStreetMap contributors"
+        }
     },
     "glyphs": "/fonts/{fontstack}/{range}.pbf",
     "sprite": "/styles/basic/sprite",
     "layers": [
       {
         "id": "background",
+        "type": "raster",
+        "source": "background",
+        "minzoom": 10,
+        "maxzoom": 24,
+        "paint": {
+            "raster-saturation": 0,
+            "raster-brightness-min": 0.1
+        }
+      },
+      {
+        "id": "background2",
+        "maxzoom": 13,
+        "layout": {
+          "visibility": "visible"
+        },
         "paint": {
           "background-color": "hsl(47, 26%, 88%)"
         },
         "type": "background"
       },
       {
-        "id": "hills",
+        "id": "hills1",
+        "maxzoom": 13,
+        "type": "hillshade",
+        "source": "hillshadeSource",
+        "layout": { "visibility": "visible" },
+        "paint": { "hillshade-shadow-color": "#473B2422" }
+      }, 
+      {
+        "id": "hills2",
+        "minzoom": 13,
         "type": "hillshade",
         "source": "hillshadeSource",
         "layout": { "visibility": "visible" },
@@ -61,6 +117,7 @@
           ]
         ],
         "id": "landuse-residential",
+        "maxzoom": 13,
         "paint": {
           "fill-color": "hsl(47, 13%, 86%)",
           "fill-opacity": 0.7
@@ -76,6 +133,7 @@
           "grass"
         ],
         "id": "landcover_grass",
+        "maxzoom": 13,
         "paint": {
           "fill-color": "hsl(82, 46%, 72%)",
           "fill-opacity": 0.1
@@ -91,6 +149,7 @@
           "wood"
         ],
         "id": "landcover_wood",
+        "maxzoom": 13,
         "paint": {
           "fill-color": "hsl(82, 46%, 72%)",
           "fill-opacity": {
@@ -126,6 +185,7 @@
           ]
         ],
         "id": "water",
+        "maxzoom": 13,
         "paint": {
           "fill-color": "hsl(200, 6%, 80%)"
         },
@@ -148,6 +208,7 @@
           ]
         ],
         "id": "water_intermittent",
+        "maxzoom": 13,
         "paint": {
           "fill-color": "hsl(205, 56%, 73%)",
           "fill-opacity": 0.7
@@ -163,6 +224,7 @@
           "ice_shelf"
         ],
         "id": "landcover-ice-shelf",
+        "maxzoom": 13,
         "paint": {
           "fill-color": "hsl(47, 26%, 88%)",
           "fill-opacity": 0.8
@@ -178,6 +240,7 @@
           "glacier"
         ],
         "id": "landcover-glacier",
+        "maxzoom": 13,
         "paint": {
           "fill-color": "hsl(47, 22%, 94%)",
           "fill-opacity": {
@@ -208,6 +271,7 @@
           ]
         ],
         "id": "landcover_sand",
+        "maxzoom": 13,
         "metadata": {},
         "paint": {
           "fill-antialias": false,
@@ -225,6 +289,7 @@
           "agriculture"
         ],
         "id": "landuse",
+        "maxzoom": 13,
         "paint": {
           "fill-color": "#eae0d0"
         },
@@ -239,6 +304,10 @@
           "national_park"
         ],
         "id": "landuse_overlay_national_park",
+        "maxzoom": 13,
+        "layout": {
+          "visibility": "none"
+        },
         "paint": {
           "fill-color": "#E1EBB0",
           "fill-opacity": {
@@ -260,6 +329,55 @@
         "type": "fill"
       },
       {
+        "id": "planning-constraints"
+      },     
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Polygon"
+          ]
+        ],
+        "id": "windspeed",
+        "layout": {
+          "visibility": "none"
+        },
+        "paint": {
+            "fill-color": [
+            "let",
+            "relativespeed",
+            ["/", ["get", "DN"], 158],
+            [
+              "interpolate",
+              ["linear"],
+              ["var", "relativespeed"],
+              0.0,
+              ["to-color", "midnightblue"],
+              0.31645,
+              ["to-color", "blue"],
+              0.31646,
+              ["to-color", "lightgray"],
+              0.37975,
+              ["to-color", "white"],
+              0.535,
+              ["to-color", "yellow"],
+              0.69,
+              ["to-color", "red"],
+              0.845,
+              ["to-color", "purple"],
+              1.0,
+              ["to-color", "purple"]
+          ]
+            ],
+            "fill-opacity": 0.8
+        },
+        "source": "windspeed",
+        "source-layer": "windspeed",
+        "type": "fill"
+      },         
+      {
         "filter": [
           "all",
           [
@@ -274,6 +392,7 @@
           ]
         ],
         "id": "waterway-tunnel",
+        "maxzoom": 13,
         "paint": {
           "line-color": "hsl(205, 56%, 73%)",
           "line-dasharray": [
@@ -332,6 +451,7 @@
           ]
         ],
         "id": "waterway",
+        "maxzoom": 13,
         "paint": {
           "line-color": "hsl(205, 56%, 73%)",
           "line-opacity": 1,
@@ -374,6 +494,7 @@
           ]
         ],
         "id": "waterway_intermittent",
+        "maxzoom": 13,
         "paint": {
           "line-color": "hsl(205, 56%, 73%)",
           "line-opacity": 1,
@@ -419,6 +540,7 @@
           ]
         ],
         "id": "tunnel_railway_transit",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "butt",
           "line-join": "miter"
@@ -450,6 +572,7 @@
       },
       {
         "id": "building",
+        "maxzoom": 13,
         "paint": {
           "fill-antialias": true,
           "fill-color": "rgba(222, 211, 190, 1)",
@@ -507,6 +630,7 @@
       },
       {
         "id": "road_area_pier",
+        "maxzoom": 13,
         "type": "fill",
         "metadata": {},
         "source": "openmaptiles",
@@ -531,6 +655,7 @@
       },
       {
         "id": "road_pier",
+        "maxzoom": 13,
         "type": "line",
         "metadata": {},
         "source": "openmaptiles",
@@ -584,6 +709,7 @@
           ]
         ],
         "id": "road_bridge_area",
+        "maxzoom": 13,
         "layout": {},
         "paint": {
           "fill-color": "hsl(47, 26%, 88%)",
@@ -609,6 +735,7 @@
           ]
         ],
         "id": "road_path",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "square",
           "line-join": "bevel"
@@ -653,6 +780,7 @@
           ]
         ],
         "id": "road_minor",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "round",
           "line-join": "round"
@@ -698,6 +826,7 @@
           ]
         ],
         "id": "tunnel_minor",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "butt",
           "line-join": "miter"
@@ -749,6 +878,7 @@
           ]
         ],
         "id": "tunnel_major",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "butt",
           "line-join": "miter"
@@ -793,6 +923,7 @@
           ]
         ],
         "id": "aeroway-area",
+        "maxzoom": 13,
         "metadata": {
           "mapbox:group": "1444849345966.4436"
         },
@@ -832,6 +963,7 @@
           ]
         ],
         "id": "aeroway-taxiway",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "round",
           "line-join": "round"
@@ -839,7 +971,7 @@
         "metadata": {
           "mapbox:group": "1444849345966.4436"
         },
-        "minzoom": 12,
+        "minzoom": 13,
         "paint": {
           "line-color": "rgba(255, 255, 255, 1)",
           "line-opacity": 1,
@@ -876,6 +1008,7 @@
           ]
         ],
         "id": "aeroway-runway",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "round",
           "line-join": "round"
@@ -921,6 +1054,7 @@
           ]
         ],
         "id": "road_trunk_primary",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "round",
           "line-join": "round"
@@ -961,6 +1095,7 @@
           ]
         ],
         "id": "road_secondary_tertiary",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "round",
           "line-join": "round"
@@ -1000,6 +1135,7 @@
           ]
         ],
         "id": "road_major_motorway",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "round",
           "line-join": "round"
@@ -1040,6 +1176,7 @@
           ]
         ],
         "id": "railway-transit",
+        "maxzoom": 13,
         "paint": {
           "line-color": "hsl(34, 12%, 66%)",
           "line-opacity": {
@@ -1067,6 +1204,7 @@
           "rail"
         ],
         "id": "railway",
+        "maxzoom": 13,
         "paint": {
           "line-color": "hsl(34, 12%, 66%)",
           "line-opacity": {
@@ -1102,6 +1240,7 @@
           ]
         ],
         "id": "waterway-bridge-case",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "butt",
           "line-join": "miter"
@@ -1154,6 +1293,7 @@
           ]
         ],
         "id": "waterway-bridge",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "round",
           "line-join": "round"
@@ -1198,6 +1338,7 @@
           ]
         ],
         "id": "bridge_minor case",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "butt",
           "line-join": "miter"
@@ -1258,6 +1399,7 @@
           ]
         ],
         "id": "bridge_major case",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "butt",
           "line-join": "miter"
@@ -1315,6 +1457,7 @@
           ]
         ],
         "id": "bridge_minor",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "round",
           "line-join": "round"
@@ -1362,6 +1505,7 @@
           ]
         ],
         "id": "bridge_major",
+        "maxzoom": 13,
         "layout": {
           "line-cap": "round",
           "line-join": "round"
@@ -1395,6 +1539,7 @@
           8
         ],
         "id": "admin_sub",
+        "maxzoom": 13,
         "paint": {
           "line-color": "hsla(0, 0%, 60%, 0.5)",
           "line-dasharray": [
@@ -1406,48 +1551,359 @@
         "source-layer": "boundary",
         "type": "line"
       },
-      { 
-        "id": "allplanningconstraints_fill_colour",
-        "source": "planningconstraints",
-        "source-layer": "all",
-        "type": "fill",
-        "filter": [
-            "all",
-            [
-                "==",
-                "$type",
-                "Polygon"
-            ]
-        ],
+      {
+        "id": "3d-buildings",
+        "source": "openmaptiles",
+        "source-layer": "building",
+        "type": "fill-extrusion",
+        "minzoom": 13,
         "layout": {
             "visibility": "visible"
+        },             
+        "paint": {
+            "fill-extrusion-color": "lightgray",                
+            "fill-extrusion-height": ["get", "render_height"],
+            "fill-extrusion-base": ["case",
+                [">=", ["get", "zoom"], 12],
+                ["get", "render_min_height"], 0
+            ]
+        }
+      },  
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "LineString"
+          ],
+          [
+            "in",
+            "power",
+            "substation"
+          ]
+        ],
+        "id": "grid_substation",
+        "layout": {
+          "visibility": "none"
         },
         "paint": {
-            "fill-opacity": 0.5,
-            "fill-color": "grey"
-        }
+          "fill-color": "purple",
+          "fill-opacity": [
+            "step",
+            ["zoom"],
+            0,
+            7, 0.8 
+          ]
+        },
+        "source": "grid",
+        "source-layer": "grid",
+        "type": "fill"
       },
       {
-          "id": "allplanningconstraints_fill_pattern",
-          "source": "planningconstraints",
-          "source-layer": "all",
-          "type": "fill",
-          "filter": [
-              "all",
-              [
-                  "==",
-                  "$type",
-                  "Polygon"
-              ]
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "LineString"
           ],
-          "layout": {
-              "visibility": "visible"
-          },
-          "paint": {
-              "fill-pattern": "hatching_transparent",
-              "fill-opacity": 0.05
-          }
+          [
+            "in",
+            "power",
+            "line",
+            "cable",
+            "minor_line"
+          ]
+        ],
+        "id": "grid",
+        "layout": {
+          "visibility": "none"
+        },
+        "paint": {
+          "line-color": [
+            "case",
+            ["==", ["to-number", ["get", "maxvoltage"]], 0], "#f7fabf",
+            [">=", ["to-number", ["get", "maxvoltage"]], 550000], "#e892a2",
+            [">=", ["to-number", ["get", "maxvoltage"]], 310000], "#e892a2",
+            [">=", ["to-number", ["get", "maxvoltage"]], 220000], "#f9b29c",
+            [">=", ["to-number", ["get", "maxvoltage"]], 132000], "#f9e09a",
+            [">=", ["to-number", ["get", "maxvoltage"]], 33000], "#f9f19a",
+            [">=", ["to-number", ["get", "maxvoltage"]], 10000], "#f7fabf",
+            "#f7fabf"
+          ],
+          "line-opacity": 1,
+          "line-width": 
+          [
+            "step",
+            ["zoom"],
+            0,
+            3, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 1,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 1,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 0,
+              0
+            ],  
+            6, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 3,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 2,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 1.2,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 0.8,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 0.4,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 0,
+              0
+            ],  
+            7, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 3,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 2,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 2,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 2,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 0,
+              0
+            ],  
+            8, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 3,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 2.7,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 2.4,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 2.1,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 2.1,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 0,
+              0
+            ],  
+            10, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 1,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 4,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 3.8,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 3.5,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 3.2,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 3,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 2,
+              1
+            ]
+          ]
+        },
+        "source": "grid",
+        "source-layer": "grid",
+        "type": "line"
       },
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "LineString"
+          ],
+          [
+            "in",
+            "power",
+            "line",
+            "cable",
+            "minor_line"
+          ]
+        ],
+        "id": "grid_outline",
+        "layout": {
+          "visibility": "none"
+        },
+        "paint": {
+          "line-color": "#666",
+          "line-width": 
+          [
+            "step",
+            ["zoom"],
+            0,
+            3, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 0,
+              0
+            ],  
+            6, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 0,
+              0
+            ],  
+            7, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 0,
+              0
+            ],  
+            8, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 0,
+              0
+            ],  
+            10, 
+            0.2,
+            12,
+            0.5,
+            13,
+            0.75
+          ],
+          "line-opacity": 1,
+          "line-gap-width": 
+          [
+            "step",
+            ["zoom"],
+            0,
+            3, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 1,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 1,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 0,
+              0
+            ],  
+            6, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 2,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 2,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 1,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 1,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 0,
+              0
+            ],  
+            7, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 2.3,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 2.3,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 2,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 2,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 0,
+              0
+            ],  
+            8, 
+            [
+              "case",
+              ["==", ["to-number", ["get", "maxvoltage"]], 0], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 550000], 2.6,
+              [">=", ["to-number", ["get", "maxvoltage"]], 310000], 2.6,
+              [">=", ["to-number", ["get", "maxvoltage"]], 220000], 2.3,
+              [">=", ["to-number", ["get", "maxvoltage"]], 132000], 2.3,
+              [">=", ["to-number", ["get", "maxvoltage"]], 33000], 0,
+              [">=", ["to-number", ["get", "maxvoltage"]], 10000], 0,
+              0
+            ],  
+            11, 
+            3
+          ]
+        },
+        "source": "grid",
+        "source-layer": "grid",
+        "type": "line"
+      },       
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "LineString"
+          ],
+          [
+            "in",
+            "power",
+            "line",
+            "cable",
+            "minor_line"
+          ]
+        ],
+        "id": "grid_label",
+        "layout": {
+          "visibility": "none",
+          "symbol-placement": "line",
+          "text-field": "{voltage}",
+          "text-font": [
+            "Noto Sans Regular"
+          ],
+          "text-letter-spacing": 0.1,
+          "text-rotation-alignment": "map",
+          "text-size": {
+            "base": 1.4,
+            "stops": [
+              [
+                10,
+                8
+              ],
+              [
+                20,
+                14
+              ]
+            ]
+          },
+          "text-transform": "uppercase"
+        },
+        "paint": {
+          "text-color": "#000",
+          "text-halo-color": "hsl(0, 0%, 100%)",
+          "text-halo-width": 2,
+          "text-opacity": [
+            "step",
+            ["zoom"],
+            0,
+            8, 1 
+          ]
+        },
+        "source": "grid",
+        "source-layer": "grid",
+        "type": "symbol"
+      },      
       {
         "filter": [
           "all",
@@ -1477,7 +1933,7 @@
           ],
           "text-size": 11
         },
-        "minzoom": 14,
+        "minzoom": 13,
         "paint": {
           "text-color": "#666",
           "text-halo-blur": 1,
@@ -1579,6 +2035,7 @@
           ]
         ],
         "id": "place_label_other",
+        "maxzoom": 13,
         "layout": {
           "text-anchor": "center",
           "text-field": "{name}",
@@ -1693,7 +2150,7 @@
             ]
           }
         },
-        "maxzoom": 12,
+        "maxzoom": 13,
         "paint": {
           "text-color": "hsl(0, 0%, 13%)",
           "text-halo-blur": 0,
@@ -1742,11 +2199,97 @@
             ]
           }
         },
-        "maxzoom": 12,
+        "maxzoom": 13,
         "paint": {
           "text-color": "hsl(0, 0%, 13%)",
           "text-halo-blur": 0,
           "text-halo-color": "rgba(255,255,255,0.75)",
+          "text-halo-width": 2
+        },
+        "source": "openmaptiles",
+        "source-layer": "place",
+        "type": "symbol"
+      },  
+      {
+        "id": "renewables_windturbine",
+        "type": "symbol",
+        "source": "renewables",
+        "source-layer": "renewables",
+        "layout": {
+            "icon-image": "windturbine_grey", 
+            "icon-size": [
+              "interpolate", ["exponential", 2], ["zoom"], 
+              12, 0.03125,
+              20, 8
+            ],
+            "icon-anchor": "bottom",
+            "icon-allow-overlap": [
+              "step",
+              ["zoom"],
+              false,
+              12,
+              true
+            ]            
+        },
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Point"
+          ],
+          [
+            "==",
+            "renewabletype",
+            "wind"
+          ]
+        ]
+      },
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Point"
+          ],
+          [
+            "!in",
+            "class",
+            "city",
+            "state",
+            "country",
+            "continent"
+          ]
+        ],
+        "id": "place_label_other_3d",
+        "layout": {
+          "icon-image": "leader_line",
+          "icon-anchor": "bottom",
+          "text-offset": [0, -8.5],
+          "text-field": "{name}",
+          "text-font": [
+            "Noto Sans Regular"
+          ],
+          "text-max-width": 6,
+          "text-size": {
+            "stops": [
+              [
+                6,
+                10
+              ],
+              [
+                12,
+                14
+              ]
+            ]
+          }
+        },
+        "minzoom": 13,
+        "paint": {
+          "text-color": "hsl(0, 0%,0%)",
+          "text-halo-blur": 2,
+          "text-halo-color": "hsla(0, 0%, 100%, 0.75)",
           "text-halo-width": 2
         },
         "source": "openmaptiles",

@@ -80,7 +80,12 @@ export class Test extends Component {
                       </IonRow>
                       <IonRow className="ion-align-items-center">
                         <IonCol size="12" style={{textAlign: "center"}}>
-                        <IonButton shape="round" onClick={() => {this.selectNearestWindturbine()}}>Find nearest potential wind site</IonButton>
+                        <IonButton shape="round" onClick={() => {this.selectNearestWindturbine()}}>Find nearest site</IonButton>
+                        </IonCol>
+                      </IonRow>
+                      <IonRow className="ion-align-items-center">
+                        <IonCol size="12" style={{textAlign: "center"}}>
+                        <a onClick={() => {this.props.history.push("explore");}}><IonButton shape="round">Explore</IonButton></a>
                         </IonCol>
                       </IonRow>
                     </IonGrid>

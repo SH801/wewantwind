@@ -99,36 +99,6 @@
               }
           }, 
           {
-              "id": "customgeojson_windturbine",
-              "type": "symbol",
-              "source": "customgeojson",
-              "layout": {
-                  "visibility": "visible",
-                  "icon-image": "windturbine_white", 
-                  "icon-size": [
-                    "interpolate", ["exponential", 2], ["zoom"], 
-                    12, 0.03125,
-                    20, 8
-                  ],
-                  "icon-anchor": "bottom",
-                  "icon-allow-overlap": [
-                    "step",
-                    ["zoom"],
-                    false,
-                    12,
-                    true
-                  ]            
-              },
-              "filter": [
-                "all",
-                [
-                  "==",
-                  "$type",
-                  "Point"
-                ]
-              ]
-          },
-          {
               "filter": [
                 "all",
                 [

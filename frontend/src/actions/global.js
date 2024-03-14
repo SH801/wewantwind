@@ -11,7 +11,7 @@
  * Actions for global redux object
  */ 
 
-import { API_URL } from "../constants";
+import { API_URL, FETCHAPI_URL } from "../constants";
 
 /**
  * setGlobalState
@@ -148,6 +148,52 @@ export const sendMessage = (messageparameters) => {
       .then(res => {
         if (res.status === 200) {
           return dispatch({type: 'SEND_MESSAGE', data: res.data});
+        }         
+      })
+  }
+}
+
+
+/**
+ * fetchEntity
+ * 
+ * Fetch entity from backend server using search criteria
+ * 
+ * @param {*} searchcriteria
+ */
+export const fetchEntity = (searchcriteria) => {
+  return (dispatch, getState) => {
+    const { mapref } = getState().global;
+    let headers = {"Content-Type": "application/json"};
+    let body = JSON.stringify(searchcriteria);
+    return fetch(FETCHAPI_URL + "/entities/", {headers, method: "POST", body})
+      .then(res => {
+        if (res.status < 500) {
+          return res.json().then(data => {
+            return {status: res.status, data};
+          })
+        } else {
+          console.log("Server Error!");
+          throw res;
+        }
+      })
+      .then(res => {
+        if (res.status === 200) {
+          var centre = null;
+          var zoom = null;
+          if (res.data.bounds !== undefined) {
+            if (mapref) {
+                var map = mapref.current.getMap();
+                const southWest = [res.data.bounds[0], res.data.bounds[1]]
+                const northEast = [res.data.bounds[2], res.data.bounds[3]]
+                centre = [(res.data.bounds[0] + res.data.bounds[2]) / 2, 
+                          (res.data.bounds[1] + res.data.bounds[3]) / 2];
+                if (map.getZoom() > 15) map.setZoom(15);
+                map.fitBounds([southWest, northEast], {animate: true}); 
+            }
+          }
+
+          return dispatch({type: 'FETCH_ENTITY', centre: centre, zoom: zoom});
         }         
       })
   }

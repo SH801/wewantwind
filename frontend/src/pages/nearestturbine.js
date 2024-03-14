@@ -161,7 +161,7 @@ class NearestTurbine extends Component {
     incorporateBaseDomain = (baseurl, json) => {
 
       let newjson = JSON.parse(JSON.stringify(json));
-      const sources_list = ['openmaptiles', 'terrainSource', 'hillshadeSource', 'allplanningconstraints', 'windspeed', 'renewables', 'grid', 'positivefarms'];
+      const sources_list = ['openmaptiles', 'terrainSource', 'hillshadeSource', 'planningconstraints', 'windspeed', 'renewables', 'grid', 'positivefarms'];
   
       for(let i = 0; i < sources_list.length; i++) {
         var id = sources_list[i];
@@ -383,14 +383,16 @@ class NearestTurbine extends Component {
         return;
       }
 
-      const targetmap = event.target;
-      const cameraposition = this.getCameraPosition();
-      const submap = this.submapRef.current.getMap();
-      this.props.setGlobalState({currentlng: cameraposition.lng, currentlat: cameraposition.lat}).then(() => {
-        this.ignoremovend = true;
-        this.reorientToTurbine(targetmap);
-        this.reloadSubmap(submap);
-      });
+      if ((this.mapRef.current !== null) && (this.submapRef.current !== null)) {
+        const targetmap = event.target;
+        const cameraposition = this.getCameraPosition();
+        const submap = this.submapRef.current.getMap();
+        this.props.setGlobalState({currentlng: cameraposition.lng, currentlat: cameraposition.lat}).then(() => {
+          this.ignoremovend = true;
+          this.reorientToTurbine(targetmap);
+          this.reloadSubmap(submap);
+        });
+      }
     }
 
     updateAltitude = () => {
@@ -753,19 +755,9 @@ class NearestTurbine extends Component {
             <IonContent>
               <IonList lines="none" style={{paddingTop: "20px"}}>
                 <IonItem>
-                  <IonText className="instruction-text">There are <b>{ this.props.global.localpeople } user(s)</b> within {LOCAL_DISTANCE} miles of you. 
-                  Enter your details below to send the following introductory message to them:</IonText>
-                </IonItem>
-                <IonItem>
-                  <IonText className="instruction-text" style={{fontSize: "75%", paddingTop: "10px", paddingBottom: "20px"}}>
-                    <i>Dear [Recipient's name], The following user(s) are within {LOCAL_DISTANCE} miles of you and would like to connect with local WeWantWind users: 
-                  [Your name and email address as supplied below]. 
-                 To contact any of them about either setting up a community wind group or getting involved with an existing group, drop them an email.</i></IonText>
-                </IonItem>
-                <IonItem>
-                  <IonText className="instruction-text">If you send a message, <b>your name and email address will be sent to users</b> near to you. 
-                  We will, however, send you a confirmation email first before sending out your personal details to other users.
-                  </IonText>
+                  <IonText className="instruction-text">There are <b>{ this.props.global.localpeople } user(s)</b> within {LOCAL_DISTANCE} miles of you who have agreed to be contacted. 
+                  You can send an introductory message to them <b>containing your name and email address</b> to make contact. 
+                  We will request your confirmation via email before messaging anyone.</IonText>
                 </IonItem>
               </IonList>
               <IonList lines="none">
@@ -790,15 +782,15 @@ class NearestTurbine extends Component {
                     onIonInput={(event) => this.validateEmail(event)}
                     onIonBlur={() => {this.setState({isTouchedEmail: true})}}
                     ></IonInput>
-                </IonItem>   
+                </IonItem>
+                <IonItem>
+                  <IonText className="instruction-text" style={{fontSize: "75%", paddingTop: "10px", color: "#666"}}>
+                    <b>Content of introductory email: </b> Dear [Recipient's name], The following user(s) are within {LOCAL_DISTANCE} miles of you and would like to connect with local WeWantWind users: 
+                  [Your name and email address as supplied above]. 
+                 To contact any of them about either setting up a community wind group or getting involved with an existing group, drop them an email.</IonText>
+                </IonItem>
               </IonList>
               <IonList lines="none">
-                {/* <IonItem className="checkbox-item">
-                  <IonCheckbox checked={this.state.contactchecked} onIonChange={(e) => {this.setState({contactchecked: !this.state.contactchecked})}} labelPlacement="end">
-                  <span class="wrap">Allow other users to contact me via this site. Note: we will <b>never</b> publish or pass on your email address without your express permission.</span>
-                  </IonCheckbox>
-                </IonItem> */}
-
                 {(this.state.recaptchaError !== '') ? (
                 <IonItem color="danger">
                 <IonText>{this.state.recaptchaError}</IonText>
@@ -857,31 +849,35 @@ class NearestTurbine extends Component {
             </div>
 
             <div className="map-wrap">
-              <Map ref={this.mapRef}
-                onLoad={this.onMapLoad} 
-                onRender={this.onRender}
-                onMoveEnd={this.onMapMoveEnd}
-                onIdle={this.onIdle}
-                mapStyle={this.satellitelayer}
-                terrain={{source: "terrainSource", exaggeration: 1.1 }}
-                attributionControl={false}
-                initialViewState={{
-                  longitude: this.props.global.currentlng,
-                  latitude: this.props.global.currentlat,
-                  pitch: 85,
-                  zoom: 18,
-                  maxPitch: 85
-                }} >
+              <div style={{ height: "100%" }}>
+                <Map ref={this.mapRef}
+                  width="100vw"
+                  height="100vh"
+                  onLoad={this.onMapLoad} 
+                  onRender={this.onRender}
+                  onMoveEnd={this.onMapMoveEnd}
+                  onIdle={this.onIdle}
+                  mapStyle={this.satellitelayer}
+                  terrain={{source: "terrainSource", exaggeration: 1.1 }}
+                  attributionControl={false}
+                  initialViewState={{
+                    longitude: this.props.global.currentlng,
+                    latitude: this.props.global.currentlat,
+                    pitch: 85,
+                    zoom: 18,
+                    maxPitch: 85
+                  }} >
                     <Tooltip id="ctrlpanel-tooltip" place="right" variant="light" style={{fontSize: "120%"}} />
 
-                    <Canvas gl={{ preserveDrawingBuffer: true }} ref={this.threeRef} latitude={this.props.global.turbinelat} longitude={this.props.global.turbinelng} altitude={this.state.altitude}>
+                    <Canvas ref={this.threeRef} latitude={this.props.global.turbinelat} longitude={this.props.global.turbinelng} altitude={this.state.altitude}>
                         <hemisphereLight args={["#ffffff", "#60666C"]} position={[1, 4.5, 3]} />
                         <object3D scale={25} rotation={[0, 1, 0]}>
                             <WindTurbine />
                         </object3D>
                     </Canvas>
                 </Map>
-            </div> 
+              </div>
+            </div>
 
           </div>
           </IonContent>
