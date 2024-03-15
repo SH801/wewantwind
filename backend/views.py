@@ -31,7 +31,7 @@ from django.contrib.gis.geos import Point
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_bytes
-from django.db.models import Q
+from django.db.models import Q, Count
 from time import sleep
 
 from .models import Site, Vote, Message
@@ -657,7 +657,6 @@ def ConfirmVote(request, uidb64, token):
     try:
         id = urlsafe_base64_decode(uidb64).decode()
         provisionalvote = Vote.objects.get(pk=id)
-        print(id, provisionalvote)
     except (TypeError, ValueError, OverflowError, Vote.DoesNotExist):
         provisionalvote = None
 
@@ -668,6 +667,42 @@ def ConfirmVote(request, uidb64, token):
         return render(request, 'backend/vote_confirmed.html')
     else:
         return render(request, 'backend/vote_not_confirmed.html')
+
+@csrf_exempt
+def Votes(request):
+    """
+    Get data on all votes
+    """
+
+    distinctpoints = Vote.objects.filter(confirmed=True).values('site').annotate(Count('id')).order_by()
+
+    features = []
+    for distinctpoint in distinctpoints:
+        # print(distinctpoint, distinctpoint['site'].coords)
+        allvotes = Vote.objects.filter(confirmed=True).filter(site=distinctpoint['site']).count()
+        onemilevotes = Vote.objects.filter(confirmed=True).filter(site=distinctpoint['site']).filter(userlocation__distance_lte=(distinctpoint['site'], RadiusDistance(mi=1))).count()
+        fivemilevotes = Vote.objects.filter(confirmed=True).filter(site=distinctpoint['site']).filter(userlocation__distance_lte=(distinctpoint['site'], RadiusDistance(mi=5))).count()
+        tenmilevotes = Vote.objects.filter(confirmed=True).filter(site=distinctpoint['site']).filter(userlocation__distance_lte=(distinctpoint['site'], RadiusDistance(mi=10))).count()
+        feature = {
+            "type": "feature",
+            "properties": {
+                'name': 'Site votes', 
+                'subtype': 'votes',
+                'position': str(distinctpoint['site'].coords[1]) + "°N, " + str(distinctpoint['site'].coords[0]) + "°W",
+                'votes': allvotes,
+                'votes:within:1:mile': onemilevotes,
+                'votes:within:5:miles': fivemilevotes,
+                'votes:within:10:miles': tenmilevotes
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [distinctpoint['site'].coords[0], distinctpoint['site'].coords[1]]
+            }
+        }
+        features.append(feature)
+
+    geojson = { "type": "FeatureCollection", "features": features }
+    return OutputJson(geojson)
 
 @csrf_exempt
 def LocalPeople(request):

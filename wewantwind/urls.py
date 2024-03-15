@@ -24,6 +24,7 @@ urlpatterns = [
     path('sitereport/', views.SiteReport, name='sitereport'),
     path('nearestturbinereport/', views.NearestTurbineReport, name='nearestturbinereport'),
     path('vote/', views.CastVote, name='castvote'),
+    path('votes/', views.Votes, name='votes'),
     path('localpeople/', views.LocalPeople, name='localpeople'),
     path('message/', views.SendMessage, name='sendmessage'),
     path('processqueue/', views.ProcessMessageQueue, name='processmessagequeue'),

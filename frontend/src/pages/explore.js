@@ -26,13 +26,12 @@ import {
 } from '@ionic/react';
 import { downloadOutline } from 'ionicons/icons';
 import toast, { Toaster } from 'react-hot-toast';
-import { point, bearing, buffer, bbox, destination, centroid } from '@turf/turf';
-import { useLoader, useFrame, useThree} from "@react-three/fiber";
+import { bearing, centroid } from '@turf/turf';
+import { useLoader, useFrame } from "@react-three/fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import 'maplibre-gl/dist/maplibre-gl.css';
 import Map, { Popup, Marker, GeolocateControl } from 'react-map-gl/maplibre';
 import { Canvas } from "react-three-map/maplibre";
-import { v4 as uuidv4 } from 'uuid';
 import maplibregl from '!maplibre-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 
 import { 
@@ -56,8 +55,6 @@ import { mapRefreshPlanningConstraints } from '../functions/map';
 
 
 const ANIMATION_INTERVAL = 800;
-
-var turf = require('@turf/turf');
 
 window.Ionic = {
   config: {
@@ -288,7 +285,8 @@ class Explore extends Component {
         'grid',
         'grid_outline',
         'grid_substation',
-        'windspeed'
+        'windspeed',
+        'votes'
       ].concat(idsinstylesheet);
   
       return planningconstraints;
@@ -724,6 +722,14 @@ class Explore extends Component {
             }
   
           } else {
+            if (properties['subtype'] === 'votes') {
+              description = '<h1 class="popup-h1">Turbine site votes</h1>';
+              description += '<p class="popup-p">' + properties['position'] + '</p>';
+              description += '<p class="popup-p"><b>All votes:</b> ' + properties['votes'] + '</p>';
+              description += '<p class="popup-p"><b>Votes within 1 mile:</b> ' + properties['votes:within:1:mile'] + '</p>';
+              description += '<p class="popup-p"><b>Votes within 5 miles:</b> ' + properties['votes:within:5:miles'] + '</p>';
+              description += '<p class="popup-p"><b>Votes within 10 miles:</b> ' + properties['votes:within:10:miles'] + '</p>';
+            }
             if (description === undefined) {
               description = "No name available";
               source = "";
@@ -734,7 +740,7 @@ class Explore extends Component {
             }
           }
           var popup = this.popupRef.current;
-          if (properties.subtype === 'wind') popup.setOffset([0, -20]);
+          if ((properties.subtype === 'wind') || (properties.subtype === 'votes')) popup.setOffset([0, -20]);
           else popup.setOffset([0, 0]);
           popup.setLngLat(featurecentroid.geometry.coordinates).setHTML(description).addTo(map);
         }  
