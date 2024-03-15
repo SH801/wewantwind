@@ -286,7 +286,8 @@ class Explore extends Component {
         'grid_outline',
         'grid_substation',
         'windspeed',
-        'votes'
+        'votes',
+        'votes_line',
       ].concat(idsinstylesheet);
   
       return planningconstraints;
@@ -459,6 +460,7 @@ class Explore extends Component {
       if (this.mapRef.current !== null) {
         var map = this.mapRef.current.getMap();
         var zoom = map.getZoom();
+        // console.log(zoom);
         var pitch = map.getPitch();
         var bearing = map.getBearing();
         if (zoom < THREED_ZOOM) {
@@ -821,8 +823,7 @@ class Explore extends Component {
       var centre = [this.props.global.turbinelng, this.props.global.turbinelat];
       this.props.setGlobalState({centre: centre});
       this.setState({centreset: true});
-      console.log(this.state.centreset);
-      map.easeTo({center: centre, pitch: 85, zoom: 15, duration: 1000});
+      map.easeTo({center: centre, pitch: 85, zoom: 15.5, duration: 1000});
       return false;
     }
 

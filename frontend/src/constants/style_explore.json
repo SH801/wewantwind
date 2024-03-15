@@ -2250,21 +2250,40 @@
         ]
       },
       {
-        "id": "votes",
+        "id": "votes_line",
         "type": "symbol",
         "source": "votes",
+        "minzoom": 13, 
         "layout": {
-            "icon-image": "vote", 
+            "icon-image": "tick_with_line",
             "icon-size": [
               "interpolate", ["exponential", 2], ["zoom"], 
-              12, 0.03125,
-              20, 8
+              10, 0.03125,
+              20, 32
             ],
             "icon-anchor": "bottom",
             "icon-allow-overlap": [
               "step",
               ["zoom"],
-              false,
+              true,
+              12,
+              true
+            ]            
+        }
+      },
+      {
+        "id": "votes",
+        "type": "symbol",
+        "source": "votes",
+        "maxzoom": 13, 
+        "layout": {
+            "icon-image": "tick", 
+            "icon-size": 0.04688,
+            "icon-anchor": "bottom",
+            "icon-allow-overlap": [
+              "step",
+              ["zoom"],
+              true,
               12,
               true
             ]            

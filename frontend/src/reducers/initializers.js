@@ -29,6 +29,7 @@ export const initialStateGlobal = {
     centre: null,
     zoom: null,
     windspeed: null,
+    randompoint: null,
     planningconstraints: {
         "all": true,
         "wind": false,

@@ -198,3 +198,33 @@ export const fetchEntity = (searchcriteria) => {
       })
   }
 }
+
+
+
+/**
+ * fetchRandomPoint
+ * 
+ * Gets random point from server
+ * 
+ */
+export const fetchRandomPoint = () => {
+  return (dispatch, getState) => {
+    let headers = {"Content-Type": "application/json"};
+    return fetch(API_URL + "/randompoint/", {headers, method: "POST"})
+      .then(res => {
+        if (res.status < 500) {
+          return res.json().then(data => {
+            return {status: res.status, data};
+          })
+        } else {
+          console.log("Server Error!");
+          throw res;
+        }
+      })
+      .then(res => {
+        if (res.status === 200) {
+          return dispatch({type: 'FETCH_RANDOMPOINT', randompoint: res.data});
+        }         
+      })
+  }
+}

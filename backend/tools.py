@@ -21,11 +21,14 @@ from django.db import connection, transaction
 from django.contrib.gis.db.models import Extent
 
 from backend.models import \
-    Site
+    Site, \
+    Boundary
 
 constraintfreefile = '../constraintfree.geojson'
 MINIMUMACREAGE = 0.5
 MINIMUMDISTANCE = 20
+
+cwd = os.path.dirname(os.path.realpath(__file__))
 
 def generatesites():
     print("Deleting existing sites")
@@ -56,5 +59,22 @@ def generatesites():
             newsite = Site(centre=centrepoint, geometry=geometry)
             newsite.save()
             # exit()
+
+def importukboundary():
+    """
+    Import UK boundary from JSON file
+    """
+
+    Boundary.objects.all().delete()
+    boundaryfile = cwd + '/UKboundary.geojson'
+
+    print("Loading context file", boundaryfile)
+    with open(boundaryfile) as f:
+        geometrydata = geojson.load(f)
+        geometry = GEOSGeometry(str(geometrydata['features'][0]['geometry']))
+        geometryobject = Boundary(name='UK Boundary', geometry=geometry)
+        geometryobject.save()                     
+
+# importukboundary()
 
 generatesites()

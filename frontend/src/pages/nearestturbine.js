@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useRef } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
@@ -19,13 +19,11 @@ import {
   IonButtons, 
   IonIcon,
   IonCheckbox,
-  IonLabel,
-  IonNote,
 } from '@ionic/react';
 import { downloadOutline } from 'ionicons/icons';
 import toast, { Toaster } from 'react-hot-toast';
 import { point, bearing, buffer, bbox, destination } from '@turf/turf';
-import { useLoader, useFrame, useThree} from "@react-three/fiber";
+import { useLoader, useFrame } from "@react-three/fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import 'maplibre-gl/dist/maplibre-gl.css';
 import Map, { Marker } from 'react-map-gl/maplibre';
@@ -154,8 +152,10 @@ class NearestTurbine extends Component {
     } 
 
     updateSubmapPosition = () => {
-      var cameraposition = this.getCameraPosition();
-      this.props.setGlobalState({currentlat: cameraposition.lat, currentlng: cameraposition.lng});
+      if (this.mapRef.current !== null) {
+        var cameraposition = this.getCameraPosition();
+        this.props.setGlobalState({currentlat: cameraposition.lat, currentlng: cameraposition.lng});
+      }
     }
   
     incorporateBaseDomain = (baseurl, json) => {
@@ -361,8 +361,8 @@ class NearestTurbine extends Component {
     
     onIdle = () => {
       if (this.updatealtitude) {
-        this.updateAltitude();
         this.updatealtitude = false;
+        this.updateAltitude();
       }
 
       if (this.state.flying) {
@@ -398,7 +398,7 @@ class NearestTurbine extends Component {
     updateAltitude = () => {
       if (this.mapRef.current !== null) {
         const map = this.mapRef.current.getMap();
-        const altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}) || 0;
+        const altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, { exaggerated: false }) || 0;
         this.setState({altitude: altitude});
       }
     }
@@ -674,10 +674,11 @@ class NearestTurbine extends Component {
             <IonContent>
               <IonList lines="none" style={{paddingTop: "20px"}}>
                 <IonItem>
-                  <IonText className="instruction-text">Enter your details below to cast your vote for the current wind turbine site. We will then email you a link to confirm your vote.</IonText>
+                  <IonText className="instruction-text">Enter your details below to cast your vote for the current wind turbine site. We will then email you a link to confirm your vote. 
+                  Once you have confirmed your vote, the location of your voted turbine - but not your own location - will be added to our map.</IonText>
                 </IonItem>
                 <IonItem>
-                  <IonText className="instruction-text" style={{marginTop: "10px"}}><i>You can only cast one vote per email address.</i> However, you can reallocate your single vote to a different turbine site or withdraw your vote at any time.</IonText>
+                  <IonText className="instruction-text" style={{marginTop: "10px"}}><i>You can only cast one vote per person / email address - please don't try and rig the system!</i> You can reallocate your single vote to a different turbine site at any time.</IonText>
                 </IonItem>
               </IonList>
               <IonList lines="none">
@@ -870,7 +871,7 @@ class NearestTurbine extends Component {
                     <Tooltip id="ctrlpanel-tooltip" place="right" variant="light" style={{fontSize: "120%"}} />
 
                     <Canvas ref={this.threeRef} latitude={this.props.global.turbinelat} longitude={this.props.global.turbinelng} altitude={this.state.altitude}>
-                        <hemisphereLight args={["#ffffff", "#60666C"]} position={[1, 4.5, 3]} />
+                        <hemisphereLight args={["#ffffff", "#60666C"]} position={[1, 4.5, 3]}/>
                         <object3D scale={25} rotation={[0, 1, 0]}>
                             <WindTurbine />
                         </object3D>

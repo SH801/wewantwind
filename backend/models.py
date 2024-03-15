@@ -112,3 +112,25 @@ class MessageAdmin(LeafletGeoAdmin):
         'ip',
         'date'
     )
+
+class Boundary(models.Model):
+    """
+    Stores boundary areas, eg counties, to allow geography-specific views
+    """
+    name = models.CharField(max_length = 200, blank=True)
+    geometry = models.GeometryField(null=True, blank=True)
+    
+    def _get_geometry(self):
+        return self.geometry
+
+    geom = property(_get_geometry)
+    
+    class Meta:
+        ordering = ('name',) 
+        indexes = [
+            models.Index(fields=['name',]),
+            GistIndex(fields=['geometry']),
+        ]
+
+    def __str__(self):
+        return self.name

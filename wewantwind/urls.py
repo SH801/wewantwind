@@ -20,6 +20,7 @@ from backend import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('geojson/', views.CreateGeoJSON, name='creategeojson'),
+    path('randompoint/', views.GetRandomPoint, name='randompoint'),
     path('nearestturbine/', views.NearestTurbine, name='nearestturbine'),
     path('sitereport/', views.SiteReport, name='sitereport'),
     path('nearestturbinereport/', views.NearestTurbineReport, name='nearestturbinereport'),

@@ -4,6 +4,7 @@ import { withRouter } from 'react-router-dom';
 import {IonAlert, IonTitle, IonToolbar, IonText } from '@ionic/react';
 import './toolbar.css';
 import { global } from "../actions";
+import { TESTING_RANDOMPOINT } from '../constants';
 
 class Toolbar extends Component {
   
@@ -18,20 +19,35 @@ class Toolbar extends Component {
     }
   
     selectNearestWindturbine = () => {  
-        if ((this.props.global.startinglat !== null) && (this.props.global.startinglng !== null)) 
-        {
-            this.setState({calculatingposition: false, calculatingnearestturbine: true});
-            this.props.fetchNearestTurbine({lat: this.props.global.startinglat, lng: this.props.global.startinglng}).then(() => {
-              this.setState({calculatingnearestturbine: false});
-              this.props.history.push("nearestturbine");
-            })
+
+        if (TESTING_RANDOMPOINT) {
+
+            // Use random points for testing
+            this.setState({calculatingposition: true});
+            this.props.fetchRandomPoint().then(() => {
+                this.setState({calculatingposition: false, calculatingnearestturbine: true});
+                this.props.fetchNearestTurbine({lat: this.props.global.randompoint.lat, lng: this.props.global.randompoint.lng}).then(() => {
+                    this.setState({calculatingnearestturbine: false});
+                    this.props.history.push("nearestturbine");
+                })      
+            });
+            
         } else {
-            if (navigator.geolocation) {
-                this.setState({calculatingposition: true});
-                navigator.geolocation.getCurrentPosition(this.foundCurrentPosition, this.notfoundCurrentPosition);
+            if ((this.props.global.startinglat !== null) && (this.props.global.startinglng !== null)) 
+            {
+                this.setState({calculatingposition: false, calculatingnearestturbine: true});
+                this.props.fetchNearestTurbine({lat: this.props.global.startinglat, lng: this.props.global.startinglng}).then(() => {
+                this.setState({calculatingnearestturbine: false});
+                this.props.history.push("nearestturbine");
+                })
             } else {
-                this.setState({calculatingposition: false});        
-            }    
+                if (navigator.geolocation) {
+                    this.setState({calculatingposition: true});
+                    navigator.geolocation.getCurrentPosition(this.foundCurrentPosition, this.notfoundCurrentPosition);
+                } else {
+                    this.setState({calculatingposition: false});        
+                }    
+            }
         }
       }
   
@@ -94,6 +110,9 @@ export const mapDispatchToProps = dispatch => {
         },  
         fetchNearestTurbine: (position) => {
             return dispatch(global.fetchNearestTurbine(position));
+        },      
+        fetchRandomPoint: () => {
+            return dispatch(global.fetchRandomPoint());
         },      
     }
 }  

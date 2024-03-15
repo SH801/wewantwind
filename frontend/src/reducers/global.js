@@ -71,7 +71,11 @@ export default function selector(state=initialStateGlobal, action) {
         case 'FETCH_ENTITY':
             newState = {...newState, zoom: action.zoom, centre: action.centre};
             return newState;
-    
+
+        case 'FETCH_RANDOMPOINT':
+            newState = {...newState, randompoint: action.randompoint};
+            return newState;
+                
         case 'CAST_VOTE':
             newState = {...newState};
             return newState;

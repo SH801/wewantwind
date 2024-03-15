@@ -6,6 +6,10 @@ import requests
 import shutil
 import uuid
 import urllib
+import geojson
+from turfpy.transformation import intersect
+from turfpy.measurement import points_within_polygon
+from geojson import Point as GeoJSONPoint, Feature, FeatureCollection, Polygon
 from urllib.parse import urlparse
 from PIL import Image, ImageEnhance
 from matplotlib import colors
@@ -33,8 +37,9 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_bytes
 from django.db.models import Q, Count
 from time import sleep
+from random import randrange
 
-from .models import Site, Vote, Message
+from .models import Site, Vote, Message, Boundary
 
 # Create your views here.
 
@@ -166,7 +171,50 @@ def OutputJson(json_array={'result': 'failure'}):
 def OutputError():
     return OutputJson()
 
+def GetRandomPointInBounds():
+    bounds = [
+        [
+            -4.9,
+            50
+        ],
+        [
+            1.5, 
+            57 
+        ]
+    ]
+
+    xmin, ymin, xmax, ymax = bounds[0][0], bounds[0][1], bounds[1][0], bounds[1][1]
+    xrandom = float(randrange(int(xmin * 100), int(xmax * 100), 1) / 100)
+    yrandom = float(randrange(int(ymin * 100), int(ymax * 100), 1) / 100)
+    return [xrandom, yrandom]
+
+def CheckInBoundary(point):
+    """
+    Checks whether point within UK using Boundary table which holds UK
+    """
+    point = Point(float(point[0]), float(point[1]))
+    return (Boundary.objects.filter(name='UK Boundary').filter(geometry__intersects=point).count() != 0)
+
+@csrf_exempt
+def GetRandomPoint(request):
+    """
+    Get random point within UK
+    """
+
+    while True:
+        point = GetRandomPointInBounds()
+        inboundary = CheckInBoundary(point)
+        if inboundary is False:
+            pass 
+            # print("Point not within UK", point)
+        else: return OutputJson({'lng': point[0], 'lat': point[1]})
+
+
 def GetNearestTurbine(lat, lng):
+    """
+    Get nearest optimal wind turbine site to specified point
+    """
+    
     centre = Point(lng, lat, srid=4326)    
     sites = Site.objects.all().annotate(distance=Distance('centre' , centre )).order_by('distance')
     if sites is None: return None
