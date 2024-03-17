@@ -6,6 +6,7 @@
 constraintfree.geojson
 constraintfree.qmd
 frontend/node_modules
+frontend/build
 static/
 venv/
 backend/downloads

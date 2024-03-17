@@ -171,6 +171,12 @@ def OutputJson(json_array={'result': 'failure'}):
 def OutputError():
     return OutputJson()
 
+def home(request):
+    """
+    Shows default home page or other frontend-specific pages to be rendered by frontend React app
+    """
+    return render(request, 'index.html')
+
 def GetRandomPointInBounds():
     bounds = [
         [

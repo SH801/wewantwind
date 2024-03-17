@@ -33,4 +33,5 @@ urlpatterns = [
     re_path(r'^confirmvote/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9a-f]{1,32})/$', views.ConfirmVote, name='confirmvote'),
     re_path(r'^confirmmessage/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9a-f]{1,32})/$', views.ConfirmMessage, name='confirmmessage'),
     re_path(r'^removemailinglist/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9a-f]{1,32})/$', views.RemoveMailingList, name='removemailinglist'),
+    re_path(r'.*', views.home, name='home'),                                       
 ]
