@@ -6,5 +6,6 @@
 constraintfree.geojson
 constraintfree.qmd
 frontend/node_modules
+venv/
 backend/downloads
 backend/UKboundary_complicated.geojson
