@@ -526,7 +526,7 @@ class NearestTurbine extends Component {
           } else {
             anchor.download += '.docx';
           }
-          const docurl = DOMAIN_BASEURL + '/sitereport/?type=' + type + '&lat=' + String(lat) + '&lng=' + String(lng);
+          const docurl = DOMAIN_BASEURL + '/sitereport?type=' + type + '&lat=' + String(lat) + '&lng=' + String(lng);
           this.setState({generatingfile: true, progress: 0});
           var timer = setInterval(() => {
             var currentstep = this.state.progress;
