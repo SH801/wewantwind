@@ -40,9 +40,9 @@
             "encoding": "terrarium",
             "attribution": "United Kingdom terrain data © Environment Agency copyright and/or database right 2015. All rights reserved"
         },
-        "allplanningconstraints": {
+        "planningconstraints": {
           "type": "vector",
-          "url": "/data/allplanningconstraints.json",
+          "url": "/data/allplanningconstraints_new.json",
           "attribution": "Source data copyright of multiple organisations - for list of data sources, see https://positiveplaces.org/datasets"
         }
     },

@@ -5,10 +5,10 @@
 .env.prod
 constraintfree.geojson
 constraintfree.qmd
-frontend/node_modules
-frontend/build
+frontend/node_modules/
+frontend/build/
 frontend/upload.sh
 static/
 venv/
-backend/downloads
+backend/downloads/
 backend/UKboundary_complicated.geojson

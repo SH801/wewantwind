@@ -34,7 +34,7 @@ class ThreeTest extends Component {
     incorporateBaseDomain = (baseurl, json) => {
 
         let newjson = JSON.parse(JSON.stringify(json));
-        const sources_list = ['openmaptiles', 'terrainSource', 'hillshadeSource', 'allplanningconstraints', 'windspeed', 'renewables', 'grid', 'positivefarms'];
+        const sources_list = ['openmaptiles', 'terrainSource', 'hillshadeSource', 'allplanningconstraints', 'windspeed', 'renewables', 'grid'];
 
         for(let i = 0; i < sources_list.length; i++) {
             var id = sources_list[i];

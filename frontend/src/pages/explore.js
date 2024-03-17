@@ -142,6 +142,7 @@ class Explore extends Component {
       this.style_planningconstraints_defaults = require('../constants/style_planningconstraints_defaults.json');
       this.style_planningconstraints = this.constructPlanningConstraints(require('../constants/style_planningconstraints.json'));
       this.explorelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_planningconstraints, this.style_explore);
+      console.log(TILESERVER_BASEURL);
       this.spacer = new Spacer();
       this.flytoggle = new FlyToggle({mapcontainer: this});
       this.recordvideo = new RecordVideo({mapcontainer: this});
