@@ -43,8 +43,8 @@
                 }]}
             }      
         },
-        "glyphs": "http://host.docker.internal:8080/fonts/{fontstack}/{range}.pbf",
-        "sprite": "http://host.docker.internal:8080/styles/basic/sprite",
+        "glyphs": "https://tiles.wewantwind.org/fonts/{fontstack}/{range}.pbf",
+        "sprite": "https://tiles.wewantwind.org/styles/basic/sprite",
         "layers": [
           {
             "id": "background",

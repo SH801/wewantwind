@@ -64,8 +64,8 @@ window.Ionic = {
 }
 
 function WindTurbine(props) {
-  const tower_gltf = useLoader(GLTFLoader, "./windturbine_tower.gltf");
-  const blades_gltf = useLoader(GLTFLoader, "./windturbine_blades.gltf");
+  const tower_gltf = useLoader(GLTFLoader, "./static/models/windturbine_tower.gltf");
+  const blades_gltf = useLoader(GLTFLoader, "./static/models/windturbine_blades.gltf");
   const turbinemesh = React.useRef();
 
   useFrame(({ clock }) => {

@@ -61,8 +61,8 @@ export const PLANNING_CONSTRAINTS = {
         "colour": "grey",
         "layers":
         [
-            "constraint_all_fill_colour",
-            "constraint_all_fill_pattern"
+            "constraint_other_technical_constraints_lo_fill_colour",
+            "constraint_other_technical_constraints_lo_fill_pattern"
         ]
     },
     "wind": 

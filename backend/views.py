@@ -266,15 +266,15 @@ def NearestTurbine(request):
     return OutputJson(results)
 
 def processimages(id, coordinates, constraintslist, parameters):
-    with open(cwd + '/styles/planningconstraint.json') as fp: planningconstraint = json.load(fp)
-    with open(cwd + '/styles/planningconstraints.json') as fp: planningconstraints = json.load(fp)
+    with open(cwd + '/styles/planningconstraint.json', encoding='utf-8') as fp: planningconstraint = json.load(fp)
+    with open(cwd + '/styles/planningconstraints.json', encoding='utf-8') as fp: planningconstraints = json.load(fp)
 
     imagedirectory = cwd + '/downloads/' + id
     os.mkdir(imagedirectory) 
 
     threedimensionsparameters = {'width': '600', 'height': '600', 'ratio': '3', 'zoom': '15', 'pitch': '45', 'bearing': '190', 'center': str(coordinates[0]) + ',' + str(coordinates[1])}
 
-    with open(cwd + '/styles/3d.json') as fp: threedimensions = json.load(fp)
+    with open(cwd + '/styles/3d.json', encoding='utf-8') as fp: threedimensions = json.load(fp)
     threedimensions['style']['sources']['customgeojson'] = {
         "type": "geojson",
         "data": {"type": "FeatureCollection", "features": [{
