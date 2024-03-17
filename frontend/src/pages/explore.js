@@ -50,6 +50,7 @@ import { RecordVideo } from '../components/recordvideo';
 import { Message } from '../components/message';
 import { Grid } from '../components/grid';
 import { Wind } from '../components/wind';
+import { Spacer } from '../components/spacer';
 import { Constraints } from '../components/constraints';
 import { mapRefreshPlanningConstraints } from '../functions/map';
 
@@ -141,6 +142,7 @@ class Explore extends Component {
       this.style_planningconstraints_defaults = require('../constants/style_planningconstraints_defaults.json');
       this.style_planningconstraints = this.constructPlanningConstraints(require('../constants/style_planningconstraints.json'));
       this.explorelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_planningconstraints, this.style_explore);
+      this.spacer = new Spacer();
       this.flytoggle = new FlyToggle({mapcontainer: this});
       this.recordvideo = new RecordVideo({mapcontainer: this});
       this.message = new Message({mapcontainer: this});
@@ -205,6 +207,7 @@ class Explore extends Component {
       this.setState({maploaded: true});
 
       map.addControl(new maplibregl.AttributionControl(), 'bottom-left');
+      map.addControl(this.spacer, 'top-right'); 
       map.addControl(this.flytoggle, 'top-right'); 
       map.addControl(this.recordvideo, 'top-right'); 
       map.addControl(this.showwind, 'top-right');
@@ -295,7 +298,7 @@ class Explore extends Component {
     incorporateBaseDomain = (baseurl, planningconstraints, json) => {
 
       let newjson = JSON.parse(JSON.stringify(json));
-      const sources_list = ['openmaptiles', 'terrainSource', 'hillshadeSource', 'allplanningconstraints', 'planningconstraints', 'windspeed', 'renewables', 'grid', 'positivefarms'];
+      const sources_list = ['openmaptiles', 'terrainSource', 'hillshadeSource', 'allplanningconstraints', 'planningconstraints', 'windspeed', 'renewables', 'grid'];
   
       for(let i = 0; i < sources_list.length; i++) {
         var id = sources_list[i];
@@ -742,8 +745,9 @@ class Explore extends Component {
             }
           }
           var popup = this.popupRef.current;
-          if ((properties.subtype === 'wind') || (properties.subtype === 'votes')) popup.setOffset([0, -20]);
-          else popup.setOffset([0, 0]);
+          popup.setOffset([0, 0]);
+          if (properties['renewabletype'] !== undefined) popup.setOffset([0, -10]);
+          if (properties['subtype'] === 'votes') popup.setOffset([0, -30]);
           popup.setLngLat(featurecentroid.geometry.coordinates).setHTML(description).addTo(map);
         }  
       }

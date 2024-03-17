@@ -18,7 +18,7 @@
             "planningconstraints": {
               "type": "vector",
               "buffer": 512,
-              "url": "mbtiles://planningconstraints",
+              "url": "mbtiles://planningconstraints_new",
               "attribution": "Source data copyright of multiple organisations - for list of data sources, see https://positiveplaces.org/datasets"
             },
             "hillshadeSource": {

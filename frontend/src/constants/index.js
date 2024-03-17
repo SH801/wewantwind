@@ -130,8 +130,10 @@ export const PLANNING_CONSTRAINTS = {
         "colour": "red",
         "layers": 
         [
-            "constraint_other_technical_constraints_fill_colour",
-            "constraint_other_technical_constraints_fill_pattern"
+            "constraint_other_technical_constraints_lo_fill_colour",
+            "constraint_other_technical_constraints_lo_fill_pattern",
+            "constraint_other_technical_constraints_hi_fill_colour",
+            "constraint_other_technical_constraints_hi_fill_pattern"
         ]
     }
 };

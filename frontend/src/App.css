@@ -218,7 +218,10 @@
 
 .maplibregl-ctrl-top-right {
   right: 8px!important;
-  top: 60px!important;
+}
+
+.maplibregl-ctrl-spacer {
+  height: 50px;
 }
 
 .wewantwind-ctrl-group button {

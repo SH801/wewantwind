@@ -69,7 +69,7 @@ constraintslist = [
             {'name': 'heritage_impacts', 'color': 'darkgoldenrod'},
             {'name': 'separation_distance_to_residential', 'color': 'darkorange'},
             {'name': 'ecology_and_wildlife', 'color': 'darkgreen'},
-            {'name': 'roads', 'color': 'red'},
+            {'name': 'other_technical_constraints_hi', 'color': 'red'},
             {'name': 'aviation_and_exclusion_areas', 'color': 'purple'}
         ]
     },
@@ -144,7 +144,7 @@ constraintslist = [
             '200 metre buffer from bridleways',     
         ],
         'layers': [
-            {'name': 'roads', 'color': 'red'}
+            {'name': 'other_technical_constraints_hi', 'color': 'red'}
         ]
     },
     {
@@ -214,7 +214,7 @@ def GetNearestTurbine(lat, lng):
     """
     Get nearest optimal wind turbine site to specified point
     """
-    
+
     centre = Point(lng, lat, srid=4326)    
     sites = Site.objects.all().annotate(distance=Distance('centre' , centre )).order_by('distance')
     if sites is None: return None
@@ -736,7 +736,7 @@ def Votes(request):
             "properties": {
                 'name': 'Site votes', 
                 'subtype': 'votes',
-                'position': str(distinctpoint['site'].coords[1]) + "°N, " + str(distinctpoint['site'].coords[0]) + "°W",
+                'position': str(round(distinctpoint['site'].coords[1], COORDINATE_PRECISION)) + "°N, " + str(round(distinctpoint['site'].coords[0], COORDINATE_PRECISION)) + "°W",
                 'votes': allvotes,
                 'votes:within:1:mile': onemilevotes,
                 'votes:within:5:miles': fivemilevotes,

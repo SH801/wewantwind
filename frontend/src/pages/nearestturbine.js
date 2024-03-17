@@ -1,4 +1,4 @@
-import React, { Component, useRef } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
@@ -35,6 +35,7 @@ import { DOMAIN_BASEURL, LOCAL_DISTANCE } from '../constants';
 import { global } from "../actions";
 import Toolbar from '../components/toolbar';
 import { initShaders, initVertexBuffers } from './webgl';
+import { Spacer } from '../components/spacer';
 import { FlyToggle } from '../components/flytoggle';
 import { RecordVideo } from '../components/recordvideo';
 import { Download } from '../components/download';
@@ -113,6 +114,7 @@ class NearestTurbine extends Component {
       this.style_twodimensions = require('../constants/style_twodimensions.json');
       this.satellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_threedimensions);
       this.nonsatellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_twodimensions);
+      this.spacer = new Spacer();
       this.flytoggle = new FlyToggle({mapcontainer: this});
       this.recordvideo = new RecordVideo({mapcontainer: this});
       this.download = new Download({mapcontainer: this});
@@ -161,7 +163,7 @@ class NearestTurbine extends Component {
     incorporateBaseDomain = (baseurl, json) => {
 
       let newjson = JSON.parse(JSON.stringify(json));
-      const sources_list = ['openmaptiles', 'terrainSource', 'hillshadeSource', 'planningconstraints', 'windspeed', 'renewables', 'grid', 'positivefarms'];
+      const sources_list = ['openmaptiles', 'terrainSource', 'hillshadeSource', 'planningconstraints', 'windspeed', 'renewables', 'grid'];
   
       for(let i = 0; i < sources_list.length; i++) {
         var id = sources_list[i];
@@ -260,6 +262,7 @@ class NearestTurbine extends Component {
       map.addControl(this.vote, 'top-left'); 
       map.addControl(this.download, 'top-left'); 
       map.addControl(this.message, 'top-left'); 
+      map.addControl(this.spacer, 'top-right'); 
       map.addControl(this.flytoggle, 'top-right'); 
       map.addControl(this.recordvideo, 'top-right'); 
     }

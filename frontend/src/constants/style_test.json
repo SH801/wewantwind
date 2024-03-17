@@ -18,7 +18,7 @@
         "planningconstraints": {
           "type": "vector",
           "buffer": 512,
-          "url": "/data/planningconstraints_new.json",
+          "url": "/data/planningconstraints.json",
           "attribution": "Source data copyright of multiple organisations - for list of data sources, see https://positiveplaces.org/datasets"
         },  
         "terrainSource": {
@@ -52,6 +52,11 @@
           "type": "vector",
           "url": "/data/windspeed.json",
           "attribution": "Estimated average wind speeds from NOABL Wind Speed Database © Department for Business, Enterprise & Regulatory Reform 1996"
+        },      
+        "test": {
+          "type": "vector",
+          "url": "http://localhost:8080/data/test.json",
+          "attribution": "Test vector tiles"
         },      
         "renewables": {
           "type": "vector",
@@ -2342,6 +2347,42 @@
         "source": "openmaptiles",
         "source-layer": "place",
         "type": "symbol"
+      },
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Polygon"
+          ]
+        ],
+        "id": "test-red",
+        "paint": {
+          "fill-color": "red",
+          "fill-opacity": 0.3
+        },
+        "source": "test",
+        "source-layer": "other_technical_constraints_lo",
+        "type": "fill"
+      },
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Polygon"
+          ]
+        ],
+        "id": "test-blue",
+        "paint": {
+          "fill-color": "blue",
+          "fill-opacity": 0.3
+        },
+        "source": "test",
+        "source-layer": "other_technical_constraints_hi",
+        "type": "fill"
       }
     ],
     "id": "basic-preview"
