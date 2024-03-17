@@ -79,8 +79,8 @@ ROOT_URLCONF = 'wewantwind.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
         'APP_DIRS': True,
+        'DIRS': [os.path.join(BASE_DIR, 'templates'), os.path.join(BASE_DIR, "frontend/build"), ],
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',

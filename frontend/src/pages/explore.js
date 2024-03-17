@@ -1130,7 +1130,7 @@ class Explore extends Component {
                       <>
                         {this.state.showmarker ? (
                         <Marker onClick={this.onClickMarker} onDragEnd={this.onTurbineMarkerDragEnd} longitude={this.props.global.turbinelng} latitude={this.props.global.turbinelat} draggable={true} anchor="bottom" >
-                          <img alt="Wind turbine" width="40" src="./windturbine_black.png" />
+                          <img alt="Wind turbine" width="40" src="./static/icons/windturbine_black.png" />
                         </Marker>                  
                         ) : null}
 

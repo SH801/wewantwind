@@ -49,8 +49,8 @@ import {
 var turf = require('@turf/turf');
 
 function WindTurbine() {
-  const tower_gltf = useLoader(GLTFLoader, "./windturbine_tower.gltf");
-  const blades_gltf = useLoader(GLTFLoader, "./windturbine_blades.gltf");
+  const tower_gltf = useLoader(GLTFLoader, "./static/models/windturbine_tower.gltf");
+  const blades_gltf = useLoader(GLTFLoader, "./static/models/windturbine_blades.gltf");
   const turbinemesh = React.useRef();
 
   useFrame(({ clock }) => {
@@ -843,10 +843,10 @@ class NearestTurbine extends Component {
                     maxPitch: 10
                   }} >
                   <Marker onDragEnd={this.onTurbineMarkerDragEnd} longitude={this.props.global.turbinelng} latitude={this.props.global.turbinelat} draggable={this.state.draggablesubmap} anchor="bottom" >
-                    <img alt="Wind turbine" width="40" src="./windturbine_black.png" />
+                    <img alt="Wind turbine" width="40" src="./static/icons/windturbine_black.png" />
                   </Marker>                  
                   <Marker onDragEnd={this.onEyeMarkerDragEnd} longitude={this.props.global.currentlng} latitude={this.props.global.currentlat} draggable={this.state.draggablesubmap} anchor="center" >
-                    <img alt="Your location" width="40" src="./eye.png" />
+                    <img alt="Your location" width="40" src="./static/icons/eye.png" />
                   </Marker>                  
                   </Map>
 

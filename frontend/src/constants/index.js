@@ -24,7 +24,7 @@ export const TESTING_RANDOMPOINT = true;
 export const FETCHAPI_URL = "https://positiveplaces.org";
 
 // Base url of tile server
-export const TILESERVER_BASEURL = isDev() ? "http://localhost:8080" : "https://tiles.positiveplaces.org";
+export const TILESERVER_BASEURL = isDev() ? "http://localhost:8080" : "https://tiles.wewantwind.org";
 
 // Base url of main website
 export const DOMAIN_BASEURL = isDev() ? "http://localhost:8000" : ("https://wewantwind.org");
