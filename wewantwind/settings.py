@@ -37,7 +37,7 @@ SECRET_KEY = 'p^3%avdok@#sisaz_25=^()41!iph-2g%w@n4_1-5_j^5uql!k'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_ALL_ORIGINS = True
