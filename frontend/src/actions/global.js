@@ -115,7 +115,6 @@ export const getLocalPeople = (position) => {
       })
       .then(res => {
         if (res.status === 200) {
-          console.log(res.data);
           return dispatch({type: 'GET_LOCALPEOPLE', data: res.data});
         }         
       })
