@@ -28,6 +28,8 @@ constraintfreefile = '../constraintfree.geojson'
 MINIMUMACREAGE = 0.5
 MINIMUMDISTANCE = 20
 
+METRES_PER_DEGREE = 111141
+
 cwd = os.path.dirname(os.path.realpath(__file__))
 
 def generatesites():
@@ -43,22 +45,23 @@ def generatesites():
 
     featurecount = 0
     for feature in features:
-        # print(feature['geometry'])
         centre = polylabel(feature['geometry']['coordinates'][0], with_distance=True)
-        distance = centre[1]
-        centrepoint = Point(centre[0][0], centre[0][1])
-        centrepoint.srid = 4326
-        # centre = None
-        geometry = GEOSGeometry(str(feature['geometry']))
-        meters_sq = calculatearea(feature['geometry'])
-        acres = meters_sq * 0.000247105381 # meters^2 to acres
-        # if acres > MINIMUMACREAGE:
-        if distance > MINIMUMDISTANCE:
-            featurecount += 1
-            print("Polygon", featurecount, centre, "size in acres", acres)
-            newsite = Site(centre=centrepoint, geometry=geometry)
-            newsite.save()
-            # exit()
+        if centre[1] is None:
+            print("Polygon has no centre", feature['geometry']['coordinates'][0])
+        else:
+            distance = float(centre[1]) * METRES_PER_DEGREE
+            # print(centre, distance)
+            centrepoint = Point(centre[0][0], centre[0][1])
+            centrepoint.srid = 4326
+            geometry = GEOSGeometry(str(feature['geometry']))
+            meters_sq = calculatearea(feature['geometry'])
+            acres = meters_sq * 0.000247105381 # meters^2 to acres
+            if distance > MINIMUMDISTANCE:
+                featurecount += 1
+                print("Polygon", featurecount, centre[0], "distance", distance, "size in acres", acres)
+                newsite = Site(centre=centrepoint, geometry=geometry)
+                newsite.save()
+                # exit()
 
 def importukboundary():
     """
