@@ -4,7 +4,7 @@ import { withRouter } from 'react-router-dom';
 import {IonAlert, IonTitle, IonToolbar, IonText } from '@ionic/react';
 import './toolbar.css';
 import { global } from "../actions";
-import { TESTING_RANDOMPOINT } from '../constants';
+import { TESTING_RANDOMPOINT, TOTAL_SITES } from '../constants';
 
 class Toolbar extends Component {
   
@@ -73,7 +73,7 @@ class Toolbar extends Component {
             <>
                 <IonAlert isOpen={this.state.calculatingposition} backdropDismiss={false} header="Calculating your position..." />            
                 <IonAlert isOpen={this.state.positionerror} backdropDismiss={false} header="Please enable location access to use this feature" onDidDismiss={() => this.setState({positionerror: false})} buttons={['OK']}/>            
-                <IonAlert isOpen={this.state.calculatingnearestturbine} backdropDismiss={false} header="Searching 20,000 locations for nearest optimal wind site..." />                        
+                <IonAlert isOpen={this.state.calculatingnearestturbine} backdropDismiss={false} header={"Searching " + String(TOTAL_SITES) + " locations for nearest optimal wind site..."} />            
                 <IonToolbar className="toolbar" color="translucent">
                     <div className="toolbar-content">
                         <IonTitle className="toolbar-title">
