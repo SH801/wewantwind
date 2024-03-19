@@ -16,7 +16,7 @@
           },
           "openmaptiles": {
               "type": "vector",
-              "url": "mbtiles://britain-and-ireland",
+              "url": "mbtiles://britain-and-ireland"
           },      
           "terrainSource": {
               "type": "raster-dem",
