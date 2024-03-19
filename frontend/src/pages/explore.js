@@ -75,7 +75,7 @@ function WindTurbine(props) {
 
   return (
     <>
-    <mesh onClick={props.container.onClickMarker} position={[0, 2.42, 0]} scale={2}>
+    <mesh onClick={props.container.onClickMarker} position={[0, 2.42, 0]} rotation-y={4 * Math.PI / 4} scale={2}>
       <mesh position={[0, -2.42, 0]}>
         <primitive object={tower_gltf.scene} scale={1} />
       </mesh>

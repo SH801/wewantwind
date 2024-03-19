@@ -60,7 +60,7 @@ function WindTurbine() {
 
   return (
     <>
-    <mesh position={[0, 2.42, 0]} scale={2}>
+    <mesh position={[0, 2.42, 0]} rotation-y={4 * Math.PI / 4} scale={2}>
       <mesh position={[0, -2.42, 0]}>
         <primitive object={tower_gltf.scene} scale={1} />
       </mesh>
@@ -413,7 +413,7 @@ class NearestTurbine extends Component {
           // Start camera from specific position high up and certain bearing from wind turbine
           var turbinepos = point([this.props.global.turbinelng, this.props.global.turbinelat]);
           var viewingdistance = 0.6;
-          var viewingbearing = 0;
+          var viewingbearing = -180;
           var options = {units: 'kilometres'};
           var viewingpos = destination(turbinepos, viewingdistance, viewingbearing, options);
           this.updateAltitude();

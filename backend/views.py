@@ -272,7 +272,7 @@ def processimages(id, coordinates, constraintslist, parameters):
     imagedirectory = cwd + '/downloads/' + id
     os.mkdir(imagedirectory) 
 
-    threedimensionsparameters = {'width': '600', 'height': '600', 'ratio': '3', 'zoom': '15', 'pitch': '45', 'bearing': '190', 'center': str(coordinates[0]) + ',' + str(coordinates[1])}
+    threedimensionsparameters = {'width': '600', 'height': '600', 'ratio': '3', 'zoom': '15', 'pitch': '45', 'bearing': '0', 'center': str(coordinates[0]) + ',' + str(coordinates[1])}
 
     with open(cwd + '/styles/3d.json', encoding='utf-8') as fp: threedimensions = json.load(fp)
     threedimensions['style']['sources']['customgeojson'] = {
