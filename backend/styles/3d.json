@@ -17,7 +17,6 @@
           "openmaptiles": {
               "type": "vector",
               "url": "mbtiles://britain-and-ireland",
-              "attribution": "Planning constraints data copyright of multiple organisations - for list of data sources, see https://positiveplaces.org/datasets"
           },      
           "terrainSource": {
               "type": "raster-dem",

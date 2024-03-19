@@ -15,8 +15,7 @@
         },
         "openmaptiles": {
             "type": "vector",
-            "url": "/data/openmaptiles.json",
-            "attribution": "Planning constraints data copyright of multiple organisations - for list of data sources, see https://positiveplaces.org/datasets"
+            "url": "/data/openmaptiles.json"
         },      
         "terrainSource": {
             "type": "raster-dem",
@@ -43,7 +42,7 @@
         "planningconstraints": {
           "type": "vector",
           "url": "/data/planningconstraints_new.json",
-          "attribution": "Source data copyright of multiple organisations - for list of data sources, see https://positiveplaces.org/datasets"
+          "attribution": "Source data copyright of multiple organisations - for list of data sources, see https://ckan.wewantwind.org"
         }
     },
     "glyphs": "/fonts/{fontstack}/{range}.pbf",
