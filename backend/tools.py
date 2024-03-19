@@ -3,6 +3,8 @@ import os
 from polylabel import polylabel
 import geojson
 from area import area as calculatearea
+import ijson
+import json
 
 if __name__ == '__main__':
     import sys
@@ -37,31 +39,25 @@ def generatesites():
     Site.objects.all().delete()
 
     print("Loading constraintfree file")
-    with open(constraintfreefile) as f:
-        gj = geojson.load(f)
-
-    features = gj['features']
-
-
     featurecount = 0
-    for feature in features:
-        centre = polylabel(feature['geometry']['coordinates'][0], with_distance=True)
-        if centre[1] is None:
-            print("Polygon has no centre", feature['geometry']['coordinates'][0])
-        else:
-            distance = float(centre[1]) * METRES_PER_DEGREE
-            # print(centre, distance)
-            centrepoint = Point(centre[0][0], centre[0][1])
-            centrepoint.srid = 4326
-            geometry = GEOSGeometry(str(feature['geometry']))
-            meters_sq = calculatearea(feature['geometry'])
-            acres = meters_sq * 0.000247105381 # meters^2 to acres
-            if distance > MINIMUMDISTANCE:
-                featurecount += 1
-                print("Polygon", featurecount, centre[0], "distance", distance, "size in acres", acres)
-                newsite = Site(centre=centrepoint, geometry=geometry)
-                newsite.save()
-                # exit()
+    with open(constraintfreefile, "r") as f:
+        for feature in ijson.items(f, "features.item", use_float=True):
+            centre = polylabel(feature['geometry']['coordinates'][0], with_distance=True)
+            if centre[1] is None:
+                print("Polygon has no centre", feature['geometry']['coordinates'][0])
+            else:
+                distance = float(centre[1]) * METRES_PER_DEGREE
+                # print(centre, distance)
+                centrepoint = Point(centre[0][0], centre[0][1])
+                centrepoint.srid = 4326
+                geometry = GEOSGeometry(str(feature['geometry']))
+                meters_sq = calculatearea(feature['geometry'])
+                acres = meters_sq * 0.000247105381 # meters^2 to acres
+                if distance > MINIMUMDISTANCE:
+                    featurecount += 1
+                    print("Polygon", featurecount, centre[0], "distance", distance, "size in acres", acres)
+                    newsite = Site(centre=centrepoint, geometry=geometry)
+                    newsite.save()
 
 def importukboundary():
     """

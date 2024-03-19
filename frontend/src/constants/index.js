@@ -35,6 +35,9 @@ export const LOCAL_DISTANCE = 10;
 // Zoom to go from 2D to 3D
 export const THREED_ZOOM = 13;
 
+// Total number of datasets
+export const TOTAL_SITES = "179,273";
+
 // Default maxbounds 
 export const DEFAULT_MAXBOUNDS = [
     [

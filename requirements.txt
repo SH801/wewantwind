@@ -13,6 +13,7 @@ django-leaflet==0.29.0
 fonttools==4.49.0
 geojson==3.1.0
 idna==3.6
+ijson
 importlib_resources==6.3.1
 kiwisolver==1.4.5
 lxml==5.1.0
