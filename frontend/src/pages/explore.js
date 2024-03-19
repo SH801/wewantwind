@@ -1188,7 +1188,7 @@ class Explore extends Component {
                   </IonRow>
                 </IonGrid>
               </div>
-              <div className="planning-key-footnote">Source data copyright of multiple organisations - <a href="/datasets" target="_new" style={{color: "black"}}>see full list of source datasets</a></div>
+              <div className="planning-key-footnote">Source data copyright of multiple organisations - see full list of source datasets at <a href="https://ckan.wewantwind.org" target="_new" style={{color: "black"}}>ckan.wewantwind.org</a></div>
             </div>
           </div>
         ) : null}
