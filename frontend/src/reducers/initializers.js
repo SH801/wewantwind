@@ -11,9 +11,15 @@
  * react-redux reducer initializers
  */ 
 
+import { PAGE } from '../constants';
 
 // Set up initial state of some global variables using constants
 export const initialStateGlobal = {
+    page: PAGE.HOME,
+    pagetransitioning: false,
+    testing: false,
+    testinginterval: null,
+    testpagesindex: 0,
     mapref: null,
     startinglat: null,
     startinglng: null,

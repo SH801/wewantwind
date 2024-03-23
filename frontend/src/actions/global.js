@@ -11,7 +11,8 @@
  * Actions for global redux object
  */ 
 
-import { API_URL, FETCHAPI_URL } from "../constants";
+import { API_URL, FETCHAPI_URL, PAGE } from "../constants";
+import { initializeMap } from "../functions/map";
 
 /**
  * setGlobalState
@@ -25,6 +26,32 @@ export const setGlobalState = (object) => {
       dispatch({type: 'GLOBAL_SET_STATE', object: object});
       return Promise.resolve(true);
     }
+}
+
+/**
+ * setPage
+ * 
+ * Sets page global state
+ * 
+ * @param {*} object 
+ */
+export const setPage = (page) => {
+  return (dispatch, getState) => {
+
+    const { mapref, startinglat, startinglng, turbinelat, turbinelng } = getState().global;
+    if ((mapref === null) || (mapref.current === null)) {
+      console.log("mapref is null");
+    }
+    if (mapref !== null) {
+      if (mapref.current !== null) {
+        var map = mapref.current.getMap();
+        initializeMap(map, page, startinglat, startinglng, turbinelat, turbinelng);
+      }
+    }
+
+    dispatch({type: 'GLOBAL_SET_STATE', object: {page: page, pagetransitioning: false}});
+    return Promise.resolve(true);
+  }  
 }
 
 /**

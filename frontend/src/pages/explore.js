@@ -294,7 +294,8 @@ class Explore extends Component {
       ].concat(idsinstylesheet);
   
       return planningconstraints;
-    }    
+    }
+        
     incorporateBaseDomain = (baseurl, planningconstraints, json) => {
 
       let newjson = JSON.parse(JSON.stringify(json));

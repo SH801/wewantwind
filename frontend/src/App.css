@@ -315,6 +315,13 @@
   height: 100vh;
 }
 
+.key-image {
+  width: 20px;
+  padding-left: 7px;
+  padding-right: 7px;
+}
+
+.turbine-distance-bottom,
 .turbine-distance {
   position: absolute;
   top: 0px;
@@ -326,6 +333,15 @@
   font-weight: 400;
   width: 100%;
   background-color: #ffffff73;
+}
+
+.turbine-distance-bottom {
+  bottom: 0px;
+  height: 70px;
+  font-size: 100%;
+  top: unset;
+  text-align: center;
+  background-color: #ffffffb0;
 }
 
 .submap {
@@ -378,7 +394,7 @@
   cursor: pointer;
   margin:10px;
   color: white;
-  text-shadow: 1px 1px 7px rgba(0, 0, 0, 0.88);
+  text-shadow: 0px 0px 7px rgb(89 88 88);
 }
 
 .alert-title.sc-ion-alert-md {
@@ -428,6 +444,11 @@
     width: 40px;
     height: 40px;
     margin-bottom: 0px;
+  }
+
+  .turbine-distance-bottom {
+    padding: 5px;
+    height: 60px;
   }
 }
 

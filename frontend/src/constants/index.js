@@ -38,6 +38,17 @@ export const THREED_ZOOM = 13;
 // Total number of datasets
 export const TOTAL_SITES = "179,273";
 
+// Animation interval
+export const ANIMATION_INTERVAL = 800;
+
+// Different page types
+export const PAGE = {
+    HOME: 0,
+    NEARESTTURBINE_OVERVIEW: 1,
+    NEARESTTURBINE: 2,
+    EXPLORE: 3
+}
+
 // Default maxbounds 
 export const DEFAULT_MAXBOUNDS = [
     [

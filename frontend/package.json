@@ -11,6 +11,7 @@
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
     "@turf/turf": "^6.5.0",
+    "history": "^5.3.0",
     "isomorphic-fetch": "^3.0.0",
     "mapbox-gl": "^3.2.0",
     "maplibre-gl": "^3.6.2",
