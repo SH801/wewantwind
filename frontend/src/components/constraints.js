@@ -20,17 +20,18 @@ export class Constraints extends Component{
       this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltip: true});}
       this._btn.onclick = function() { 
         // _this._mapcontainer.props.setGlobalState({windspeed: null});
-        if (_this._mapcontainer.state.showconstraints) {
+        if (_this._mapcontainer.props.global.showconstraints) {
           this.setAttribute('data-tooltip-content', 'Show planning constraints');
           _this._btn.className = 'wewantwind maplibregl-ctrl-showconstraints-off';
         } else {
           this.setAttribute('data-tooltip-content', 'Hide planning constraints');
           _this._btn.className = 'wewantwind maplibregl-ctrl-showconstraints-on';
         }        
-        mapRefreshPlanningConstraints(!(_this._mapcontainer.state.showconstraints), 
+        mapRefreshPlanningConstraints(!(_this._mapcontainer.props.global.showconstraints), 
                                         _this._mapcontainer.props.global.planningconstraints, 
                                         _this._map);          
-        _this._mapcontainer.setState({showtooltip: false, showconstraints: !_this._mapcontainer.state.showconstraints});
+        _this._mapcontainer.props.setGlobalState({showconstraints: !_this._mapcontainer.props.global.showconstraints});
+        _this._mapcontainer.setState({showtooltip: false});
       };
       
       this._container = document.createElement('div');

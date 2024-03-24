@@ -49,6 +49,14 @@ export const PAGE = {
     EXPLORE: 3
 }
 
+// Buttons on each page
+export const PAGEBUTTONS = [
+    [],
+    [],
+    ['vote', 'download', 'message', 'fly', 'video'],
+    ['vote', 'download', 'message', 'fly', 'video', 'wind', 'planning', 'grid']
+]
+
 // Default maxbounds 
 export const DEFAULT_MAXBOUNDS = [
     [

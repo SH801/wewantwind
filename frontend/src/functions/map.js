@@ -3,6 +3,7 @@ import maplibregl from '!maplibre-gl'; // eslint-disable-line import/no-webpack-
 import { 
   PLANNING_CONSTRAINTS,
   PAGE,
+  PAGEBUTTONS,
   DEFAULT_CENTRE 
 } from "../constants";
 
@@ -80,8 +81,33 @@ export function getBearing(currentpos, turbinepos) {
   return bearing(point1, point2);
 }
 
-export function initializeMap(map, page, startinglat, startinglng, turbinelat, turbinelng) {
-  // console.log("initializeMap", map, page, startinglat, startinglng, turbinelat, turbinelng);
+export function initializeMap(map, page, buttons, buttonsstate, startinglat, startinglng, turbinelat, turbinelng) {
+
+  var newbuttonsstate = JSON.parse(JSON.stringify(buttonsstate));
+  // Remove all existing buttons
+  const buttonkeys = Object.keys(buttonsstate);
+  for(var i = 0 ; i< buttonkeys.length; i++) {
+    var buttonname = buttonkeys[i];
+    if (buttonsstate[buttonname]) map.removeControl(buttons[buttonname]);
+    newbuttonsstate[buttonname] = false;
+  }
+
+  const pagebuttons = PAGEBUTTONS[page];
+  for(var i = 0; i < pagebuttons.length; i++) {
+    var buttonname = pagebuttons[i];
+    switch (buttonname) {
+      case 'vote':        map.addControl(buttons[buttonname], 'top-left'); break;
+      case 'download':    map.addControl(buttons[buttonname], 'top-left'); break;
+      case 'message':     map.addControl(buttons[buttonname], 'top-left'); break;
+      case 'fly':         map.addControl(buttons[buttonname], 'top-right'); break;
+      case 'video':       map.addControl(buttons[buttonname], 'top-right'); break;
+      case 'wind':        map.addControl(buttons[buttonname], 'top-right'); break;
+      case 'planning':    map.addControl(buttons[buttonname], 'top-right'); break;
+      case 'grid':        map.addControl(buttons[buttonname], 'top-right'); break;
+    }
+    if (buttonname in newbuttonsstate) newbuttonsstate[buttonname] = true;
+  }
+
   switch (page) {
     case PAGE.HOME:
       break;
@@ -93,7 +119,7 @@ export function initializeMap(map, page, startinglat, startinglng, turbinelat, t
         const northEast = [turbinelng + deltalng, turbinelat + deltalat];
         map.setPitch(0);
         map.setBearing(0);
-        map.fitBounds([southWest, northEast], {animate: true, padding: 150}); 
+        map.fitBounds([southWest, northEast], {animate: true, padding: 190}); 
       }
       break;
     case PAGE.NEARESTTURBINE:
@@ -105,4 +131,6 @@ export function initializeMap(map, page, startinglat, startinglng, turbinelat, t
       map.flyTo({center: {lng: DEFAULT_CENTRE[0], lat: DEFAULT_CENTRE[1]}, pitch:0, bearing: 0, zoom: 5, animate: false});
       break;
   }  
+
+  return newbuttonsstate;
 }

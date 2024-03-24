@@ -36,6 +36,9 @@ export const initialStateGlobal = {
     zoom: null,
     windspeed: null,
     randompoint: null,
+    showwind: false,
+    showconstraints: false,
+    showgrid: false,
     planningconstraints: {
         "all": true,
         "wind": false,
@@ -45,5 +48,16 @@ export const initialStateGlobal = {
         "ecology": false,
         "safety": false,
         "aviation_mod": false
+    },
+    buttons: null,
+    buttonsstate: {
+        'vote':     false,
+        'download': false,
+        'message':  false,
+        'fly':      false,
+        'video':    false,
+        'wind':     false,
+        'planning': false,
+        'grid':     false
     }
 };

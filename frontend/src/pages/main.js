@@ -48,15 +48,18 @@ import {
     TOTAL_SITES     
 } from '../constants';
 import { global } from "../actions";
-import { initializeMap } from "../functions/map";
+import { initializeMap, mapRefreshPlanningConstraints } from "../functions/map";
 import Toolbar from '../components/toolbar';
 import { initShaders, initVertexBuffers } from './webgl';
 import { Spacer } from '../components/spacer';
+import { Vote } from '../components/vote';
+import { Download } from '../components/download';
+import { Message } from '../components/message';
 import { FlyToggle } from '../components/flytoggle';
 import { RecordVideo } from '../components/recordvideo';
-import { Download } from '../components/download';
-import { Vote } from '../components/vote';
-import { Message } from '../components/message';
+import { Wind } from '../components/wind';
+import { Constraints } from '../components/constraints';
+import { Grid } from '../components/grid';
 
 import { 
   TILESERVER_BASEURL
@@ -109,15 +112,16 @@ class Main extends Component {
         iconsloaded_white: false,
         icons_grey: [],
         iconsloaded_grey: false,    
-        maploaded: false, 
         altitude: null, 
         flying: false, 
         flyingcentre: null, 
         draggablesubmap: true,
         showmarker: true,
-        showdownload: false,
         showvote: false,
+        showdownload: false,
         showmessage: false,
+        showwind: false,
+        showgrid: false,
         generatingfile: false,
         progress: 0,
         preflightposition: null,
@@ -130,7 +134,9 @@ class Main extends Component {
         isTouchedEmail: false,
         recaptcha: undefined,
         recaptchaError: '',
-        centreset: false
+        centreset: false,
+        alertIsOpen: false,
+        alertText: ''    
       };
       this.updatealtitude = false;
       this.ignoremovend = false;
@@ -146,20 +152,21 @@ class Main extends Component {
       this.explorelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_planningconstraints, this.style_explore);
       this.satellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_planningconstraints, this.style_threedimensions);
       this.nonsatellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_planningconstraints, this.style_twodimensions);
-      this.spacer = new Spacer();
-      this.flytoggle = new FlyToggle({mapcontainer: this});
-      this.recordvideo = new RecordVideo({mapcontainer: this});
-      this.download = new Download({mapcontainer: this});
-      this.vote = new Vote({mapcontainer: this});
-      this.message = new Message({mapcontainer: this});
-      this.hoveredPolygonId = null;
 
-      if ((this.props.global.currentlng === null) || 
-          (this.props.global.currentlat === null) || 
-          (this.props.global.turbinelng === null) || 
-          (this.props.global.turbinelat === null)) {
-          this.props.history.push("");
-      } 
+      const buttons = {
+        'vote':           new Vote({mapcontainer: this}),
+        'download':       new Download({mapcontainer: this}),
+        'message':        new Message({mapcontainer: this}),
+        'fly':            new FlyToggle({mapcontainer: this}),
+        'video':          new RecordVideo({mapcontainer: this}),
+        'wind':           new Wind({mapcontainer: this}),
+        'planning':       new Constraints({mapcontainer: this}),
+        'grid':           new Grid({mapcontainer: this})
+      }
+
+      this.props.setGlobalState({'buttons': buttons});
+
+      this.hoveredPolygonId = null;
     }
 
     componentDidMount() {
@@ -410,39 +417,35 @@ class Main extends Component {
 
     onMapLoad = (event) => {
         
-        this.props.setGlobalState({"mapref": this.mapRef});
-        
-        initializeMap(  this.mapRef.current.getMap(), 
-                        this.props.global.page, 
-                        this.props.global.startinglat, 
-                        this.props.global.startinglng, 
-                        this.props.global.turbinelat, 
-                        this.props.global.turbinelng );
+        var map = this.mapRef.current.getMap();
+        map.addControl(new Spacer(), 'top-right');
+        var newbuttonsstate = initializeMap(  map, 
+                                          this.props.global.page,
+                                          this.props.global.buttons,
+                                          this.props.global.buttonsstate, 
+                                          this.props.global.startinglat, 
+                                          this.props.global.startinglng, 
+                                          this.props.global.turbinelat, 
+                                          this.props.global.turbinelng );
+
+        this.props.setGlobalState({
+            'mapref': this.mapRef, 
+            'buttonsstate': newbuttonsstate, 
+            'showconstraints': false  
+        });
 
         if (this.props.global.page === PAGE.NEARESTTURBINE_OVERVIEW) {
             toast.success("Showing nearest potential wind site...", {duration: 4000});
         }
 
         if (this.props.global.page === PAGE.NEARESTTURBINE) {
-            var map = this.mapRef.current.getMap();
             if ((this.props.global.currentlng !== null) && 
                 (this.props.global.currentlat !== null) && 
                 (this.props.global.turbinelng !== null) && 
                 (this.props.global.turbinelat !== null)) {
                 this.reorientToTurbine(map);
             }  
-            this.setState({maploaded: true});
-
-            map.addControl(new maplibregl.AttributionControl(), 'bottom-left');
-            map.addControl(this.vote, 'top-left'); 
-            map.addControl(this.download, 'top-left'); 
-            map.addControl(this.message, 'top-left'); 
-            map.addControl(this.spacer, 'top-right'); 
-            map.addControl(this.flytoggle, 'top-right'); 
-            map.addControl(this.recordvideo, 'top-right'); 
         }
-
-        var map = this.mapRef.current.getMap();
 
         map.on('click', 'points', function (e) {
           console.log('clicked on layer', e);
@@ -694,17 +697,15 @@ class Main extends Component {
     }
       
     onDrag = (event) => {
-        if (this.props.global.page !== PAGE.EXPLORE) return;
-
-        this.setState({centreset: false});  
+      this.setState({centreset: false});  
     }
   
     onClick = (event) => {
-        if (this.props.global.page !== PAGE.EXPLORE) return;
-
         // User clicks so remove centre
         if (event.clickOnLayer) this.setState({centreset: false});  
-  
+
+        if (this.props.global.page !== PAGE.EXPLORE) return;
+
         // Don't select features if adding asset
         if (event.features.length > 0) {
           var id = event.features[0]['layer']['id'];
@@ -918,7 +919,7 @@ class Main extends Component {
     updateAltitude = () => {
       if (this.mapRef.current !== null) {
         const map = this.mapRef.current.getMap();
-        const altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, { exaggerated: false }) || 0;
+        const altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, { exaggerated: true }) || 0;
         this.setState({altitude: altitude});
       }
     }
@@ -926,30 +927,58 @@ class Main extends Component {
     flyingStart = () => {
       if (!this.state.flying) {
         this.setState({flying: true, draggablesubmap: false, preflightposition: {lat: this.props.global.currentlat, lng: this.props.global.currentlng }}, () => {          
-          this.submapInterval = setInterval(this.updateSubmapPosition, 200);
-          // Start camera from specific position high up and certain bearing from wind turbine
-          var turbinepos = point([this.props.global.turbinelng, this.props.global.turbinelat]);
-          var viewingdistance = 0.6;
-          var viewingbearing = -180;
-          var options = {units: 'kilometres'};
-          var viewingpos = destination(turbinepos, viewingdistance, viewingbearing, options);
-          this.updateAltitude();
-          this.setCameraPosition({lng: viewingpos['geometry']['coordinates'][0], lat: viewingpos['geometry']['coordinates'][1], altitude: 600, pitch: 45, bearing: 180 + viewingbearing});
-          this.flyingRun();
+
+          if (this.props.global.page === PAGE.NEARESTTURBINE) {
+            this.submapInterval = setInterval(this.updateSubmapPosition, 200);
+            // Start camera from specific position high up and certain bearing from wind turbine
+            var turbinepos = point([this.props.global.turbinelng, this.props.global.turbinelat]);
+            var viewingdistance = 0.6;
+            var viewingbearing = -180;
+            var options = {units: 'kilometres'};
+            var viewingpos = destination(turbinepos, viewingdistance, viewingbearing, options);
+            this.setCameraPosition({lng: viewingpos['geometry']['coordinates'][0], lat: viewingpos['geometry']['coordinates'][1], altitude: 600, pitch: 45, bearing: 180 + viewingbearing});
+            // this.updateAltitude();
+            this.flyingRun();
+          }
+
+          if (this.props.global.page === PAGE.EXPLORE) {
+            var map = this.mapRef.current.getMap();
+            var centre = map.getCenter();
+            var zoom = map.getZoom();
+            if (this.state.centreset) {
+              console.log("Centre is set already, using that for flying");
+              centre = this.props.global.centre;
+              zoom = this.props.global.zoom;
+            } 
+            this.props.setGlobalState({centre: centre, zoom: zoom}).then(() => {
+              this.updateAltitude();
+              this.flyingRun();
+            });  
+          }
         });
       }
     }
 
     flyingStop = () => {
-      clearInterval(this.submapInterval);
-      this.props.setGlobalState({currentlat: this.state.preflightposition.lat, currentlng: this.state.preflightposition.lng }).then(() => {
+      if (this.props.global.page === PAGE.NEARESTTURBINE) {
+        clearInterval(this.submapInterval);
+        this.props.setGlobalState({currentlat: this.state.preflightposition.lat, currentlng: this.state.preflightposition.lng }).then(() => {
+          if (this.mapRef) {
+            var map = this.mapRef.current.getMap();
+            var pointbearing = this.getBearing({lat: this.props.global.currentlat, lng: this.props.global.currentlng}, {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng});
+            map.jumpTo({center: {lat: this.props.global.currentlat, lng: this.props.global.currentlng}, zoom: 18, pitch: 85, bearing: pointbearing});
+            this.setState({flying: false, draggablesubmap: true});
+          }
+        })
+      }
+
+      if (this.props.global.page === PAGE.EXPLORE) {
         if (this.mapRef) {
           var map = this.mapRef.current.getMap();
-          var pointbearing = this.getBearing({lat: this.props.global.currentlat, lng: this.props.global.currentlng}, {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng});
-          map.jumpTo({center: {lat: this.props.global.currentlat, lng: this.props.global.currentlng}, zoom: 18, pitch: 85, bearing: pointbearing});
-          this.setState({flying: false, draggablesubmap: true});
-        }
-      })
+          map.jumpTo({center: map.getCenter(), duration: 0});
+          this.setState({flying: false});
+        }  
+      }
     }
 
     flyingRun = () => {
@@ -958,19 +987,27 @@ class Main extends Component {
   
       if (this.mapRef) {
         var map = this.mapRef.current.getMap();
-        var centre = map.getCenter();
-        var zoom = map.getZoom();
-        if (this.props.global.centre) centre = this.props.global.centre;
-        else {
-          console.log("Centre is not set - using map's center");
-          this.props.setGlobalState({centre: centre});
+        if (this.props.global.page === PAGE.NEARESTTURBINE) {
+          var centre = map.getCenter();
+          var zoom = map.getZoom();
+          if (this.props.global.centre) centre = this.props.global.centre;
+          else {
+            console.log("Centre is not set - using map's center");
+            this.props.setGlobalState({centre: centre});
+          }
+          if (this.props.global.zoom) zoom = this.props.global.zoom;
+          else this.props.setGlobalState({zoom: zoom});        
+          // map.jumpTo({center: centre, zoom: zoom});
+          var newbearing = parseInt(map.getBearing() + degreesperiteration);
+          console.log("About to rotateTo", newbearing, centre);
+          map.rotateTo(parseFloat(newbearing), {around: {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, easing(t) {return t;}, duration: halfinterval});  
         }
-        if (this.props.global.zoom) zoom = this.props.global.zoom;
-        else this.props.setGlobalState({zoom: zoom});        
-        // map.jumpTo({center: centre, zoom: zoom});
-        var newbearing = parseInt(map.getBearing() + degreesperiteration);
-        console.log("About to rotateTo", newbearing, centre);
-        map.rotateTo(parseFloat(newbearing), {around: {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, easing(t) {return t;}, duration: halfinterval});  
+
+        if (this.props.global.page === PAGE.EXPLORE) {
+          var newbearing = parseInt(map.getBearing() + degreesperiteration);
+          console.log("About to rotateTo", newbearing, this.props.global.centre);
+          map.rotateTo(parseFloat(newbearing), {around: this.props.global.centre, easing(t) {return t;}, duration: halfinterval});  
+        }
       }
     }
 
@@ -1191,8 +1228,32 @@ class Main extends Component {
         console.log("Unable to retrieve your location");
     }
 
+    togglePlanningConstraint = (planningconstraint) => {
+      var planningconstraints = this.props.global.planningconstraints;
+      // // Selecting 'all' will either turn off all other layers or turn on all other layers
+      // if (planningconstraint === 'all') {
+      //   // planningconstraints['all'] = !(planningconstraints[planningconstraint]);
+      //   var planningconstraints_list = Object.keys(PLANNING_CONSTRAINTS);
+      //   for(var i = 0; i < planningconstraints_list.length; i++) {
+      //     var key = planningconstraints_list[i];
+      //     planningconstraints[key] = !this.props.global.planningconstraints['all'];
+      //   }
+      // } else {
+      //   planningconstraints['all'] = false;
+      //   planningconstraints[planningconstraint] = !(planningconstraints[planningconstraint]);
+      // }
+      planningconstraints[planningconstraint] = !(planningconstraints[planningconstraint]);
+      this.props.setGlobalState({planningconstraints: planningconstraints}).then(() => {
+        mapRefreshPlanningConstraints(
+          this.props.global.showconstraints, 
+          this.props.global.planningconstraints,
+          this.mapRef.current.getMap());
+      });
+    }
+
     render() {
         return (
+          <>
           <IonApp>
           <IonHeader translucent="true" className="ion-no-border">
             <Toolbar parent={this} />
@@ -1463,6 +1524,23 @@ class Main extends Component {
       
                   {this.showMainMap(this.props.global.page) ? (
                   <div className="map-wrap">
+
+                      {(this.props.global.windspeed !== null) ? (
+                      <div style={{zIndex:1000, position: "absolute", top: "60px", width: "100%"}}>
+                        <IonGrid>
+                          <IonRow className="ion-align-items-center">
+                            <IonCol size="12" style={{textAlign: "center"}}>
+                              <div className="horizontal-centred-container">
+                                <div className="wewantwind-infotab">
+                                Wind speed:&nbsp;<b>{this.props.global.windspeed} m/s</b>&nbsp;{(this.props.global.windspeed < 5) ? ('(too low for turbines)'): null}
+                                </div>
+                              </div>
+                            </IonCol>
+                          </IonRow>
+                        </IonGrid>
+                      </div>
+                      ) : null}
+
                       <div style={{ height: "100%" }}>
 
                         {(this.props.global.page === PAGE.NEARESTTURBINE_OVERVIEW) ? (
@@ -1470,8 +1548,7 @@ class Main extends Component {
                                 <div className="turbine-distance-bottom">
                                     <div>
                                         <img className="key-image" style={{verticalAlign: "middle"}} alt="Your location" width="40" src="./static/icons/eye.png" /> 
-                                        is current position. 
-                                        Drag
+                                        is current position, drag
                                         <img className="key-image" style={{verticalAlign: "middle"}} alt="Your location" width="40" src="./static/icons/windturbine_black.png" />
                                         to move.  
                                         Turbine distance: <b>{this.props.global.distance_mi.toFixed(1) + ' miles'} / {this.props.global.distance_km.toFixed(1) + ' km'}</b>
@@ -1559,7 +1636,59 @@ class Main extends Component {
           </IonContent>
 
         </IonApp>
-  
+
+
+        {this.props.global.showconstraints ? (
+          <div style={{position: "absolute", bottom: "0px", left: "0px", width: "100vw", zIndex: "9999"}}>
+            <div style={{marginLeft: "0px", marginRight: "0px", backgroundColor: "#ffffffff"}}>
+              <div>
+                <IonGrid>
+                  <IonRow class="ion-align-items-center ion-justify-content-center">
+                    <IonCol size="12" className="planning-key-title-container">
+                      <div className="horizontal-centred-container">
+                        <IonText className="planning-key-title ">Non-optimal wind sites due to low wind / planning constraints</IonText>
+                      </div>
+                    </IonCol>
+                  </IonRow>
+                  <IonRow class="ion-align-items-center ion-justify-content-center">
+                    <IonCol size="auto">
+                      <div style={{paddingRight: "20px"}}>
+                        {Object.keys(PLANNING_CONSTRAINTS).map((planningconstraint, index) => {
+                          return (
+                            <span 
+                              key={index} 
+                              onClick={() => this.togglePlanningConstraint(planningconstraint)} 
+                              className="planning-key-item"
+                              style={{
+                                opacity: (this.props.global.planningconstraints[planningconstraint] ? 1 : 0.4),
+                              }}>
+                              <div style={{width: "25px", height: "10px", marginRight: "5px", display: "inline-block", backgroundColor: PLANNING_CONSTRAINTS[planningconstraint]['colour']}} />
+                              {PLANNING_CONSTRAINTS[planningconstraint]['description']}
+                            </span>  
+                          )
+                        })}
+                      </div>
+                    </IonCol>
+                  </IonRow>
+                </IonGrid>
+              </div>
+              <div className="planning-key-footnote">Source data copyright of multiple organisations - see full list of source datasets at <a href="https://ckan.wewantwind.org" target="_new" style={{color: "black"}}>ckan.wewantwind.org</a></div>
+            </div>
+          </div>
+        ) : null}
+
+        <IonAlert
+          id="alert-modal"
+          isOpen={this.state.alertIsOpen}
+          header="Problem with location"
+          message={this.state.alertText}
+          buttons={['OK']}
+          onDidDismiss={() => this.setState({alertIsOpen: false})} >
+        </IonAlert>
+
+        </>
+
+
             );
     }
 }

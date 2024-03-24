@@ -38,18 +38,25 @@ export const setGlobalState = (object) => {
 export const setPage = (page) => {
   return (dispatch, getState) => {
 
-    const { mapref, startinglat, startinglng, turbinelat, turbinelng } = getState().global;
+    const { mapref, startinglat, startinglng, turbinelat, turbinelng, buttons, buttonsstate } = getState().global;
+    var newbuttonsstate = JSON.parse(JSON.stringify(buttonsstate));
+
     if ((mapref === null) || (mapref.current === null)) {
       console.log("mapref is null");
     }
     if (mapref !== null) {
       if (mapref.current !== null) {
         var map = mapref.current.getMap();
-        initializeMap(map, page, startinglat, startinglng, turbinelat, turbinelng);
+        newbuttonsstate = initializeMap(map, page, buttons, buttonsstate, startinglat, startinglng, turbinelat, turbinelng);
       }
     }
 
-    dispatch({type: 'GLOBAL_SET_STATE', object: {page: page, pagetransitioning: false}});
+    dispatch({type: 'GLOBAL_SET_STATE', object: {
+      page: page, 
+      pagetransitioning: false, 
+      buttonsstate: newbuttonsstate,
+      showconstraints: false
+    }});
     return Promise.resolve(true);
   }  
 }
