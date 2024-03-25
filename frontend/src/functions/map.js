@@ -120,6 +120,8 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
     case PAGE.HOME:
       break;
     case PAGE.NEARESTTURBINE_OVERVIEW:
+      map.setLayoutProperty('votes', 'visibility', 'none');
+      map.setLayoutProperty('votes_line', 'visibility', 'none');
       mapRefreshPlanningConstraints(true, {all: true}, map);      
       if ((startinglat !== null) && (startinglng !== null) && (turbinelat !== null) && (turbinelng !== null)) {
         const deltalat = turbinelat - startinglat;
@@ -132,12 +134,16 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
       }
       break;
     case PAGE.NEARESTTURBINE:
+      map.setLayoutProperty('votes', 'visibility', 'none');
+      map.setLayoutProperty('votes_line', 'visibility', 'none');
       mapRefreshPlanningConstraints(false, planningconstraints, map);      
       var pointbearing = getBearing({lat: startinglat, lng: startinglng}, {lat: turbinelat, lng: turbinelng});
       setCameraPosition(map, {lng: startinglng, lat: startinglat, altitude: 50, pitch: 85, bearing: pointbearing});
       map.flyTo({center: map.getCenter(), animate: true});
       break;
     case PAGE.EXPLORE:
+      map.setLayoutProperty('votes', 'visibility', 'visible');
+      map.setLayoutProperty('votes_line', 'visibility', 'visible');
       mapRefreshPlanningConstraints(false, planningconstraints, map);      
       map.flyTo({center: {lng: DEFAULT_CENTRE[0], lat: DEFAULT_CENTRE[1]}, pitch:0, bearing: 0, zoom: 5, animate: false});
       break;
