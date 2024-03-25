@@ -18,7 +18,7 @@ console.log("Development machine", isDev());
 export const API_URL = isDev() ? "http://localhost:8000" : "";
 
 // Whether to run testing using random points
-export const TESTING_RANDOMPOINT = true;
+export var TESTING_RANDOMPOINT = true;
 
 // URL of fetch system
 export const FETCHAPI_URL = "https://positiveplaces.org";

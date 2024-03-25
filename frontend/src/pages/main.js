@@ -1,8 +1,8 @@
-import React, { Component, Suspense, Loader } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
-import { ReCaptcha } from 'react-recaptcha-google'
+import ReCAPTCHA from "react-google-recaptcha";
 import { 
   IonApp, 
   IonHeader, 
@@ -100,14 +100,14 @@ class Main extends Component {
 
     constructor(props, context) {
       super(props, context);
-      this.maxTileCacheSize = this.getMaxTileCacheSize();
-      this.onLoadRecaptcha = this.onLoadRecaptcha.bind(this);
       this.verifyCallback = this.verifyCallback.bind(this);
+      this.maxTileCacheSize = this.getMaxTileCacheSize();
       this.state = {
         calculatingposition: false, 
         calculatingnearestturbine: false, 
         positionerror: false,
         locationnotenabled: false,
+        locationinitialized: false,
         icons_white: [],
         iconsloaded_white: false,
         icons_grey: [],
@@ -153,6 +153,13 @@ class Main extends Component {
       this.satellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_planningconstraints, this.style_threedimensions);
       this.nonsatellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_planningconstraints, this.style_twodimensions);
 
+      let path = window.location.pathname;
+      if (path === '/toggletesting/') {
+        console.log("Enabling testing mode...")
+        this.props.setGlobalState({testingenabled: !this.props.global.testingenabled});
+        this.props.history.push("/");
+      }
+  
       const buttons = {
         'vote':           new Vote({mapcontainer: this}),
         'download':       new Download({mapcontainer: this}),
@@ -169,18 +176,11 @@ class Main extends Component {
       this.hoveredPolygonId = null;
     }
 
-    componentDidMount() {
-      if (this.captchaRef) {
-          this.captchaRef.reset();
-      }
+    verifyCallback(recaptchaToken) {
+      if (recaptchaToken === null) recaptchaToken = undefined;
+      this.setState({'recaptcha': recaptchaToken, 'recaptchaError': ''});
     }
-
-    onLoadRecaptcha() {
-        if (this.captchaRef) {
-            this.captchaRef.reset();
-        }
-    }
-
+  
     showMainMap = (page) => {
         switch (page) {
             case PAGE.HOME: return false;
@@ -234,20 +234,9 @@ class Main extends Component {
         }
     }
 
-    verifyCallback(recaptchaToken) {
-      // console.log("Recaptcha", recaptchaToken)
-      this.setState({recaptcha: recaptchaToken, recaptchaError: ''});
-    }
-  
-    onExpiredCaptcha() {
-      console.log("Recaptcha expired");
-      this.setState({recaptcha: undefined, recaptchaError: ''});
-      // this.captchaRef.current.reset();    
-      return false;  
-    } 
-
     updateSubmapPosition = () => {
       if (this.mapRef.current !== null) {
+        // var elevation = this.mapRef.current.getMap().queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}) || 0;
         var cameraposition = this.getCameraPosition();
         this.props.setGlobalState({currentlat: cameraposition.lat, currentlng: cameraposition.lng});
       }
@@ -407,10 +396,10 @@ class Main extends Component {
       const latOffset = Math.tan(pitch_) * cameraToCenterDistance;
       const newPixelPoint = new maplibregl.Point(map.transform.width / 2, map.transform.height / 2 + latOffset);
       const newLongLat = new maplibregl.LngLat(lng, lat);
-      map.transform.zoom = zoom;
+      // console.log(cameraToCenterDistance, pixelAltitude, metersInWorldAtLat, worldsize, latOffset, newPixelPoint, newLongLat, lng, lat, zoom, pitch, bearing);
+      if (!isNaN(zoom)) map.transform.zoom = zoom;
       map.transform.pitch = pitch;
       map.transform.bearing = bearing;
-      // console.log(cameraToCenterDistance, pixelAltitude, metersInWorldAtLat, worldsize, latOffset, newPixelPoint, newLongLat, lng, lat, zoom, pitch, bearing);
       map.transform.setLocationAtPoint(newLongLat, newPixelPoint);
       map.setBearing(map.getBearing());
     }
@@ -919,7 +908,8 @@ class Main extends Component {
     updateAltitude = () => {
       if (this.mapRef.current !== null) {
         const map = this.mapRef.current.getMap();
-        const altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, { exaggerated: true }) || 0;
+        var altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, { exaggerated: false }) || 0;
+        if (altitude < 0) altitude = 0;
         this.setState({altitude: altitude});
       }
     }
@@ -1129,8 +1119,6 @@ class Main extends Component {
     };
 
     castVote = () => {
-      // console.log(this.state.name, this.state.email, this.state.contactchecked, this.state.cookieschecked, this.state.recaptcha);
-  
       if (this.state.isValidName && this.state.isValidEmail && (this.state.recaptcha !== undefined)) {
         // Valid name, email and recaptcha so submit form
         this.setState({showvote: false});
@@ -1151,9 +1139,7 @@ class Main extends Component {
       }
     }  
 
-    sendMessage = () => {
-      // console.log(this.state.name, this.state.email, this.state.contactchecked, this.state.cookieschecked, this.state.recaptcha);
-  
+    sendMessage = () => {  
       if (this.state.isValidName && this.state.isValidEmail && (this.state.recaptcha !== undefined)) {
         // Valid name, email and recaptcha so submit form
         this.setState({showmessage: false});
@@ -1180,7 +1166,7 @@ class Main extends Component {
 
     selectNearestWindturbine = () => {  
 
-        if (TESTING_RANDOMPOINT) {
+        if (this.props.global.testingenabled) {
 
             // Use random points for testing
             this.setState({calculatingposition: true});
@@ -1251,6 +1237,32 @@ class Main extends Component {
       });
     }
 
+    checkLocation = () => {
+      const map = this.mapRef.current.getMap();
+      if ((this.props.global.startinglat !== undefined) && (this.props.global.startinglng)) {
+        if (!this.state.locationinitialized) {
+          map.addControl(this.props.global.buttons['message'], 'top-left'); 
+          this.setState({locationinitialized: true});
+        }
+      } else {
+        if (this.state.locationinitialized) {
+          map.removeControl(this.props.global.buttons['message']);
+          this.setState({locationinitialized: false});
+        }
+      }
+    }
+
+    onGeolocate = (e) => {
+      if (e.coords !== undefined) {
+          if (this.props.global.startinglat === null) {
+            this.props.setGlobalState({startinglat: e.coords.latitude, startinglng: e.coords.longitude}).then(() => {
+              this.checkLocation();
+            });
+          }
+      }
+    }
+
+
     render() {
         return (
           <>
@@ -1263,7 +1275,181 @@ class Main extends Component {
             <IonAlert isOpen={this.state.calculatingposition} backdropDismiss={false} header="Calculating your position..." />            
             <IonAlert isOpen={this.state.positionerror} backdropDismiss={false} header="Please enable location access to use this feature" onDidDismiss={() => this.setState({positionerror: false})} buttons={['OK']}/>            
             <IonAlert isOpen={this.state.calculatingnearestturbine} backdropDismiss={false} header={"Searching " + String(TOTAL_SITES) + " locations for nearest optimal wind site..."} />            
-            <IonAlert isOpen={this.state.generatingfile} backdropDismiss={false} header={"Generating new file, please wait... " + String(this.state.progress) + "%"} />   
+            <IonAlert isOpen={this.state.generatingfile} backdropDismiss={false} header={"Generating new file, please wait... " + String(this.state.progress) + "%"} />         
+
+            <IonModal isOpen={this.state.showdownload} onDidDismiss={() => this.setState({showdownload: false})}>
+              <IonHeader>
+                <IonToolbar>
+                  <IonTitle>Download planning files</IonTitle>
+                  <IonButtons slot="end">
+                    <IonButton onClick={() => this.setState({showdownload: false})}>Close</IonButton>
+                  </IonButtons>
+                </IonToolbar>
+              </IonHeader>
+              <IonContent>
+                <IonList lines="none">
+                  <IonItem>
+                    <IonText>
+                      <IonButton onClick={() => {this.downloadFile('geojson')}} color="light" size="medium" fill="default">
+                      <IonIcon slot="start" icon={downloadOutline}></IonIcon>GeoJSON</IonButton>
+                    </IonText>
+                  </IonItem>
+                  <IonItem>
+                    <IonText>
+                      <IonButton onClick={() => {this.downloadFile('qgis')}} color="light" size="medium" fill="default">
+                      <IonIcon slot="start" icon={downloadOutline}></IonIcon>QGIS</IonButton>
+                    </IonText>                                            
+                  </IonItem>
+                  <IonItem>
+                    <IonText>
+                      <IonButton onClick={() => {this.downloadFile('word')}} color="light" size="medium" fill="default">
+                      <IonIcon slot="start" icon={downloadOutline}></IonIcon>Word</IonButton>
+                    </IonText>                  
+                  </IonItem>
+                  <IonItem>
+                    <IonText>
+                      <IonButton onClick={() => {this.downloadFile('pdf')}} color="light" size="medium" fill="default">
+                      <IonIcon slot="start" icon={downloadOutline}></IonIcon>PDF</IonButton>
+                    </IonText>                
+                  </IonItem>
+                </IonList>
+              </IonContent>
+            </IonModal>
+
+            <IonModal className="wewantwind-modal" isOpen={this.state.showvote} onDidDismiss={() => this.setState({showvote: false})}>
+              <IonHeader>
+                <IonToolbar className="wob-toolbar">
+                  <IonTitle mode="ios">Cast your vote</IonTitle>
+                </IonToolbar>
+              </IonHeader>
+              <IonContent>
+                <IonList lines="none" style={{paddingTop: "20px"}}>
+                  <IonItem>
+                    <IonText className="instruction-text">Enter your details below to cast your vote for the current wind turbine site. We will then email you a link to confirm your vote. 
+                    Once you have confirmed your vote, the location of your voted turbine - but not your own location - will be added to our map.</IonText>
+                  </IonItem>
+                  <IonItem>
+                    <IonText className="instruction-text" style={{marginTop: "10px"}}><i>You can only cast one vote per person / email address - please don't try and rig the system!</i> You can reallocate your single vote to a different turbine site at any time.</IonText>
+                  </IonItem>
+                </IonList>
+                <IonList lines="none">
+                  <IonItem>
+                    <IonInput 
+                      errorText="Enter your name" 
+                      className={`${this.state.isValidName && 'ion-valid'} ${this.state.isValidName === false && 'ion-invalid'} ${this.state.isTouchedName && 'ion-touched'}`} 
+                      label="Name" 
+                      labelPlacement="stacked" 
+                      placeholder="Enter name" 
+                      onIonInput={(event) => this.validateName(event)}
+                      onIonBlur={() => {this.setState({isTouchedName: true})}}
+                      ></IonInput>
+                  </IonItem>                
+                  <IonItem>
+                    <IonInput 
+                      errorText="Enter valid email address" 
+                      className={`${this.state.isValidEmail && 'ion-valid'} ${this.state.isValidEmail === false && 'ion-invalid'} ${this.state.isTouchedEmail && 'ion-touched'}`} 
+                      label="Email address" 
+                      labelPlacement="stacked" 
+                      placeholder="Enter email address" 
+                      onIonInput={(event) => this.validateEmail(event)}
+                      onIonBlur={() => {this.setState({isTouchedEmail: true})}}
+                      ></IonInput>
+                  </IonItem>   
+                </IonList>
+                <IonList lines="none">
+                  <IonItem className="checkbox-item">
+                    <IonCheckbox checked={this.state.contactchecked} onIonChange={(e) => {this.setState({contactchecked: !this.state.contactchecked})}} labelPlacement="end">
+                    <span className="wrap">Allow other users to contact me via this site. Note: we will <b>never</b> publish or pass on your email address without your express permission.</span>
+                    </IonCheckbox>
+                  </IonItem>
+                  {/* <IonItem className="checkbox-item">
+                    <IonCheckbox checked={this.state.cookieschecked} onIonChange={(e) => {this.setState({cookieschecked: !this.state.cookieschecked})}} labelPlacement="end">
+                    <span className="wrap">Accept browser cookies. This helps track whether you have already voted for a specific turbine site.</span>
+                    </IonCheckbox>
+                  </IonItem> */}
+
+                  {(this.state.recaptchaError !== '') ? (
+                  <IonItem color="danger">
+                  <IonText>{this.state.recaptchaError}</IonText>
+                  </IonItem>
+                  ) : null}
+                  <IonItem className={this.recaptcha ? 'ion-no-padding ion-invalid': 'ion-no-padding ion-valid'} style={{paddingTop: "20px"}}>
+                      <ReCAPTCHA sitekey={process.env.REACT_APP_GOOGLE_RECAPTCHA_SITE_KEY} onChange={this.verifyCallback}/>
+                  </IonItem>
+
+                  <IonItem>
+                    <IonText style={{margin: "auto", paddingTop: "10px"}}>  
+                      <IonButton onClick={() => {this.setState({showvote: false})}} color="light" shape="round" size="medium" fill="solid">Cancel</IonButton>
+                      <IonButton onClick={() => {this.castVote()}} color="success" shape="round" size="medium" fill="solid">Submit vote</IonButton>
+                    </IonText>
+                  </IonItem>
+                </IonList>
+              </IonContent>
+            </IonModal>
+
+            <IonModal className="wewantwind-modal" isOpen={this.state.showmessage} onDidDismiss={() => this.setState({showmessage: false})}>
+              <IonHeader>
+                <IonToolbar className="wob-toolbar">
+                  <IonTitle mode="ios">Connect with nearby users</IonTitle>
+                </IonToolbar>
+              </IonHeader>
+              <IonContent>
+                <IonList lines="none" style={{paddingTop: "20px"}}>
+                  <IonItem>
+                    <IonText className="instruction-text">There are <b>{ this.props.global.localpeople } user(s)</b> within {LOCAL_DISTANCE} miles of you who have agreed to be contacted. 
+                    You can send an introductory message to them <b>containing your name and email address</b> to make contact. 
+                    We will request your confirmation via email before messaging anyone.</IonText>
+                  </IonItem>
+                </IonList>
+                <IonList lines="none">
+                  <IonItem>
+                    <IonInput 
+                      errorText="Enter your name" 
+                      className={`${this.state.isValidName && 'ion-valid'} ${this.state.isValidName === false && 'ion-invalid'} ${this.state.isTouchedName && 'ion-touched'}`} 
+                      label="Name" 
+                      labelPlacement="stacked" 
+                      placeholder="Enter name" 
+                      onIonInput={(event) => this.validateName(event)}
+                      onIonBlur={() => {this.setState({isTouchedName: true})}}
+                      ></IonInput>
+                  </IonItem>                
+                  <IonItem>
+                    <IonInput 
+                      errorText="Enter valid email address" 
+                      className={`${this.state.isValidEmail && 'ion-valid'} ${this.state.isValidEmail === false && 'ion-invalid'} ${this.state.isTouchedEmail && 'ion-touched'}`} 
+                      label="Email address" 
+                      labelPlacement="stacked" 
+                      placeholder="Enter email address" 
+                      onIonInput={(event) => this.validateEmail(event)}
+                      onIonBlur={() => {this.setState({isTouchedEmail: true})}}
+                      ></IonInput>
+                  </IonItem>
+                  <IonItem>
+                    <IonText className="instruction-text" style={{fontSize: "75%", paddingTop: "10px", color: "#666"}}>
+                      <b>Content of introductory email: </b> Dear [Recipient's name], The following user(s) are within {LOCAL_DISTANCE} miles of you and would like to connect with local WeWantWind users: 
+                    [Your name and email address as supplied above]. 
+                  To contact any of them about either setting up a community wind group or getting involved with an existing group, drop them an email.</IonText>
+                  </IonItem>
+                </IonList>
+                <IonList lines="none">
+                  {(this.state.recaptchaError !== '') ? (
+                  <IonItem color="danger">
+                  <IonText>{this.state.recaptchaError}</IonText>
+                  </IonItem>
+                  ) : null}
+                  <IonItem className={this.recaptcha ? 'ion-no-padding ion-invalid': 'ion-no-padding ion-valid'} style={{paddingTop: "20px"}}>
+                    <ReCAPTCHA sitekey={process.env.REACT_APP_GOOGLE_RECAPTCHA_SITE_KEY} onChange={this.verifyCallback}/>
+                  </IonItem>
+
+                  <IonItem>
+                    <IonText style={{margin: "auto", paddingTop: "10px"}}>  
+                      <IonButton onClick={() => {this.setState({showmessage: false})}} color="light" shape="round" size="medium" fill="solid">Cancel</IonButton>
+                      <IonButton onClick={() => {this.sendMessage()}} color="success" shape="round" size="medium" fill="solid">Send intro message</IonButton>
+                    </IonText>
+                  </IonItem>
+                </IonList>
+              </IonContent>
+            </IonModal>
 
             {(this.props.global.page === PAGE.HOME) ? (
 
@@ -1275,225 +1461,26 @@ class Main extends Component {
                         </IonCol>
                         </IonRow>
                         <IonRow className="ion-align-items-center">
-                        <IonCol size="12" style={{textAlign: "center"}}>
-                        <IonButton shape="round" onClick={() => {this.selectNearestWindturbine()}}>Find nearest site</IonButton>
-                        </IonCol>
+                          <IonCol size="12" style={{textAlign: "center"}}>
+                            <IonButton shape="round" onClick={() => {this.selectNearestWindturbine()}}>Find nearest site</IonButton>
+                          </IonCol>
                         </IonRow>
                         <IonRow className="ion-align-items-center">
-                        <IonCol size="12" style={{textAlign: "center"}}>
-                        <a onClick={() => {this.setPage(PAGE.EXPLORE)}} className="wewantwind-link">
-                            <IonButton shape="round">Explore</IonButton>
-                        </a>
-                        </IonCol>
+                          <IonCol size="12" style={{textAlign: "center"}}>
+                          <a onClick={() => {this.setPage(PAGE.EXPLORE)}} className="wewantwind-link">
+                              <IonButton shape="round">Explore</IonButton>
+                          </a>
+                          </IonCol>
                         </IonRow>
                     </IonGrid>
                 </div>
 
             ) : (
 
-
                 <div className="map-wrap">
 
-                <IonAlert isOpen={this.state.generatingfile} backdropDismiss={false} header={"Generating new file, please wait... " + String(this.state.progress) + "%"} />   
-      
-                <IonModal isOpen={this.state.showdownload} onDidDismiss={() => this.setState({showdownload: false})}>
-                  <IonHeader>
-                    <IonToolbar>
-                      <IonTitle>Download planning files</IonTitle>
-                      <IonButtons slot="end">
-                        <IonButton onClick={() => this.setState({showdownload: false})}>Close</IonButton>
-                      </IonButtons>
-                    </IonToolbar>
-                  </IonHeader>
-                  <IonContent>
-                    <IonList lines="none">
-                      <IonItem>
-                        <IonText>
-                          <IonButton onClick={() => {this.downloadFile('geojson')}} color="light" size="medium" fill="default">
-                          <IonIcon slot="start" icon={downloadOutline}></IonIcon>GeoJSON</IonButton>
-                        </IonText>
-                      </IonItem>
-                      <IonItem>
-                        <IonText>
-                          <IonButton onClick={() => {this.downloadFile('qgis')}} color="light" size="medium" fill="default">
-                          <IonIcon slot="start" icon={downloadOutline}></IonIcon>QGIS</IonButton>
-                        </IonText>                                            
-                      </IonItem>
-                      <IonItem>
-                        <IonText>
-                          <IonButton onClick={() => {this.downloadFile('word')}} color="light" size="medium" fill="default">
-                          <IonIcon slot="start" icon={downloadOutline}></IonIcon>Word</IonButton>
-                        </IonText>                  
-                      </IonItem>
-                      <IonItem>
-                        <IonText>
-                          <IonButton onClick={() => {this.downloadFile('pdf')}} color="light" size="medium" fill="default">
-                          <IonIcon slot="start" icon={downloadOutline}></IonIcon>PDF</IonButton>
-                        </IonText>                
-                      </IonItem>
-                    </IonList>
-                  </IonContent>
-                </IonModal>
-      
-                <IonModal className="wewantwind-modal" isOpen={this.state.showvote} onDidDismiss={() => this.setState({showvote: false})}>
-                  <IonHeader>
-                    <IonToolbar className="wob-toolbar">
-                      <IonTitle mode="ios">Cast your vote</IonTitle>
-                    </IonToolbar>
-                  </IonHeader>
-                  <IonContent>
-                    <IonList lines="none" style={{paddingTop: "20px"}}>
-                      <IonItem>
-                        <IonText className="instruction-text">Enter your details below to cast your vote for the current wind turbine site. We will then email you a link to confirm your vote. 
-                        Once you have confirmed your vote, the location of your voted turbine - but not your own location - will be added to our map.</IonText>
-                      </IonItem>
-                      <IonItem>
-                        <IonText className="instruction-text" style={{marginTop: "10px"}}><i>You can only cast one vote per person / email address - please don't try and rig the system!</i> You can reallocate your single vote to a different turbine site at any time.</IonText>
-                      </IonItem>
-                    </IonList>
-                    <IonList lines="none">
-                      <IonItem>
-                        <IonInput 
-                          errorText="Enter your name" 
-                          className={`${this.state.isValidName && 'ion-valid'} ${this.state.isValidName === false && 'ion-invalid'} ${this.state.isTouchedName && 'ion-touched'}`} 
-                          label="Name" 
-                          labelPlacement="stacked" 
-                          placeholder="Enter name" 
-                          onIonInput={(event) => this.validateName(event)}
-                          onIonBlur={() => {this.setState({isTouchedName: true})}}
-                          ></IonInput>
-                      </IonItem>                
-                      <IonItem>
-                        <IonInput 
-                          errorText="Enter valid email address" 
-                          className={`${this.state.isValidEmail && 'ion-valid'} ${this.state.isValidEmail === false && 'ion-invalid'} ${this.state.isTouchedEmail && 'ion-touched'}`} 
-                          label="Email address" 
-                          labelPlacement="stacked" 
-                          placeholder="Enter email address" 
-                          onIonInput={(event) => this.validateEmail(event)}
-                          onIonBlur={() => {this.setState({isTouchedEmail: true})}}
-                          ></IonInput>
-                      </IonItem>   
-                    </IonList>
-                    <IonList lines="none">
-                      <IonItem className="checkbox-item">
-                        <IonCheckbox checked={this.state.contactchecked} onIonChange={(e) => {this.setState({contactchecked: !this.state.contactchecked})}} labelPlacement="end">
-                        <span class="wrap">Allow other users to contact me via this site. Note: we will <b>never</b> publish or pass on your email address without your express permission.</span>
-                        </IonCheckbox>
-                      </IonItem>
-                      {/* <IonItem className="checkbox-item">
-                        <IonCheckbox checked={this.state.cookieschecked} onIonChange={(e) => {this.setState({cookieschecked: !this.state.cookieschecked})}} labelPlacement="end">
-                        <span class="wrap">Accept browser cookies. This helps track whether you have already voted for a specific turbine site.</span>
-                        </IonCheckbox>
-                      </IonItem> */}
-      
-                      {(this.state.recaptchaError !== '') ? (
-                      <IonItem color="danger">
-                      <IonText>{this.state.recaptchaError}</IonText>
-                      </IonItem>
-                      ) : null}
-                      <IonItem className={this.recaptcha ? 'ion-no-padding ion-invalid': 'ion-no-padding ion-valid'} 
-                          style={{paddingTop: "20px"}}>
-                          <ReCaptcha
-                              style={{margin: "auto"}}
-                              ref={(el) => {this.captchaRef = el;}}
-                              size="normal"
-                              render="explicit"
-                              sitekey={process.env.REACT_APP_GOOGLE_RECAPTCHA_SITE_KEY}
-                              name="recaptcha"
-                              onloadCallback={this.onLoadRecaptcha}
-                              verifyCallback={this.verifyCallback}
-                              // expiredCallback={this.onExpiredCaptcha}
-                          />
-                      </IonItem>
-      
-                      <IonItem>
-                        <IonText style={{margin: "auto", paddingTop: "10px"}}>  
-                          <IonButton onClick={() => {this.setState({showvote: false})}} color="light" shape="round" size="medium" fill="solid">Cancel</IonButton>
-                          <IonButton onClick={() => {this.castVote()}} color="success" shape="round" size="medium" fill="solid">Submit vote</IonButton>
-                        </IonText>
-                      </IonItem>
-                    </IonList>
-                  </IonContent>
-                </IonModal>
-      
-                <IonModal className="wewantwind-modal" isOpen={this.state.showmessage} onDidDismiss={() => this.setState({showmessage: false})}>
-                  <IonHeader>
-                    <IonToolbar className="wob-toolbar">
-                      <IonTitle mode="ios">Connect with nearby users</IonTitle>
-                    </IonToolbar>
-                  </IonHeader>
-                  <IonContent>
-                    <IonList lines="none" style={{paddingTop: "20px"}}>
-                      <IonItem>
-                        <IonText className="instruction-text">There are <b>{ this.props.global.localpeople } user(s)</b> within {LOCAL_DISTANCE} miles of you who have agreed to be contacted. 
-                        You can send an introductory message to them <b>containing your name and email address</b> to make contact. 
-                        We will request your confirmation via email before messaging anyone.</IonText>
-                      </IonItem>
-                    </IonList>
-                    <IonList lines="none">
-                      <IonItem>
-                        <IonInput 
-                          errorText="Enter your name" 
-                          className={`${this.state.isValidName && 'ion-valid'} ${this.state.isValidName === false && 'ion-invalid'} ${this.state.isTouchedName && 'ion-touched'}`} 
-                          label="Name" 
-                          labelPlacement="stacked" 
-                          placeholder="Enter name" 
-                          onIonInput={(event) => this.validateName(event)}
-                          onIonBlur={() => {this.setState({isTouchedName: true})}}
-                          ></IonInput>
-                      </IonItem>                
-                      <IonItem>
-                        <IonInput 
-                          errorText="Enter valid email address" 
-                          className={`${this.state.isValidEmail && 'ion-valid'} ${this.state.isValidEmail === false && 'ion-invalid'} ${this.state.isTouchedEmail && 'ion-touched'}`} 
-                          label="Email address" 
-                          labelPlacement="stacked" 
-                          placeholder="Enter email address" 
-                          onIonInput={(event) => this.validateEmail(event)}
-                          onIonBlur={() => {this.setState({isTouchedEmail: true})}}
-                          ></IonInput>
-                      </IonItem>
-                      <IonItem>
-                        <IonText className="instruction-text" style={{fontSize: "75%", paddingTop: "10px", color: "#666"}}>
-                          <b>Content of introductory email: </b> Dear [Recipient's name], The following user(s) are within {LOCAL_DISTANCE} miles of you and would like to connect with local WeWantWind users: 
-                        [Your name and email address as supplied above]. 
-                       To contact any of them about either setting up a community wind group or getting involved with an existing group, drop them an email.</IonText>
-                      </IonItem>
-                    </IonList>
-                    <IonList lines="none">
-                      {(this.state.recaptchaError !== '') ? (
-                      <IonItem color="danger">
-                      <IonText>{this.state.recaptchaError}</IonText>
-                      </IonItem>
-                      ) : null}
-                      <IonItem className={this.recaptcha ? 'ion-no-padding ion-invalid': 'ion-no-padding ion-valid'} 
-                          style={{paddingTop: "20px"}}>
-                          <ReCaptcha
-                              style={{margin: "auto"}}
-                              ref={(el) => {this.captchaRef = el;}}
-                              size="normal"
-                              render="explicit"
-                              sitekey={process.env.REACT_APP_GOOGLE_RECAPTCHA_SITE_KEY}
-                              name="recaptcha"
-                              onloadCallback={this.onLoadRecaptcha}
-                              verifyCallback={this.verifyCallback}
-                              // expiredCallback={this.onExpiredCaptcha}
-                          />
-                      </IonItem>
-      
-                      <IonItem>
-                        <IonText style={{margin: "auto", paddingTop: "10px"}}>  
-                          <IonButton onClick={() => {this.setState({showmessage: false})}} color="light" shape="round" size="medium" fill="solid">Cancel</IonButton>
-                          <IonButton onClick={() => {this.sendMessage()}} color="success" shape="round" size="medium" fill="solid">Send intro message</IonButton>
-                        </IonText>
-                      </IonItem>
-                    </IonList>
-                  </IonContent>
-                </IonModal>
-      
-                <Toaster position="top-center" containerStyle={{top: 50}}/>
-      
+                  <Toaster position="top-center" containerStyle={{top: 50}}/>
+
                   {this.showSubMap(this.props.global.page) ? (
                   <div className="submap">
                       <div className="turbine-distance">
@@ -1599,6 +1586,9 @@ class Main extends Component {
                           maxPitch: 85
                           }} >
                             <Tooltip id="ctrlpanel-tooltip" place="right" variant="light" style={{fontSize: "120%"}} />
+                            {(this.props.global.page === PAGE.EXPLORE) ? (
+                              <GeolocateControl onGeolocate={this.onGeolocate} position="top-left" />
+                            ) : null}
                             <Popup longitude={0} latitude={0} ref={this.popupRef} closeButton={false} closeOnClick={false} />
 
                             <Canvas ref={this.threeRef} latitude={this.props.global.turbinelat} longitude={this.props.global.turbinelng} altitude={this.state.altitude}>
@@ -1643,14 +1633,14 @@ class Main extends Component {
             <div style={{marginLeft: "0px", marginRight: "0px", backgroundColor: "#ffffffff"}}>
               <div>
                 <IonGrid>
-                  <IonRow class="ion-align-items-center ion-justify-content-center">
+                  <IonRow className="ion-align-items-center ion-justify-content-center">
                     <IonCol size="12" className="planning-key-title-container">
                       <div className="horizontal-centred-container">
                         <IonText className="planning-key-title ">Non-optimal wind sites due to low wind / planning constraints</IonText>
                       </div>
                     </IonCol>
                   </IonRow>
-                  <IonRow class="ion-align-items-center ion-justify-content-center">
+                  <IonRow className="ion-align-items-center ion-justify-content-center">
                     <IonCol size="auto">
                       <div style={{paddingRight: "20px"}}>
                         {Object.keys(PLANNING_CONSTRAINTS).map((planningconstraint, index) => {

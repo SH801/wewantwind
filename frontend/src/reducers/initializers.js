@@ -17,6 +17,7 @@ import { PAGE } from '../constants';
 export const initialStateGlobal = {
     page: PAGE.HOME,
     pagetransitioning: false,
+    testingenabled: false,
     testing: false,
     testinginterval: null,
     testpagesindex: 0,

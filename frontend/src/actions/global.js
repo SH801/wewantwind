@@ -11,7 +11,7 @@
  * Actions for global redux object
  */ 
 
-import { API_URL, FETCHAPI_URL, PAGE } from "../constants";
+import { API_URL, FETCHAPI_URL } from "../constants";
 import { initializeMap } from "../functions/map";
 
 /**

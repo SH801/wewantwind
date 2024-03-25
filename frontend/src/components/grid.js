@@ -1,5 +1,4 @@
 import { Component } from 'react';
-import toast from 'react-hot-toast';
 import { mapRefreshElectricity } from '../functions/map';
 
 export class Grid extends Component{

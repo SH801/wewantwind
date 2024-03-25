@@ -69,9 +69,11 @@ class Toolbar extends Component {
                             <a onClick={() => {this.props.setPage(PAGE.HOME)}}  style={{textDecoration: "none"}}><IonText className="wewantwind-headertext"><span style={{color:"#F5C242"}}>we</span><span style={{color:"#D8DFCE"}}>want</span><span style={{color:"#FFF"}}>wind</span></IonText></a>
                         </IonTitle>
                         <div className="links-container" >
+                            {this.props.global.testingenabled ? (
                             <a onClick={() => {this.toggleTesting()}} className="wewantwind-link">
                                 <IonText>testing</IonText>
                             </a>
+                            ) : null}
                             <a onClick={() => {this.props.parent.selectNearestWindturbine()}} className="wewantwind-link">
                                 <IonText>start</IonText>
                             </a>

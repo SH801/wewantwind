@@ -86,15 +86,21 @@ export function initializeMap(map, page, buttons, buttonsstate, startinglat, sta
   var newbuttonsstate = JSON.parse(JSON.stringify(buttonsstate));
   // Remove all existing buttons
   const buttonkeys = Object.keys(buttonsstate);
-  for(var i = 0 ; i< buttonkeys.length; i++) {
-    var buttonname = buttonkeys[i];
+  var buttonname = null;
+  var i;
+  for(i = 0 ; i< buttonkeys.length; i++) {
+    buttonname = buttonkeys[i];
     if (buttonsstate[buttonname]) map.removeControl(buttons[buttonname]);
     newbuttonsstate[buttonname] = false;
   }
 
   const pagebuttons = PAGEBUTTONS[page];
-  for(var i = 0; i < pagebuttons.length; i++) {
-    var buttonname = pagebuttons[i];
+  for(i = 0; i < pagebuttons.length; i++) {
+    buttonname = pagebuttons[i];
+    if ((buttonname === 'vote') && (turbinelat === null)) continue;
+    if ((buttonname === 'download') && (turbinelat === null)) continue;
+    if ((buttonname === 'message') && (startinglat === null)) continue;
+
     switch (buttonname) {
       case 'vote':        map.addControl(buttons[buttonname], 'top-left'); break;
       case 'download':    map.addControl(buttons[buttonname], 'top-left'); break;
@@ -104,6 +110,7 @@ export function initializeMap(map, page, buttons, buttonsstate, startinglat, sta
       case 'wind':        map.addControl(buttons[buttonname], 'top-right'); break;
       case 'planning':    map.addControl(buttons[buttonname], 'top-right'); break;
       case 'grid':        map.addControl(buttons[buttonname], 'top-right'); break;
+      default:            break;
     }
     if (buttonname in newbuttonsstate) newbuttonsstate[buttonname] = true;
   }
