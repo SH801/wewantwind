@@ -270,7 +270,7 @@ def createworddoc(wordpath, imagedirectory):
 
     p = document.add_paragraph(style='Heading 1')
     p.paragraph_format.space_before = Pt(0)
-    run = p.add_run('Wewantwind Turbine Siting Report')
+    run = p.add_run('wewantwind.org Turbine Siting Report')
     run.font.color.rgb = RGBColor.from_string('000000')
     p = document.add_paragraph('Below is a summary of all wind turbine planning constraints used to create your optimal wind turbine site.')
 
@@ -318,7 +318,7 @@ def createpdfdoc(pdfpath, imagedirectory):
     lastcontraint = constraintslist[-1]
     for constraint in constraintslist:
         canvas.setFont("OpenSansExtraBd", 25) #choose your font type and font size
-        canvas.drawString(40, 11*72, "Wewantwind Turbine Siting Report")
+        canvas.drawString(40, 11*72, "wewantwind.org Turbine Siting Report")
         canvas.setFont("OpenSansLt", 23) #choose your font type and font size
         canvas.drawString(40, 10.5*72, "Planning and other constraints")
         canvas.setFont("OpenSansExtraBd", 15) #choose your font type and font size

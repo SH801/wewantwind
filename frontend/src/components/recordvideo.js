@@ -50,7 +50,7 @@ export class RecordVideo extends Component{
             anchor.href =  URL.createObjectURL(new Blob(data, {type: "video/webm;codecs=h264"}));
             const now = new Date();
             const timesuffix = now.toISOString().substring(0,19).replaceAll('T', ' ').replaceAll(':', '-');
-            anchor.download = "wewantwind - " + timesuffix;
+            anchor.download = "wewantwind.org - " + timesuffix;
             anchor.click();  
           }
   

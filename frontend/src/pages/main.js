@@ -1032,7 +1032,7 @@ class Main extends Component {
           {
             "type": "Feature",
             "properties": {
-                "name": "wewantwind Wind Turbine Siting - " + readableposition
+                "name": "wewantwind.org Wind Turbine Siting - " + readableposition
             },
             "geometry": {
                 "type": "Point",
@@ -1042,7 +1042,7 @@ class Main extends Component {
       };
       
       // const timesuffix = now.toISOString().substring(0,19).replaceAll('T', ' ').replaceAll(':', '-');
-      anchor.download = "wewantwind - " + readableposition;
+      anchor.download = "wewantwind.org - " + readableposition;
   
       switch (type) {
         case 'qgis':
@@ -1432,7 +1432,7 @@ class Main extends Component {
                   </IonItem>
                   <IonItem>
                     <IonText className="instruction-text" style={{fontSize: "75%", paddingTop: "10px", color: "#666"}}>
-                      <b>Content of introductory email: </b> Dear [Recipient's name], The following user(s) are within {LOCAL_DISTANCE} miles of you and would like to connect with local wewantwind users: 
+                      <b>Content of introductory email: </b> Dear [Recipient's name], The following user(s) are within {LOCAL_DISTANCE} miles of you and would like to connect with local wewantwind.org users: 
                     [Your name and email address as supplied above]. 
                   To contact any of them about either setting up a community wind group or getting involved with an existing group, drop them an email.</IonText>
                   </IonItem>
