@@ -963,7 +963,6 @@ class Main extends Component {
             var map = this.mapRef.current.getMap();
             var pointbearing = this.getBearing({lat: this.props.global.currentlat, lng: this.props.global.currentlng}, {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng});
             map.jumpTo({center: {lat: this.props.global.currentlat, lng: this.props.global.currentlng}, zoom: 18, pitch: 85, bearing: pointbearing});
-            this.setState({flying: false, draggablesubmap: true});
           }
         })
       }
@@ -972,9 +971,10 @@ class Main extends Component {
         if (this.mapRef) {
           var map = this.mapRef.current.getMap();
           map.jumpTo({center: map.getCenter(), duration: 0});
-          this.setState({flying: false});
         }  
       }
+
+      this.setState({flying: false, draggablesubmap: true});
     }
 
     flyingRun = () => {
