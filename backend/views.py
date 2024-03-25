@@ -604,7 +604,7 @@ def GetReport(type, lat, lng):
 
     except IOError:
         # handle file not exist case here
-        response = HttpResponseNotFound('<h1>File not exist</h1>')
+        response = HttpResponseNotFound('<h1>File does not exist</h1>')
 
     return response
 
