@@ -457,7 +457,7 @@ def createworddoc(wordpath, readableposition, imagedirectory):
 
     p = document.add_paragraph(style='Heading 1')
     p.paragraph_format.space_before = Pt(0)
-    run = p.add_run('WeWantWind Turbine Siting Report')
+    run = p.add_run('Wewantwind Turbine Siting Report')
     run.font.color.rgb = RGBColor.from_string('000000')
     p = document.add_paragraph(style='Heading 3')
     p.paragraph_format.space_before = Pt(0)
@@ -513,7 +513,7 @@ def createpdfdoc(pdfpath, readableposition, imagedirectory):
     """
 
     canvas = Canvas(pdfpath, pagesize=A4)
-    canvas.setTitle("WeWantWind Turbine Siting Report - " + readableposition)
+    canvas.setTitle("Wewantwind Turbine Siting Report - " + readableposition)
 
     pdfmetrics.registerFont(TTFont('OpenSansLt', cwd + '/Open_Sans/static/OpenSans-Light.ttf'))
     pdfmetrics.registerFont(TTFont('OpenSans', cwd + '/Open_Sans/static/OpenSans-Medium.ttf'))
@@ -521,7 +521,7 @@ def createpdfdoc(pdfpath, readableposition, imagedirectory):
     pdfmetrics.registerFont(TTFont('OpenSansExtraBd', cwd + '/Open_Sans/static/OpenSans-ExtraBold.ttf'))
 
     canvas.setFont("OpenSansExtraBd", 25) #choose your font type and font size
-    canvas.drawString(40, 11*72, "WeWantWind Turbine Siting Report")
+    canvas.drawString(40, 11*72, "Wewantwind Turbine Siting Report")
     canvas.setFont("OpenSansLt", 23) #choose your font type and font size
     canvas.drawString(40, 10.5*72, "Position: " + readableposition)
 
@@ -535,7 +535,7 @@ def createpdfdoc(pdfpath, readableposition, imagedirectory):
     lastcontraint = constraintslist[-1]
     for constraint in constraintslist:
         canvas.setFont("OpenSansExtraBd", 25) #choose your font type and font size
-        canvas.drawString(40, 11*72, "WeWantWind Turbine Siting Report")
+        canvas.drawString(40, 11*72, "Wewantwind Turbine Siting Report")
         canvas.setFont("OpenSansLt", 23) #choose your font type and font size
         canvas.drawString(40, 10.5*72, "Position: " + readableposition)
         canvas.setFont("OpenSansExtraBd", 15) #choose your font type and font size
@@ -588,7 +588,7 @@ def GetReport(type, lat, lng):
         shutil.rmtree(imagedirectory)
 
     returnfile = wordpath
-    filestem = "WeWantWind Report - " + readableposition
+    filestem = "Wewantwind Report - " + readableposition
     mimetype = 'application/msword'
     filename = filestem + ".docx"
     if type == 'pdf': 
@@ -638,7 +638,7 @@ def CreateGeoJSON(request):
         "features": [
             {
             "type": "Feature",
-            "name": "WeWantWind Turbine",
+            "name": "wewantwind Turbine",
             "geometry": {
                 "type": "Point",
                 "coordinates": [lng, lat]
@@ -688,8 +688,8 @@ def CastVote(request):
             token=token)
         provisionalvote.save()
         # Attempt to send email
-        from_email = '"WeWantWind.org" <info@wewantwind.org>'
-        subject = "WeWantWind.org: Confirm your wind turbine vote"
+        from_email = '"wewantwind.org" <info@wewantwind.org>'
+        subject = "wewantwind.org: Confirm your wind turbine vote"
         current_site = get_current_site(request)
         parameters['domain'] = current_site.domain
         parameters['uid'] = urlsafe_base64_encode(force_bytes(provisionalvote.pk))
@@ -813,8 +813,8 @@ def SendMessage(request):
             token=token)
         provisionalmessage.save()
         # Attempt to send email
-        from_email = '"WeWantWind.org" <info@wewantwind.org>'
-        subject = "WeWantWind.org: Confirm your message request"
+        from_email = '"wewantwind.org" <info@wewantwind.org>'
+        subject = "wewantwind.org: Confirm your message request"
         current_site = get_current_site(request)
         parameters['domain'] = current_site.domain
         parameters['uid'] = urlsafe_base64_encode(force_bytes(provisionalmessage.pk))
@@ -833,8 +833,8 @@ def ProcessMessageQueue(request):
     """
 
     current_site = get_current_site(request)
-    from_email = '"WeWantWind.org" <info@wewantwind.org>'
-    subject = "WeWantWind.org: Introductory email from user(s) wanting to connect with other users"
+    from_email = '"wewantwind.org" <info@wewantwind.org>'
+    subject = "wewantwind.org: Introductory email from user(s) wanting to connect with other users"
     pendingmessages = Message.objects.filter(sent=False)
     outboundqueue = {}
     for pendingmessage in pendingmessages:
