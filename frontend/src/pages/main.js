@@ -150,7 +150,6 @@ class Main extends Component {
         alertText: ''    
       };
       this.helpIndex = 0;
-      this.helpInterval = null;    
       this.updatealtitude = false;
       this.ignoremovend = false;
       this.mapRef = React.createRef();
@@ -397,7 +396,6 @@ class Main extends Component {
     }
 
     setCameraPosition = (camPos) => {
-      console.log("setCameraPosition");
       if (mutex) return;
       mutex = true;
       var map = this.mapRef.current.getMap();
@@ -413,7 +411,6 @@ class Main extends Component {
       const newPixelPoint = new maplibregl.Point(map.transform.width / 2, map.transform.height / 2 + latOffset);
       const newLongLat = new maplibregl.LngLat(lng, lat);
       // console.log(cameraToCenterDistance, pixelAltitude, metersInWorldAtLat, worldsize, latOffset, newPixelPoint, newLongLat, lng, lat, zoom, pitch, bearing);
-      console.log("zoom", zoom);
       if (!isNaN(zoom)) map.transform.zoom = zoom;
       map.transform.pitch = pitch;
       map.transform.bearing = bearing;
@@ -430,6 +427,7 @@ class Main extends Component {
         map.addControl(new Spacer(), 'top-right');
         var newbuttonsstate = initializeMap(  map, 
                                           this.props.global.page,
+                                          this.props.global.planningconstraints,
                                           this.props.global.buttons,
                                           this.props.global.buttonsstate, 
                                           this.props.global.startinglat, 
@@ -937,6 +935,7 @@ class Main extends Component {
     updateHelp = () => {
       if (this.props.global.page !== PAGE.NEARESTTURBINE) return;
 
+      console.log("updateHelp", this.helpIndex);
       const links = ['intro', 'vote', 'download', 'message', 'fly', 'record'];
 
       if (this.helpIndex > (links.length)) this.helpStop();
@@ -959,15 +958,17 @@ class Main extends Component {
     }
 
     helpStart = () => {
-      this.helpInterval = setInterval(this.updateHelp, 4000);
+      this.helpStop();
+      var helpInterval = setInterval(this.updateHelp, 4000);
+      this.props.setGlobalState({helpInterval: helpInterval});         
     }
 
     helpStop = () => {
-      if (this.helpInterval !== null) {
-        clearInterval(this.helpInterval);
+      if (this.props.global.helpInterval !== null) {
+        clearInterval(this.props.global.helpInterval);
         this.setState({'showtooltipvote': false, 'showtooltipdownload': false, 'showtooltipmessage': false, 'showtooltipfly': false, 'showtooltiprecord': false});
-        this.helpInterval = null;
-        this.helpIndex = -1;
+        this.props.setGlobalState({helpInterval: null});
+        this.helpIndex = 0;
       }
     }
 
@@ -1260,6 +1261,14 @@ class Main extends Component {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
         this.props.fetchNearestTurbine({lat: latitude, lng: longitude}).then(() => {
+          console.log({
+            startinglat: this.props.global.startinglat,
+            startinglng: this.props.global.startinglng,
+            currentlat: this.props.global.currentlat,
+            currentlng: this.props.global.currentlng,
+            turbinelat: this.props.global.turbinelat,
+            turbinelng: this.props.global.turbinelng,
+          })
           this.setState({calculatingnearestturbine: false});
           this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
         })
@@ -1652,67 +1661,66 @@ class Main extends Component {
                             </>
                         ) : null}
 
-                      <Map ref={this.mapRef}
-                          width="100vw"
-                          height="100vh"
-                          onLoad={this.onMapLoad} 
-                          onMouseEnter={this.onMouseEnter}
-                          onMouseMove={this.onMouseMove}
-                          onMouseLeave={this.onMouseLeave}   
-                          onClick={this.onClick}    
-                          onDrag={this.onDrag}
-                          onRender={this.onRender}
-                          onMoveEnd={this.onMapMoveEnd}
-                          onIdle={this.onIdle}
-                          interactiveLayerIds={this.interactivelayers}
-                          mapStyle={this.mainmapStyle(this.props.global.page)}
-                          terrain={{source: "terrainSource", exaggeration: 1.1 }}
-                          attributionControl={false}
-                          maxBounds={DEFAULT_MAXBOUNDS}
-                          initialViewState={{
-                          longitude: this.props.global.currentlng,
-                          latitude: this.props.global.currentlat,
-                        //   pitch: this.mainmapPitch(this.props.global.page),
-                        //   zoom: this.mainmapZoom(this.props.global.page),
-                          maxPitch: 85
-                          }} >
-                            <Tooltip id="ctrlpanel-tooltip" place="right" variant="light" style={{fontSize: "120%"}} />
-                            <Tooltip id="ctrlpanel-tooltip-vote" isOpen={this.state.showtooltipvote} place="right" variant="light" style={{fontSize: "120%"}} />
-                            <Tooltip id="ctrlpanel-tooltip-download" isOpen={this.state.showtooltipdownload} place="right" variant="light" style={{fontSize: "120%"}} />
-                            <Tooltip id="ctrlpanel-tooltip-message" isOpen={this.state.showtooltipmessage} place="right" variant="light" style={{fontSize: "120%"}} />
-                            <Tooltip id="ctrlpanel-tooltip-fly" isOpen={this.state.showtooltipfly} place="right" variant="light" style={{fontSize: "120%"}} />
-                            <Tooltip id="ctrlpanel-tooltip-record" isOpen={this.state.showtooltiprecord} place="right" variant="light" style={{fontSize: "120%"}} />
+                            <Map ref={this.mapRef}
+                              width="100vw"
+                              height="100vh"
+                              onLoad={this.onMapLoad} 
+                              onMouseEnter={this.onMouseEnter}
+                              onMouseMove={this.onMouseMove}
+                              onMouseLeave={this.onMouseLeave}   
+                              onClick={this.onClick}    
+                              onDrag={this.onDrag}
+                              onRender={this.onRender}
+                              onMoveEnd={this.onMapMoveEnd}
+                              onIdle={this.onIdle}
+                              interactiveLayerIds={this.interactivelayers}
+                              mapStyle={this.explorelayer}
+                              terrain={{source: "terrainSource", exaggeration: 1.1 }}
+                              attributionControl={false}
+                              maxBounds={DEFAULT_MAXBOUNDS}
+                              initialViewState={{
+                              longitude: this.props.global.currentlng,
+                              latitude: this.props.global.currentlat,
+                              maxPitch: 85
+                              }} >
+                                <Tooltip id="ctrlpanel-tooltip" place="right" variant="light" style={{fontSize: "120%"}} />
+                                <Tooltip id="ctrlpanel-tooltip-vote" isOpen={this.state.showtooltipvote} place="right" variant="light" style={{fontSize: "120%"}} />
+                                <Tooltip id="ctrlpanel-tooltip-download" isOpen={this.state.showtooltipdownload} place="right" variant="light" style={{fontSize: "120%"}} />
+                                <Tooltip id="ctrlpanel-tooltip-message" isOpen={this.state.showtooltipmessage} place="right" variant="light" style={{fontSize: "120%"}} />
+                                <Tooltip id="ctrlpanel-tooltip-fly" isOpen={this.state.showtooltipfly} place="right" variant="light" style={{fontSize: "120%"}} />
+                                <Tooltip id="ctrlpanel-tooltip-record" isOpen={this.state.showtooltiprecord} place="right" variant="light" style={{fontSize: "120%"}} />
 
-                            {(this.props.global.page === PAGE.EXPLORE) ? (
-                              <GeolocateControl onGeolocate={this.onGeolocate} position="top-left" />
-                            ) : null}
-                            <Popup longitude={0} latitude={0} ref={this.popupRef} closeButton={false} closeOnClick={false} />
+                                {(this.props.global.page === PAGE.EXPLORE) ? (
+                                  <GeolocateControl onGeolocate={this.onGeolocate} position="top-left" />
+                                ) : null}
+                                <Popup longitude={0} latitude={0} ref={this.popupRef} closeButton={false} closeOnClick={false} />
 
-                            <Canvas ref={this.threeRef} latitude={this.props.global.turbinelat} longitude={this.props.global.turbinelng} altitude={this.state.altitude}>
-                                <hemisphereLight args={["#ffffff", "#60666C"]} position={[1, 4.5, 3]}/>
-                                <object3D visible={(this.props.global.page !== PAGE.NEARESTTURBINE_OVERVIEW)} scale={25} rotation={[0, 1, 0]}>
-                                    <WindTurbine container={this}/>
-                                </object3D>
-                            </Canvas>
+                                <Canvas ref={this.threeRef} latitude={this.props.global.turbinelat} longitude={this.props.global.turbinelng} altitude={this.state.altitude}>
+                                    <hemisphereLight args={["#ffffff", "#60666C"]} position={[1, 4.5, 3]}/>
+                                    <object3D visible={(this.props.global.page !== PAGE.NEARESTTURBINE_OVERVIEW)} scale={25} rotation={[0, 1, 0]}>
+                                        <WindTurbine container={this}/>
+                                    </object3D>
+                                </Canvas>
 
-                            <Marker 
-                                style={{display: (this.showMarkers(this.props.global.page) && (this.state.showmarker)) ? 'block': 'none'}} 
-                                onDragEnd={this.onTurbineMarkerDragEnd} 
-                                onClick={this.onClickMarker} 
-                                longitude={this.props.global.turbinelng} 
-                                latitude={this.props.global.turbinelat} 
-                                draggable="true" 
-                                anchor="bottom" >
-                                    <img alt="Wind turbine" width="40" src="./static/icons/windturbine_black.png" />
-                            </Marker>    
+                                <Marker 
+                                    style={{display: (this.showMarkers(this.props.global.page) && (this.state.showmarker)) ? 'block': 'none'}} 
+                                    onDragEnd={this.onTurbineMarkerDragEnd} 
+                                    onClick={this.onClickMarker} 
+                                    longitude={this.props.global.turbinelng} 
+                                    latitude={this.props.global.turbinelat} 
+                                    draggable="true" 
+                                    anchor="bottom" >
+                                        <img alt="Wind turbine" width="40" src="./static/icons/windturbine_black.png" />
+                                </Marker>    
 
-                            <Marker
-                                style={{display: (this.showMarkers(this.props.global.page) && (this.state.showmarker) && (this.props.global.page !== PAGE.EXPLORE)) ? 'block': 'none'}} 
-                                longitude={this.props.global.currentlng} 
-                                latitude={this.props.global.currentlat} anchor="center" >
-                                <img alt="Your location" width="40" src="./static/icons/eye.png" />
-                            </Marker>                  
-                      </Map>
+                                <Marker
+                                    style={{display: (this.showMarkers(this.props.global.page) && (this.state.showmarker) && (this.props.global.page !== PAGE.EXPLORE)) ? 'block': 'none'}} 
+                                    longitude={this.props.global.currentlng} 
+                                    latitude={this.props.global.currentlat} anchor="center" >
+                                    <img alt="Your location" width="40" src="./static/icons/eye.png" />
+                                </Marker>                  
+                            </Map>
+
                       </div>
                   </div>
                   ) : null}
@@ -1759,7 +1767,7 @@ class Main extends Component {
                   </IonRow>
                 </IonGrid>
               </div>
-              <div className="planning-key-footnote">Source data copyright of multiple organisations - see full list of source datasets at <a href="https://ckan.wewantwind.org" target="_new" style={{color: "black"}}>ckan.wewantwind.org</a></div>
+              <div className="planning-key-footnote">Click colour or label to toggle on/off. Source data copyright of multiple organisations - see full list of source datasets at <a href="https://ckan.wewantwind.org" target="_new" style={{color: "black"}}>ckan.wewantwind.org</a></div>
             </div>
           </div>
         ) : null}

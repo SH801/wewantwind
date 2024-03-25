@@ -40,6 +40,7 @@ export const initialStateGlobal = {
     showwind: false,
     showconstraints: false,
     showgrid: false,
+    helpInterval: null,
     planningconstraints: {
         "all": true,
         "wind": false,

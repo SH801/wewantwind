@@ -12,7 +12,7 @@ class Toolbar extends Component {
   
     constructor(props) {
         super(props);
-        this.testpageslist = ['home', 'start', 'explore'];
+        this.testpageslist = ['home', 'start', 'nearestturbine', 'explore'];
         this.testpagesdelay = 9000;
     }
   
@@ -39,19 +39,37 @@ class Toolbar extends Component {
 
         switch(this.testpageslist[testpagesindex]) {
             case 'home':
-                this.props.parent.props.setPage(PAGE.HOME);
+                this.setPage(PAGE.HOME);
                 break;
             case 'start': 
                 this.props.parent.selectNearestWindturbine();
                 break;
+            case 'nearestturbine':
+                this.setPage(PAGE.NEARESTTURBINE);
+                break;    
             case 'explore':
-                this.props.parent.props.setPage(PAGE.EXPLORE);
+                this.setPage(PAGE.EXPLORE);
                 break;
             default:
                 break;
         }    
         testpagesindex++;
 
+    }
+
+    singleBug = () => {
+
+        var bugstate = {
+            currentlat: 50.828947,
+            currentlng: -0.1475211,
+            startinglat: 50.828947,
+            startinglng: -0.1475211,
+            turbinelat: 50.92485452772702,
+            turbinelng: -0.19656070746401624
+        }
+
+        this.props.parent.props.setGlobalState(bugstate);
+        this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
     }
 
     setPage = (page) => {
@@ -68,11 +86,16 @@ class Toolbar extends Component {
                         <IonTitle className="toolbar-title">
                             <a onClick={() => {this.props.setPage(PAGE.HOME)}}  style={{textDecoration: "none"}}><IonText className="wewantwind-headertext"><span style={{color:"#F5C242"}}>we</span><span style={{color:"#D8DFCE"}}>want</span><span style={{color:"#FFF"}}>wind</span></IonText></a>
                         </IonTitle>
-                        <div className="links-container" >
+                        <div className="links-container">
                             {this.props.global.testingenabled ? (
-                            <a onClick={() => {this.toggleTesting()}} className="wewantwind-link">
-                                <IonText>testing</IonText>
-                            </a>
+                            <>
+                                <a onClick={() => {this.singleBug()}} className="wewantwind-link">
+                                    <IonText>singlebug</IonText>
+                                </a>
+                                <a onClick={() => {this.toggleTesting()}} className="wewantwind-link">
+                                    <IonText>testing</IonText>
+                                </a>
+                            </>
                             ) : null}
                             <a onClick={() => {this.props.parent.selectNearestWindturbine()}} className="wewantwind-link">
                                 <IonText>start</IonText>

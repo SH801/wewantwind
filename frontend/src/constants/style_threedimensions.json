@@ -67,24 +67,6 @@
             "paint": { "hillshade-shadow-color": "#473B24" }
         }, 
         {
-            "id": "3d-buildings",
-            "source": "openmaptiles",
-            "source-layer": "building",
-            "type": "fill-extrusion",
-            "minzoom": 15,
-            "layout": {
-                "visibility": "visible"
-            },             
-            "paint": {
-                "fill-extrusion-color": "darkgray",                
-                "fill-extrusion-height": ["get", "render_height"],
-                "fill-extrusion-base": ["case",
-                    [">=", ["get", "zoom"], 16],
-                    ["get", "render_min_height"], 0
-                ]
-            }
-        },  
-        {
             "filter": [
               "all",
               [
@@ -277,6 +259,24 @@
             "source": "openmaptiles",
             "source-layer": "place",
             "type": "symbol"
+        },
+        {
+          "id": "3d-buildings",
+          "source": "openmaptiles",
+          "source-layer": "building",
+          "type": "fill-extrusion",
+          "minzoom": 15,
+          "layout": {
+              "visibility": "visible"
+          },             
+          "paint": {
+              "fill-extrusion-color": "darkgray",                
+              "fill-extrusion-height": ["get", "render_height"],
+              "fill-extrusion-base": ["case",
+                  [">=", ["get", "zoom"], 16],
+                  ["get", "render_min_height"], 0
+              ]
+          }
         }
    ]
 }

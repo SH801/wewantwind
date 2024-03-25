@@ -11,7 +11,8 @@ export function mapRefreshPlanningConstraints(showplanningconstraints, planningc
     var planningconstraints_sections = Object.keys(PLANNING_CONSTRAINTS);
     for(let i = 0; i < planningconstraints_sections.length; i++) {
       var planningconstraint_section = planningconstraints_sections[i];
-      var section_status = planningconstraints[planningconstraint_section];
+      var section_status = false;
+      if (planningconstraint_section in planningconstraints) section_status = planningconstraints[planningconstraint_section];
       if (!showplanningconstraints) section_status = false;
       for(let j = 0; j < PLANNING_CONSTRAINTS[planningconstraint_section]['layers'].length; j++) {
         var id = PLANNING_CONSTRAINTS[planningconstraint_section]['layers'][j];
@@ -55,7 +56,7 @@ export function setCameraPosition(map, camPos) {
   const latOffset = Math.tan(pitch_) * cameraToCenterDistance;
   const newPixelPoint = new maplibregl.Point(map.transform.width / 2, map.transform.height / 2 + latOffset);
   const newLongLat = new maplibregl.LngLat(lng, lat);
-  map.transform.zoom = zoom;
+  if (!isNaN(zoom)) map.transform.zoom = zoom;
   map.transform.pitch = pitch;
   map.transform.bearing = bearing;
   // console.log(cameraToCenterDistance, pixelAltitude, metersInWorldAtLat, worldsize, latOffset, newPixelPoint, newLongLat, lng, lat, zoom, pitch, bearing);
@@ -81,7 +82,7 @@ export function getBearing(currentpos, turbinepos) {
   return bearing(point1, point2);
 }
 
-export function initializeMap(map, page, buttons, buttonsstate, startinglat, startinglng, turbinelat, turbinelng) {
+export function initializeMap(map, page, planningconstraints, buttons, buttonsstate, startinglat, startinglng, turbinelat, turbinelng) {
 
   var newbuttonsstate = JSON.parse(JSON.stringify(buttonsstate));
   // Remove all existing buttons
@@ -119,6 +120,7 @@ export function initializeMap(map, page, buttons, buttonsstate, startinglat, sta
     case PAGE.HOME:
       break;
     case PAGE.NEARESTTURBINE_OVERVIEW:
+      mapRefreshPlanningConstraints(true, {all: true}, map);      
       if ((startinglat !== null) && (startinglng !== null) && (turbinelat !== null) && (turbinelng !== null)) {
         const deltalat = turbinelat - startinglat;
         const deltalng = turbinelng - startinglng;
@@ -130,11 +132,13 @@ export function initializeMap(map, page, buttons, buttonsstate, startinglat, sta
       }
       break;
     case PAGE.NEARESTTURBINE:
+      mapRefreshPlanningConstraints(false, planningconstraints, map);      
       var pointbearing = getBearing({lat: startinglat, lng: startinglng}, {lat: turbinelat, lng: turbinelng});
       setCameraPosition(map, {lng: startinglng, lat: startinglat, altitude: 50, pitch: 85, bearing: pointbearing});
       map.flyTo({center: map.getCenter(), animate: true});
       break;
     case PAGE.EXPLORE:
+      mapRefreshPlanningConstraints(false, planningconstraints, map);      
       map.flyTo({center: {lng: DEFAULT_CENTRE[0], lat: DEFAULT_CENTRE[1]}, pitch:0, bearing: 0, zoom: 5, animate: false});
       break;
   }  

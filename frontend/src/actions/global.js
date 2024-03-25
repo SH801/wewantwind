@@ -38,7 +38,7 @@ export const setGlobalState = (object) => {
 export const setPage = (page) => {
   return (dispatch, getState) => {
 
-    const { mapref, startinglat, startinglng, turbinelat, turbinelng, buttons, buttonsstate } = getState().global;
+    const { mapref, startinglat, startinglng, turbinelat, turbinelng, buttons, buttonsstate, planningconstraints } = getState().global;
     var newbuttonsstate = JSON.parse(JSON.stringify(buttonsstate));
 
     if ((mapref === null) || (mapref.current === null)) {
@@ -47,7 +47,7 @@ export const setPage = (page) => {
     if (mapref !== null) {
       if (mapref.current !== null) {
         var map = mapref.current.getMap();
-        newbuttonsstate = initializeMap(map, page, buttons, buttonsstate, startinglat, startinglng, turbinelat, turbinelng);
+        newbuttonsstate = initializeMap(map, page, planningconstraints, buttons, buttonsstate, startinglat, startinglng, turbinelat, turbinelng);
       }
     }
 
