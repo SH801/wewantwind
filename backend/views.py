@@ -38,6 +38,7 @@ from django.utils.encoding import force_bytes
 from django.db.models import Q, Count
 from time import sleep
 from random import randrange
+from itertools import islice
 
 from .models import Site, Vote, Message, Boundary
 
@@ -222,20 +223,30 @@ def GetNearestTurbine(lat, lng):
     """
 
     centre = Point(lng, lat, srid=4326)    
-    sites = Site.objects.all().annotate(distance=Distance('centre' , centre )).order_by('distance')
+    firstcutsize = 50
+    sites = Site.objects.all().annotate(centredistance=Distance('centre' , centre )).order_by('centredistance')[:firstcutsize].annotate(distance=Distance('geometry' , centre))
     if sites is None: return None
+
+    firstcut = {}
+    for site in sites: firstcut[site.distance] = site
+    sortedfirstcut = dict(sorted(firstcut.items()))
 
     largestarea = None
     largestindex = 0
     num_to_check = 5
+    sites = list(islice(sortedfirstcut.items(), num_to_check))
+    # print(sites)
     for i in range(num_to_check):
-        site = sites[i]
+        site = sites[i][1]
         area_square_meters = site.geometry.area
+        # print(i, site.centre, int(100000 * area_square_meters))
         # print(area_square_meters)
         if ((largestarea is None) or (area_square_meters > largestarea)):
             largestindex = i
+            largestarea = area_square_meters
 
-    site = sites[largestindex]
+    # print("largestindex", largestindex)
+    site = sites[largestindex][1]
     return site
 
 @csrf_exempt

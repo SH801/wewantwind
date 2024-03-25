@@ -59,17 +59,23 @@ class Toolbar extends Component {
 
     singleBug = () => {
 
+
         var bugstate = {
-            currentlat: 50.828947,
-            currentlng: -0.1475211,
+            currentlat: 52.56,
+            currentlng: -3.45,
             startinglat: 50.828947,
             startinglng: -0.1475211,
             turbinelat: 50.92485452772702,
             turbinelng: -0.19656070746401624
         }
 
-        this.props.parent.props.setGlobalState(bugstate);
-        this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
+        this.props.parent.props.fetchNearestTurbine({lat: bugstate.currentlat, lng: bugstate.currentlng}).then(() => {
+            this.props.parent.setState({calculatingnearestturbine: false});
+            this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
+        })      
+
+        // this.props.parent.props.setGlobalState(bugstate);
+        // this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
     }
 
     setPage = (page) => {

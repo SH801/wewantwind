@@ -2220,6 +2220,7 @@
         "source": "renewables",
         "source-layer": "renewables",
         "layout": {
+            "visibility": "visible",
             "icon-image": "windturbine_grey", 
             "icon-size": [
               "interpolate", ["exponential", 2], ["zoom"], 

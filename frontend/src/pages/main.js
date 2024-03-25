@@ -772,8 +772,8 @@ class Main extends Component {
           if (((firstfeature['source'] === 'planningconstraints') && (firstfeature['sourceLayer'] === 'all')) ||
               ((firstfeature['source'] === 'openmaptiles') && (firstfeature['sourceLayer'] === 'water'))) {
   
-                if (firstfeature['sourceLayer'] === 'water') toast('Sorry, system not intended for offshore wind');
-                else toast('Sorry, intended position has planning constraints');
+                if (firstfeature['sourceLayer'] === 'water') toast.error('System not intended for offshore wind');
+                else toast.error('Position has planning constraints');
               event.target.setLngLat({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng});
               return;
           }
@@ -940,7 +940,7 @@ class Main extends Component {
 
       if (this.helpIndex > (links.length)) this.helpStop();
       else {
-        if (this.helpIndex === 0) toast.success("Showing turbine view from your location...", {duration: 4000});
+        if (this.helpIndex === 0) toast.success("Showing turbine from your location...", {duration: 4000});
         else {
           if (this.helpIndex > 0) {
             var oldtooltipdata = {};
@@ -1229,6 +1229,7 @@ class Main extends Component {
             // Use random points for testing
             this.setState({calculatingposition: true});
             this.props.fetchRandomPoint().then(() => {
+              // console.log(this.props.global.randompoint);
                 this.setState({calculatingposition: false, calculatingnearestturbine: true, startinglat: this.props.global.randompoint.lat, startinglng: this.props.global.randompoint.lng});
                 this.props.fetchNearestTurbine({lat: this.props.global.randompoint.lat, lng: this.props.global.randompoint.lng}).then(() => {
                     this.setState({calculatingnearestturbine: false});
