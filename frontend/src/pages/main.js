@@ -67,6 +67,12 @@ import {
 
 var turf = require('@turf/turf');
 
+window.Ionic = {
+  config: {
+    innerHTMLTemplatesEnabled: true
+  }
+}
+
 function WindTurbine(props) {
   const tower_gltf = useLoader(GLTFLoader, "./static/models/windturbine_tower.gltf");
   const blades_gltf = useLoader(GLTFLoader, "./static/models/windturbine_blades.gltf");
