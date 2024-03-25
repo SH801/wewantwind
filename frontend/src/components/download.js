@@ -12,10 +12,11 @@ export class Download extends Component{
         let _this = this; 
         this._btn = document.createElement('button');
         this._btn.type = 'button';
-        this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip');
+        this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip-download');
         this._btn.className = 'wewantwind-ctrl-icon maplibregl-ctrl-download';
         this._btn.setAttribute('data-tooltip-content', 'Download planning documents');
-        this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltip: true});}
+        this._btn.onmouseenter = function() {_this._mapcontainer.setState({showtooltipdownload: true});_this._mapcontainer.helpStop();}
+        this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltipdownload: false});}
         this._btn.onclick = function() { 
             _this._mapcontainer.setState({showtooltip: false, showdownload: true});
         };
@@ -28,7 +29,9 @@ export class Download extends Component{
     }
 
     onRemove() {
-      this._container.parentNode.removeChild(this._container);
+      if (this._container.parentNode !== null) {
+        this._container.parentNode.removeChild(this._container);
+      }
       this._map = undefined;
     }
   }

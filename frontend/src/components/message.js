@@ -14,10 +14,11 @@ export class Message extends Component{
         let _this = this; 
         this._btn = document.createElement('button');
         this._btn.type = 'button';
-        this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip');
+        this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip-message');
         this._btn.className = 'wewantwind-ctrl-icon maplibregl-ctrl-message';
         this._btn.setAttribute('data-tooltip-content', 'Contact interested local people');
-        this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltip: true});}
+        this._btn.onmouseenter = function() {_this._mapcontainer.setState({showtooltipmessage: true});_this._mapcontainer.helpStop();}
+        this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltipmessage: false});}
         this._btn.onclick = function() { 
           _this._mapcontainer.props.getLocalPeople({
             lat: _this._mapcontainer.props.global.startinglat, 

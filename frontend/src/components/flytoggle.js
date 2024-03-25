@@ -14,7 +14,7 @@ export class FlyToggle extends Component{
       let _this = this; 
       this._btn = document.createElement('button');
       this._btn.type = 'button';
-      this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip');
+      this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip-fly');
       if (this._mapcontainer.state.flying) {
         this._btn.className = 'wewantwind-ctrl-icon maplibregl-ctrl-flytoggle-landing';
         this._btn.setAttribute('data-tooltip-content', 'Stop flying');
@@ -22,7 +22,8 @@ export class FlyToggle extends Component{
         this._btn.className = 'wewantwind-ctrl-icon maplibregl-ctrl-flytoggle-takeoff';
         this._btn.setAttribute('data-tooltip-content', 'Zero carbon flight around turbine');
       }
-      this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltip: true});}
+      this._btn.onmouseenter = function() {_this._mapcontainer.setState({showtooltipfly: true});_this._mapcontainer.helpStop();}
+      this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltipfly: false});}
       this._btn.onclick = function() { 
         var currflying = _this._mapcontainer.state.flying;
         var newflying = !currflying;
@@ -48,7 +49,9 @@ export class FlyToggle extends Component{
     }
   
     onRemove() {
-      this._container.parentNode.removeChild(this._container);
+      if (this._container.parentNode !== null) {
+        this._container.parentNode.removeChild(this._container);
+      }
       this._map = undefined;
     }
   }

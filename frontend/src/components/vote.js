@@ -12,10 +12,11 @@ export class Vote extends Component{
         let _this = this; 
         this._btn = document.createElement('button');
         this._btn.type = 'button';
-        this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip');
+        this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip-vote');
         this._btn.className = 'wewantwind-ctrl-icon maplibregl-ctrl-vote';
         this._btn.setAttribute('data-tooltip-content', 'Vote for current site');
-        this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltip: true});}
+        this._btn.onmouseenter = function() {_this._mapcontainer.setState({showtooltipvote: true});_this._mapcontainer.helpStop();}
+        this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltipvote: false});}
         this._btn.onclick = function() { 
             _this._mapcontainer.setState({
               showtooltip: false,
@@ -41,7 +42,9 @@ export class Vote extends Component{
     }
 
     onRemove() {
-      this._container.parentNode.removeChild(this._container);
+      if (this._container.parentNode !== null) {
+        this._container.parentNode.removeChild(this._container);
+      }
       this._map = undefined;
     }
   }

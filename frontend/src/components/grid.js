@@ -38,7 +38,9 @@ export class Grid extends Component{
     }
   
     onRemove() {
-      this._container.parentNode.removeChild(this._container);
+      if (this._container.parentNode !== null) {
+        this._container.parentNode.removeChild(this._container);
+      }
       this._map = undefined;
     }
   }

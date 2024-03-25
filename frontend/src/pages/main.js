@@ -97,7 +97,7 @@ function WindTurbine(props) {
   )
 }
 
-
+var mutex = false;
 
 /**
  * Main template class 
@@ -128,6 +128,11 @@ class Main extends Component {
         showmessage: false,
         showwind: false,
         showgrid: false,
+        showtooltipvote: false,
+        showtooltipdownload: false,
+        showtooltipmessage: false,
+        showtooltipfly: false,
+        showtooltiprecord: false,
         generatingfile: false,
         progress: 0,
         preflightposition: null,
@@ -144,6 +149,8 @@ class Main extends Component {
         alertIsOpen: false,
         alertText: ''    
       };
+      this.helpIndex = 0;
+      this.helpInterval = null;    
       this.updatealtitude = false;
       this.ignoremovend = false;
       this.mapRef = React.createRef();
@@ -390,6 +397,9 @@ class Main extends Component {
     }
 
     setCameraPosition = (camPos) => {
+      console.log("setCameraPosition");
+      if (mutex) return;
+      mutex = true;
       var map = this.mapRef.current.getMap();
       var { lng, lat, altitude, pitch, bearing } = camPos;
       altitude += map.queryTerrainElevation({lat: lat, lng: lng}) || 0;
@@ -403,15 +413,19 @@ class Main extends Component {
       const newPixelPoint = new maplibregl.Point(map.transform.width / 2, map.transform.height / 2 + latOffset);
       const newLongLat = new maplibregl.LngLat(lng, lat);
       // console.log(cameraToCenterDistance, pixelAltitude, metersInWorldAtLat, worldsize, latOffset, newPixelPoint, newLongLat, lng, lat, zoom, pitch, bearing);
+      console.log("zoom", zoom);
       if (!isNaN(zoom)) map.transform.zoom = zoom;
       map.transform.pitch = pitch;
       map.transform.bearing = bearing;
       map.transform.setLocationAtPoint(newLongLat, newPixelPoint);
       map.setBearing(map.getBearing());
+      mutex = false;
     }
 
     onMapLoad = (event) => {
         
+        this.helpStart();
+
         var map = this.mapRef.current.getMap();
         map.addControl(new Spacer(), 'top-right');
         var newbuttonsstate = initializeMap(  map, 
@@ -917,6 +931,42 @@ class Main extends Component {
         var altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, { exaggerated: false }) || 0;
         if (altitude < 0) altitude = 0;
         this.setState({altitude: altitude});
+      }
+    }
+
+    updateHelp = () => {
+      if (this.props.global.page !== PAGE.NEARESTTURBINE) return;
+
+      const links = ['intro', 'vote', 'download', 'message', 'fly', 'record'];
+
+      if (this.helpIndex > (links.length)) this.helpStop();
+      else {
+        if (this.helpIndex === 0) toast.success("Showing turbine view from your location...", {duration: 4000});
+        else {
+          if (this.helpIndex > 0) {
+            var oldtooltipdata = {};
+            oldtooltipdata['showtooltip' + links[this.helpIndex - 1]] = false;
+            this.setState(oldtooltipdata);
+          }
+          if (this.helpIndex < links.length) {
+            var newtooltipdata = {};
+            newtooltipdata['showtooltip' + links[this.helpIndex]] = true;
+            this.setState(newtooltipdata);
+          }
+        }
+      }
+      this.helpIndex++;
+    }
+
+    helpStart = () => {
+      this.helpInterval = setInterval(this.updateHelp, 4000);
+    }
+
+    helpStop = () => {
+      if (this.helpInterval !== null) {
+        clearInterval(this.helpInterval);
+        this.helpInterval = null;
+        this.helpIndex = -1;
       }
     }
 
@@ -1469,7 +1519,7 @@ class Main extends Component {
                         </IonRow>
                         <IonRow className="ion-align-items-center">
                           <IonCol size="12" style={{textAlign: "center"}}>
-                            <div style={{maxWidth: "600px", textAlign: "center", margin: "auto", paddingBottom: "20px"}}>
+                            <div className="wewantwind-bodyarea">
                               <IonText className="wewantwind-bodytext">Find your nearest wind turbine site, vote for potential sites and get started building your community wind project team!</IonText>
                             </div>
                           </IonCol>
@@ -1499,15 +1549,15 @@ class Main extends Component {
                         <IonRow className="ion-align-items-center">
                           <IonCol size="12" style={{textAlign: "center"}}>
                             <div style={{maxWidth: "600px", textAlign: "center", margin: "auto", paddingBottom: "20px"}}>
-                              <IonText className="wewantwind-bodytext"><b>wewantwind.org</b> was created by Stefan Haselwimmer.<br/><br/>
-                              To contact us, drop us an email at <b>info@wewantwind.org</b></IonText>
+                              <IonText className="wewantwind-bodytext"><b>wewantwind.org</b> was created by Stefan Haselwimmer to help communities get started with community wind.<br/><br/>
+                              To contact us, email <b>info@wewantwind.org</b></IonText>
                             </div>
                           </IonCol>
                         </IonRow>
                         <IonRow className="ion-align-items-center">
                           <IonCol size="12" style={{textAlign: "center"}}>
                           <a href="mailto:info@wewantwind.org" className="wewantwind-link">
-                              <IonButton shape="round">Email info@wewantwind.org</IonButton>
+                              <IonButton shape="round">Email us</IonButton>
                           </a>
                           </IonCol>
                         </IonRow>
@@ -1626,6 +1676,12 @@ class Main extends Component {
                           maxPitch: 85
                           }} >
                             <Tooltip id="ctrlpanel-tooltip" place="right" variant="light" style={{fontSize: "120%"}} />
+                            <Tooltip id="ctrlpanel-tooltip-vote" isOpen={this.state.showtooltipvote} place="right" variant="light" style={{fontSize: "120%"}} />
+                            <Tooltip id="ctrlpanel-tooltip-download" isOpen={this.state.showtooltipdownload} place="right" variant="light" style={{fontSize: "120%"}} />
+                            <Tooltip id="ctrlpanel-tooltip-message" isOpen={this.state.showtooltipmessage} place="right" variant="light" style={{fontSize: "120%"}} />
+                            <Tooltip id="ctrlpanel-tooltip-fly" isOpen={this.state.showtooltipfly} place="right" variant="light" style={{fontSize: "120%"}} />
+                            <Tooltip id="ctrlpanel-tooltip-record" isOpen={this.state.showtooltiprecord} place="right" variant="light" style={{fontSize: "120%"}} />
+
                             {(this.props.global.page === PAGE.EXPLORE) ? (
                               <GeolocateControl onGeolocate={this.onGeolocate} position="top-left" />
                             ) : null}
