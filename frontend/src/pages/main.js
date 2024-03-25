@@ -1032,7 +1032,7 @@ class Main extends Component {
           {
             "type": "Feature",
             "properties": {
-                "name": "WeWantWind Wind Turbine Siting - " + readableposition
+                "name": "wewantwind Wind Turbine Siting - " + readableposition
             },
             "geometry": {
                 "type": "Point",
@@ -1042,7 +1042,7 @@ class Main extends Component {
       };
       
       // const timesuffix = now.toISOString().substring(0,19).replaceAll('T', ' ').replaceAll(':', '-');
-      anchor.download = "WeWantWind - " + readableposition;
+      anchor.download = "wewantwind - " + readableposition;
   
       switch (type) {
         case 'qgis':
@@ -1432,7 +1432,7 @@ class Main extends Component {
                   </IonItem>
                   <IonItem>
                     <IonText className="instruction-text" style={{fontSize: "75%", paddingTop: "10px", color: "#666"}}>
-                      <b>Content of introductory email: </b> Dear [Recipient's name], The following user(s) are within {LOCAL_DISTANCE} miles of you and would like to connect with local WeWantWind users: 
+                      <b>Content of introductory email: </b> Dear [Recipient's name], The following user(s) are within {LOCAL_DISTANCE} miles of you and would like to connect with local wewantwind users: 
                     [Your name and email address as supplied above]. 
                   To contact any of them about either setting up a community wind group or getting involved with an existing group, drop them an email.</IonText>
                   </IonItem>
@@ -1457,14 +1457,22 @@ class Main extends Component {
               </IonContent>
             </IonModal>
 
-            {(this.props.global.page === PAGE.HOME) ? (
-
+            {((this.props.global.page === PAGE.HOME) || (this.props.global.page === PAGE.ABOUT)) ? (
+              <>
+              {(this.props.global.page === PAGE.HOME) ? (
                 <div className="centred-container background-image">
                     <IonGrid>
                         <IonRow>
                         <IonCol size="12" style={{textAlign: "center"}}>
                             <IonText className="wewantwind-largetext"><span style={{color:"#F5C242"}}>we</span><span style={{color:"#D8DFCE"}}>want</span><span style={{color:"#FFF"}}>wind</span></IonText>
                         </IonCol>
+                        </IonRow>
+                        <IonRow className="ion-align-items-center">
+                          <IonCol size="12" style={{textAlign: "center"}}>
+                            <div style={{maxWidth: "600px", textAlign: "center", margin: "auto", paddingBottom: "20px"}}>
+                              <IonText className="wewantwind-bodytext">Find your nearest wind turbine site, vote for potential sites and get started building your community wind project team!</IonText>
+                            </div>
+                          </IonCol>
                         </IonRow>
                         <IonRow className="ion-align-items-center">
                           <IonCol size="12" style={{textAlign: "center"}}>
@@ -1480,7 +1488,33 @@ class Main extends Component {
                         </IonRow>
                     </IonGrid>
                 </div>
-
+              ) : (
+                <div className="centred-container background-image">
+                    <IonGrid>
+                        <IonRow>
+                        <IonCol size="12" style={{textAlign: "center"}}>
+                            <IonText className="wewantwind-largetext"><span style={{color:"#F5C242"}}>we</span><span style={{color:"#D8DFCE"}}>want</span><span style={{color:"#FFF"}}>wind</span></IonText>
+                        </IonCol>
+                        </IonRow>
+                        <IonRow className="ion-align-items-center">
+                          <IonCol size="12" style={{textAlign: "center"}}>
+                            <div style={{maxWidth: "600px", textAlign: "center", margin: "auto", paddingBottom: "20px"}}>
+                              <IonText className="wewantwind-bodytext"><b>wewantwind.org</b> was created by Stefan Haselwimmer.<br/><br/>
+                              To contact us, drop us an email at <b>info@wewantwind.org</b></IonText>
+                            </div>
+                          </IonCol>
+                        </IonRow>
+                        <IonRow className="ion-align-items-center">
+                          <IonCol size="12" style={{textAlign: "center"}}>
+                          <a href="mailto:info@wewantwind.org" className="wewantwind-link">
+                              <IonButton shape="round">Email info@wewantwind.org</IonButton>
+                          </a>
+                          </IonCol>
+                        </IonRow>
+                    </IonGrid>
+                </div>
+              )}              
+              </>
             ) : (
 
                 <div className="map-wrap">

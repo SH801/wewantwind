@@ -80,7 +80,7 @@ class Toolbar extends Component {
                             <a onClick={() => {this.setPage(PAGE.EXPLORE)}} className="wewantwind-link">
                                 <IonText>explore</IonText>
                             </a>
-                            <a href="/about" className="wewantwind-link">
+                            <a onClick={() => {this.setPage(PAGE.ABOUT)}} className="wewantwind-link">
                                 <IonText>about</IonText>
                             </a>
                         </div>

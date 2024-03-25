@@ -8,14 +8,14 @@ import {thunk} from 'redux-thunk';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '@ionic/react/css/core.css';
 
-import WeWantWindApp from "./reducers";
+import wewantwindApp from "./reducers";
 
 import Main from './pages/main.js';
 import { setupIonicReact } from '@ionic/react';
  
 setupIonicReact();
 
-let store = createStore(WeWantWindApp, applyMiddleware(thunk));
+let store = createStore(wewantwindApp, applyMiddleware(thunk));
 
 class App extends Component {
   render() {

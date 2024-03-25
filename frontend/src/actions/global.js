@@ -42,7 +42,7 @@ export const setPage = (page) => {
     var newbuttonsstate = JSON.parse(JSON.stringify(buttonsstate));
 
     if ((mapref === null) || (mapref.current === null)) {
-      console.log("mapref is null");
+      // console.log("mapref is null");
     }
     if (mapref !== null) {
       if (mapref.current !== null) {

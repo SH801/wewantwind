@@ -46,7 +46,8 @@ export const PAGE = {
     HOME: 0,
     NEARESTTURBINE_OVERVIEW: 1,
     NEARESTTURBINE: 2,
-    EXPLORE: 3
+    EXPLORE: 3,
+    ABOUT: 4,
 }
 
 // Buttons on each page
@@ -54,7 +55,8 @@ export const PAGEBUTTONS = [
     [],
     [],
     ['vote', 'download', 'message', 'fly', 'video'],
-    ['vote', 'download', 'message', 'fly', 'video', 'wind', 'planning', 'grid']
+    ['vote', 'download', 'message', 'fly', 'video', 'wind', 'planning', 'grid'],
+    []
 ]
 
 // Default maxbounds 

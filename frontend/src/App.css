@@ -384,6 +384,14 @@
   text-decoration: none!important;
 }
 
+.wewantwind-bodytext {
+  font-size: 120%;
+  color: #fff;
+  font-weight: 400;
+  text-shadow: 0px 0px 7px rgb(89 88 88);
+
+}
+
 .wewantwind-infotab {
   padding: 10px;
   background: #ffffffcf;

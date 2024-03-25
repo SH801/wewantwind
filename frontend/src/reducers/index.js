@@ -15,9 +15,9 @@ import { combineReducers } from 'redux';
 import global from "./global";
 import mobileReducer from "./isMobile";
 
-const WeWantWindApp = combineReducers({
+const wewantwindApp = combineReducers({
   global,
   mobileReducer
 })
 
-export default WeWantWindApp;
+export default wewantwindApp;
