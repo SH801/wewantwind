@@ -1531,7 +1531,7 @@ class Main extends Component {
                         <IonRow className="ion-align-items-center">
                           <IonCol size="12" style={{textAlign: "center"}}>
                             <div className="wewantwind-bodyarea">
-                              <IonText className="wewantwind-bodytext">Find your nearest wind turbine site, vote for potential sites and get started building your community wind project team!</IonText>
+                              <IonText className="wewantwind-bodytext">Find your nearest potential wind turbine site, vote for sites and get started building your community wind project team!</IonText>
                             </div>
                           </IonCol>
                         </IonRow>
