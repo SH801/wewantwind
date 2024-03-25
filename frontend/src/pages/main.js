@@ -965,6 +965,7 @@ class Main extends Component {
     helpStop = () => {
       if (this.helpInterval !== null) {
         clearInterval(this.helpInterval);
+        this.setState({'showtooltipvote': false, 'showtooltipdownload': false, 'showtooltipmessage': false, 'showtooltipfly': false, 'showtooltiprecord': false});
         this.helpInterval = null;
         this.helpIndex = -1;
       }
