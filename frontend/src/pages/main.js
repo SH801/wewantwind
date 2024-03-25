@@ -935,7 +935,7 @@ class Main extends Component {
     updateHelp = () => {
       if (this.props.global.page !== PAGE.NEARESTTURBINE) return;
 
-      console.log("updateHelp", this.helpIndex);
+      // console.log("updateHelp", this.helpIndex);
       const links = ['intro', 'vote', 'download', 'message', 'fly', 'record'];
 
       if (this.helpIndex > (links.length)) this.helpStop();
@@ -1261,14 +1261,14 @@ class Main extends Component {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
         this.props.fetchNearestTurbine({lat: latitude, lng: longitude}).then(() => {
-          console.log({
-            startinglat: this.props.global.startinglat,
-            startinglng: this.props.global.startinglng,
-            currentlat: this.props.global.currentlat,
-            currentlng: this.props.global.currentlng,
-            turbinelat: this.props.global.turbinelat,
-            turbinelng: this.props.global.turbinelng,
-          })
+          // console.log({
+          //   startinglat: this.props.global.startinglat,
+          //   startinglng: this.props.global.startinglng,
+          //   currentlat: this.props.global.currentlat,
+          //   currentlng: this.props.global.currentlng,
+          //   turbinelat: this.props.global.turbinelat,
+          //   turbinelng: this.props.global.turbinelng,
+          // })
           this.setState({calculatingnearestturbine: false});
           this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
         })
