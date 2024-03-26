@@ -711,6 +711,7 @@ class Main extends Component {
     }
   
     onClick = (event) => {
+
         // User clicks so remove centre
         if (event.clickOnLayer) this.setState({centreset: false});  
 
@@ -728,13 +729,13 @@ class Main extends Component {
                     alertIsOpen: true, 
                     alertText: new IonicSafeString("<p>Non-optimal site for wind turbine due to: </p><p><b>" + this.layerlookup[id] + "</b></p>")
                   });
-              return;
+              return false;
           }
     
           if (event.features[0].sourceLayer === 'windspeed') {
             var windspeed = parseFloat(event.features[0].properties['DN'] / 10);
             this.props.setGlobalState({'windspeed': windspeed});
-            return;
+            return false;
           }
 
           if (event.features[0].source === 'votes') {
@@ -747,7 +748,7 @@ class Main extends Component {
                 this.setState({calculatingposition: false});        
               }    
             } else this.setState({showloosevote: true});
-            return;
+            return false;
           }
   
           // Don't respond to clicking on power lines or substations
@@ -759,6 +760,8 @@ class Main extends Component {
           this.setState({centreset: true});
           this.props.fetchEntity(entityid);
         }
+
+        return false;
     }
           
     onPopupClick = () => {
@@ -1435,13 +1438,13 @@ class Main extends Component {
                 </IonToolbar>
               </IonHeader>
               <IonContent>
-                <IonList lines="none" style={{paddingTop: "20px"}}>
+                <IonList lines="none" style={{paddingTop: "10px"}}>
                   <IonItem>
-                    <IonText className="instruction-text">Enter your details to cast a vote for current wind site. We will email you a link to confirm your vote. 
-                    After you've confirmed vote, the location of voted turbine - but not your location - will be added to map.</IonText>
+                    <IonText className="instruction-text">Enter your details to vote for current wind site. We will then email you a link to confirm your vote. 
+                    After you've confirmed your vote, the location of voted turbine - not your location - will be added to map.</IonText>
                   </IonItem>
                   <IonItem>
-                    <IonText className="instruction-text" style={{marginTop: "10px"}}><i>You can only cast one vote per person / email address - please don't try and rig system!</i> You can reallocate single vote to a different turbine site at any time.</IonText>
+                    <IonText className="instruction-text" style={{marginTop: "10px", paddingBottom: "0px"}}><i>You can only cast one vote per person / email address - please don't try and rig system!</i> You can reallocate your single vote to a different turbine site at any time.</IonText>
                   </IonItem>
                 </IonList>
                 <IonList lines="none">
@@ -1485,7 +1488,7 @@ class Main extends Component {
                   <IonText>{this.state.recaptchaError}</IonText>
                   </IonItem>
                   ) : null}
-                  <IonItem className={this.recaptcha ? 'ion-no-padding ion-invalid': 'ion-no-padding ion-valid'} style={{paddingTop: "20px"}}>
+                  <IonItem className={this.recaptcha ? 'ion-no-padding ion-invalid': 'ion-no-padding ion-valid'} style={{paddingTop: "0px"}}>
                       <ReCAPTCHA sitekey={process.env.REACT_APP_GOOGLE_RECAPTCHA_SITE_KEY} onChange={this.verifyCallback}/>
                   </IonItem>
 
@@ -1506,9 +1509,9 @@ class Main extends Component {
                 </IonToolbar>
               </IonHeader>
               <IonContent>
-                <IonList lines="none" style={{paddingTop: "20px"}}>
+                <IonList lines="none" style={{paddingTop: "10px"}}>
                   <IonItem>
-                    <IonText className="instruction-text">Enter your details to cast a vote. We will email you a link to confirm your vote.</IonText>
+                    <IonText className="instruction-text">Enter your details to cast a vote for the clicked site. We will email you a link to confirm your vote.</IonText>
                   </IonItem>
                   <IonItem>
                     <IonText className="instruction-text" style={{marginTop: "10px"}}><b>If you have already voted for another site, your vote will be switched to this site.</b></IonText>
@@ -1555,7 +1558,7 @@ class Main extends Component {
                   <IonText>{this.state.recaptchaError}</IonText>
                   </IonItem>
                   ) : null}
-                  <IonItem className={this.recaptcha ? 'ion-no-padding ion-invalid': 'ion-no-padding ion-valid'} style={{paddingTop: "20px"}}>
+                  <IonItem className={this.recaptcha ? 'ion-no-padding ion-invalid': 'ion-no-padding ion-valid'} style={{paddingTop: "0px"}}>
                       <ReCAPTCHA sitekey={process.env.REACT_APP_GOOGLE_RECAPTCHA_SITE_KEY} onChange={this.verifyCallback}/>
                   </IonItem>
 
@@ -1572,11 +1575,11 @@ class Main extends Component {
             <IonModal className="wewantwind-modal" isOpen={this.state.showmessage} onDidDismiss={() => this.setState({showmessage: false})}>
               <IonHeader>
                 <IonToolbar className="wob-toolbar">
-                  <IonTitle mode="ios">Connect with nearby users</IonTitle>
+                  <IonTitle mode="ios">Connect with users</IonTitle>
                 </IonToolbar>
               </IonHeader>
               <IonContent>
-                <IonList lines="none" style={{paddingTop: "20px"}}>
+                <IonList lines="none" style={{paddingTop: "10px", paddingBottom: "0px"}}>
                   <IonItem>
                     <IonText className="instruction-text"><b>{ this.props.global.localpeople } contactable user(s)</b> within {LOCAL_DISTANCE} miles of you. 
                     You can send them an introductory message <i>containing your name and email address</i> to connect with them. 
@@ -1607,7 +1610,7 @@ class Main extends Component {
                       ></IonInput>
                   </IonItem>
                   <IonItem>
-                    <IonText className="instruction-text" style={{fontSize: "75%", paddingTop: "10px", color: "#666"}}>
+                    <IonText className="instruction-text" style={{fontSize: "70%", paddingTop: "5px", paddingBottom: "10px", color: "#666"}}>
                       <b>Content of introductory email: </b> Dear [Recipient's name], The following user(s) are within {LOCAL_DISTANCE} miles of you and would like to connect with local wewantwind.org users: 
                     [Your name and email address as supplied above]. 
                   To contact any of them about either setting up a community wind group or getting involved with an existing group, drop them an email.</IonText>
@@ -1619,7 +1622,7 @@ class Main extends Component {
                   <IonText>{this.state.recaptchaError}</IonText>
                   </IonItem>
                   ) : null}
-                  <IonItem className={this.recaptcha ? 'ion-no-padding ion-invalid': 'ion-no-padding ion-valid'} style={{paddingTop: "20px"}}>
+                  <IonItem className={this.recaptcha ? 'ion-no-padding ion-invalid': 'ion-no-padding ion-valid'} style={{paddingTop: "0px"}}>
                     <ReCAPTCHA sitekey={process.env.REACT_APP_GOOGLE_RECAPTCHA_SITE_KEY} onChange={this.verifyCallback}/>
                   </IonItem>
 
