@@ -19,7 +19,7 @@ export class Vote extends Component{
         this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltipvote: false});}
         this._btn.onclick = function() { 
             _this._mapcontainer.setState({
-              showtooltip: false,
+              showtooltipvote: false,
               name: '',
               email: '',
               contactchecked: true,

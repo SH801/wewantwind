@@ -133,7 +133,7 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
         const northEast = [turbinelng + deltalng, turbinelat + deltalat];
         map.setPitch(0);
         map.setBearing(0);
-        map.fitBounds([southWest, northEast], {animate: true, padding: 190}); 
+        map.fitBounds([southWest, northEast], {animate: true, padding: {top: 150, bottom: 210, left: 30, right: 30}}); 
       }
       break;
     case PAGE.NEARESTTURBINE:

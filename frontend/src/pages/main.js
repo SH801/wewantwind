@@ -836,7 +836,7 @@ class Main extends Component {
           const southWest = [this.props.global.turbinelng - pointdistance, this.props.global.turbinelat - pointdistance];
           const northEast = [this.props.global.turbinelng + pointdistance, this.props.global.turbinelat + pointdistance];
           const boundingBox = [southWest, northEast];
-          submap.fitBounds(boundingBox, {duration: 0, padding: {top: 65, bottom:65, left: 65, right: 65}});    
+          submap.fitBounds(boundingBox, {duration: 0, padding: {top: 65, bottom:65, left: 20, right: 20}});    
       }
     }
 
@@ -1437,11 +1437,11 @@ class Main extends Component {
               <IonContent>
                 <IonList lines="none" style={{paddingTop: "20px"}}>
                   <IonItem>
-                    <IonText className="instruction-text">Enter your details below to cast your vote for the current wind turbine site. We will then email you a link to confirm your vote. 
-                    Once you have confirmed your vote, the location of your voted turbine - but not your own location - will be added to our map.</IonText>
+                    <IonText className="instruction-text">Enter your details to cast a vote for current wind site. We will email you a link to confirm your vote. 
+                    After you've confirmed vote, the location of voted turbine - but not your location - will be added to map.</IonText>
                   </IonItem>
                   <IonItem>
-                    <IonText className="instruction-text" style={{marginTop: "10px"}}><i>You can only cast one vote per person / email address - please don't try and rig the system!</i> You can reallocate your single vote to a different turbine site at any time.</IonText>
+                    <IonText className="instruction-text" style={{marginTop: "10px"}}><i>You can only cast one vote per person / email address - please don't try and rig system!</i> You can reallocate single vote to a different turbine site at any time.</IonText>
                   </IonItem>
                 </IonList>
                 <IonList lines="none">
@@ -1508,7 +1508,7 @@ class Main extends Component {
               <IonContent>
                 <IonList lines="none" style={{paddingTop: "20px"}}>
                   <IonItem>
-                    <IonText className="instruction-text">Enter your details below to cast your vote. We will then email you a link to confirm your vote.</IonText>
+                    <IonText className="instruction-text">Enter your details to cast a vote. We will email you a link to confirm your vote.</IonText>
                   </IonItem>
                   <IonItem>
                     <IonText className="instruction-text" style={{marginTop: "10px"}}><b>If you have already voted for another site, your vote will be switched to this site.</b></IonText>
@@ -1578,9 +1578,9 @@ class Main extends Component {
               <IonContent>
                 <IonList lines="none" style={{paddingTop: "20px"}}>
                   <IonItem>
-                    <IonText className="instruction-text">There are <b>{ this.props.global.localpeople } user(s)</b> within {LOCAL_DISTANCE} miles of you who have agreed to be contacted. 
-                    You can send an introductory message to them <b>containing your name and email address</b> to make contact. 
-                    We will request your confirmation via email before messaging anyone.</IonText>
+                    <IonText className="instruction-text"><b>{ this.props.global.localpeople } contactable user(s)</b> within {LOCAL_DISTANCE} miles of you. 
+                    You can send them an introductory message <i>containing your name and email address</i> to connect with them. 
+                    We will request your confirmation via email before messaging them.</IonText>
                   </IonItem>
                 </IonList>
                 <IonList lines="none">
@@ -1626,7 +1626,7 @@ class Main extends Component {
                   <IonItem>
                     <IonText style={{margin: "auto", paddingTop: "10px"}}>  
                       <IonButton onClick={() => {this.setState({showmessage: false})}} color="light" shape="round" size="medium" fill="solid">Cancel</IonButton>
-                      <IonButton onClick={() => {this.sendMessage()}} color="success" shape="round" size="medium" fill="solid">Send intro message</IonButton>
+                      <IonButton onClick={() => {this.sendMessage()}} color="success" shape="round" size="medium" fill="solid">Send intro</IonButton>
                     </IonText>
                   </IonItem>
                 </IonList>
@@ -1758,7 +1758,7 @@ class Main extends Component {
                                     </div>
                                 </div>
 
-                                <div style={{zIndex:1000, position: "absolute", bottom: "90px", width: "100%"}}>
+                                <div style={{zIndex:1000, position: "absolute", top: "40px", width: "100%"}}>
                                     <IonGrid>
                                         <IonRow className="ion-align-items-center">
                                         <IonCol size="12" style={{textAlign: "center"}}>

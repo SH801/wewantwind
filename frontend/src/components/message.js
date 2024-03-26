@@ -28,7 +28,7 @@ export class Message extends Component{
               toast.error('No contactable users within ' + String(LOCAL_DISTANCE) + ' miles');
             } else {
               _this._mapcontainer.setState({
-                showtooltip: false,
+                showtooltipmessage: false,
                 name: '',
                 email: '',
                 showmessage: true,

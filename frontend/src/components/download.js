@@ -18,7 +18,7 @@ export class Download extends Component{
         this._btn.onmouseenter = function() {_this._mapcontainer.setState({showtooltipdownload: true});_this._mapcontainer.helpStop();}
         this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltipdownload: false});}
         this._btn.onclick = function() { 
-            _this._mapcontainer.setState({showtooltip: false, showdownload: true});
+            _this._mapcontainer.setState({showtooltipdownload: false, showdownload: true});
         };
       
         this._container = document.createElement('div');
