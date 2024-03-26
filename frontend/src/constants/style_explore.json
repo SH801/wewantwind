@@ -60,7 +60,7 @@
         },
         "votes": {
           "type": "geojson",
-          "data": "https://wewantwind.org/votes/"
+          "data": "http://localhost:8000/votes/"
         }
     },
     "glyphs": "/fonts/{fontstack}/{range}.pbf",

@@ -122,6 +122,8 @@ class Main extends Component {
         flying: false, 
         flyingcentre: null, 
         draggablesubmap: true,
+        loosevote: null,
+        showloosevote: false,
         showmarker: true,
         showvote: false,
         showdownload: false,
@@ -653,6 +655,7 @@ class Main extends Component {
                 description += '<p class="popup-p"><b>Votes within 1 mile:</b> ' + properties['votes:within:1:mile'] + '</p>';
                 description += '<p class="popup-p"><b>Votes within 5 miles:</b> ' + properties['votes:within:5:miles'] + '</p>';
                 description += '<p class="popup-p"><b>Votes within 10 miles:</b> ' + properties['votes:within:10:miles'] + '</p>';
+                description += '<p class="popup-p"><i>Click to vote for this site</i></p>';
               }
               if (description === undefined) {
                 description = "No name available";
@@ -716,6 +719,7 @@ class Main extends Component {
         // Don't select features if adding asset
         if (event.features.length > 0) {
           var id = event.features[0]['layer']['id'];
+          var properties = event.features[0].properties;
           if ((id === 'constraint_windspeed_fill_colour') ||
               (event.features[0].source === 'planningconstraints') || 
               (event.features[0].sourceLayer === 'landuse')) {
@@ -732,10 +736,19 @@ class Main extends Component {
             this.props.setGlobalState({'windspeed': windspeed});
             return;
           }
-        }
-    
-        if (event.features.length > 0) {
-          var properties = event.features[0].properties;
+
+          if (event.features[0].source === 'votes') {
+            this.setState({loosevote: {lat: event.features[0].properties['lat'], lng: event.features[0].properties['lng']}})
+            if (this.props.global.startinglat === null) {
+              if (navigator.geolocation) {
+                this.setState({calculatingposition: true});
+                navigator.geolocation.getCurrentPosition(this.foundCurrentPositionLooseVote, this.notfoundCurrentPosition);
+              } else {
+                this.setState({calculatingposition: false});        
+              }    
+            } else this.setState({showloosevote: true});
+            return;
+          }
   
           // Don't respond to clicking on power lines or substations
           if (properties['power'] !== undefined) {
@@ -748,6 +761,10 @@ class Main extends Component {
         }
     }
           
+    onPopupClick = () => {
+      console.log("onPopupClick");
+    }
+
     onClickMarker = () => {
         if (this.props.global.page === PAGE.EXPLORE) {
             const map = this.mapRef.current.getMap();
@@ -1197,6 +1214,29 @@ class Main extends Component {
       }
     }  
 
+    castLooseVote = () => {
+      if (this.state.isValidName && this.state.isValidEmail && (this.state.recaptcha !== undefined)) {
+        console.log(this.state);
+        // Valid name, email and recaptcha so submit form
+        this.setState({showloosevote: false});
+        toast.success("Emailing you link to confirm vote", {duration: 4000});
+        this.props.castVote(
+        {
+          name: this.state.name, 
+          email: this.state.email, 
+          contactable: this.state.contactchecked,
+          recaptcha: this.state.recaptcha,
+          userlocation: {lat: this.props.global.startinglat, lng: this.props.global.startinglng},
+          site: {lat: this.state.loosevote['lat'], lng: this.state.loosevote['lng']}
+        });
+      } else {
+        if (!this.state.isTouchedName) this.setState({isTouchedName: true});
+        if (!this.state.isTouchedEmail) this.setState({isTouchedEmail: true});
+        if (this.state.recaptcha === undefined) this.setState({recaptchaError: "Please click \"I'm not a robot\""})
+      }
+
+    }
+
     sendMessage = () => {  
       if (this.state.isValidName && this.state.isValidEmail && (this.state.recaptcha !== undefined)) {
         // Valid name, email and recaptcha so submit form
@@ -1274,7 +1314,12 @@ class Main extends Component {
           this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
         })
     }
-      
+
+    foundCurrentPositionLooseVote = (position) => {
+      this.props.setGlobalState({startinglat: position.coords.latitude, startinglng: position.coords.longitude});
+      this.setState({calculatingposition: false, showloosevote: true});
+    }
+
     notfoundCurrentPosition = () => {
         this.setState({calculatingposition: false, positionerror: true});
   
@@ -1454,6 +1499,76 @@ class Main extends Component {
               </IonContent>
             </IonModal>
 
+            <IonModal className="wewantwind-modal" isOpen={this.state.showloosevote} onDidDismiss={() => this.setState({showloosevote: false})}>
+              <IonHeader>
+                <IonToolbar className="wob-toolbar">
+                  <IonTitle mode="ios">Cast your vote</IonTitle>
+                </IonToolbar>
+              </IonHeader>
+              <IonContent>
+                <IonList lines="none" style={{paddingTop: "20px"}}>
+                  <IonItem>
+                    <IonText className="instruction-text">Enter your details below to cast your vote. We will then email you a link to confirm your vote.</IonText>
+                  </IonItem>
+                  <IonItem>
+                    <IonText className="instruction-text" style={{marginTop: "10px"}}><b>If you have already voted for another site, your vote will be switched to this site.</b></IonText>
+                  </IonItem>
+                </IonList>
+                <IonList lines="none">
+                  <IonItem>
+                    <IonInput 
+                      errorText="Enter your name" 
+                      className={`${this.state.isValidName && 'ion-valid'} ${this.state.isValidName === false && 'ion-invalid'} ${this.state.isTouchedName && 'ion-touched'}`} 
+                      label="Name" 
+                      labelPlacement="stacked" 
+                      placeholder="Enter name" 
+                      onIonInput={(event) => this.validateName(event)}
+                      onIonBlur={() => {this.setState({isTouchedName: true})}}
+                      ></IonInput>
+                  </IonItem>                
+                  <IonItem>
+                    <IonInput 
+                      errorText="Enter valid email address" 
+                      className={`${this.state.isValidEmail && 'ion-valid'} ${this.state.isValidEmail === false && 'ion-invalid'} ${this.state.isTouchedEmail && 'ion-touched'}`} 
+                      label="Email address" 
+                      labelPlacement="stacked" 
+                      placeholder="Enter email address" 
+                      onIonInput={(event) => this.validateEmail(event)}
+                      onIonBlur={() => {this.setState({isTouchedEmail: true})}}
+                      ></IonInput>
+                  </IonItem>   
+                </IonList>
+                <IonList lines="none">
+                  <IonItem className="checkbox-item">
+                    <IonCheckbox checked={this.state.contactchecked} onIonChange={(e) => {this.setState({contactchecked: !this.state.contactchecked})}} labelPlacement="end">
+                    <span className="wrap">Allow other users to contact me via this site. Note: we will <b>never</b> publish or pass on your email address without your express permission.</span>
+                    </IonCheckbox>
+                  </IonItem>
+                  {/* <IonItem className="checkbox-item">
+                    <IonCheckbox checked={this.state.cookieschecked} onIonChange={(e) => {this.setState({cookieschecked: !this.state.cookieschecked})}} labelPlacement="end">
+                    <span className="wrap">Accept browser cookies. This helps track whether you have already voted for a specific turbine site.</span>
+                    </IonCheckbox>
+                  </IonItem> */}
+
+                  {(this.state.recaptchaError !== '') ? (
+                  <IonItem color="danger">
+                  <IonText>{this.state.recaptchaError}</IonText>
+                  </IonItem>
+                  ) : null}
+                  <IonItem className={this.recaptcha ? 'ion-no-padding ion-invalid': 'ion-no-padding ion-valid'} style={{paddingTop: "20px"}}>
+                      <ReCAPTCHA sitekey={process.env.REACT_APP_GOOGLE_RECAPTCHA_SITE_KEY} onChange={this.verifyCallback}/>
+                  </IonItem>
+
+                  <IonItem>
+                    <IonText style={{margin: "auto", paddingTop: "10px"}}>  
+                      <IonButton onClick={() => {this.setState({showloosevote: false})}} color="light" shape="round" size="medium" fill="solid">Cancel</IonButton>
+                      <IonButton onClick={() => {this.castLooseVote()}} color="success" shape="round" size="medium" fill="solid">Submit vote</IonButton>
+                    </IonText>
+                  </IonItem>
+                </IonList>
+              </IonContent>
+            </IonModal>
+
             <IonModal className="wewantwind-modal" isOpen={this.state.showmessage} onDidDismiss={() => this.setState({showmessage: false})}>
               <IonHeader>
                 <IonToolbar className="wob-toolbar">
@@ -1531,7 +1646,7 @@ class Main extends Component {
                         <IonRow className="ion-align-items-center">
                           <IonCol size="12" style={{textAlign: "center"}}>
                             <div className="wewantwind-bodyarea">
-                              <IonText className="wewantwind-bodytext">Find your nearest potential wind turbine site, vote for sites and get started building your community wind project team!</IonText>
+                              <IonText className="wewantwind-bodytext">Find your nearest potential wind site, vote for sites and get started creating a community wind project!</IonText>
                             </div>
                           </IonCol>
                         </IonRow>

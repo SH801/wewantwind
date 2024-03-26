@@ -755,6 +755,8 @@ def Votes(request):
                 'subtype': 'votes',
                 'position': str(round(distinctpoint['site'].coords[1], COORDINATE_PRECISION)) + "°N, " + str(round(distinctpoint['site'].coords[0], COORDINATE_PRECISION)) + "°W",
                 'votes': allvotes,
+                'lat': distinctpoint['site'].coords[1],
+                'lng': distinctpoint['site'].coords[0],
                 'votes:within:1:mile': onemilevotes,
                 'votes:within:5:miles': fivemilevotes,
                 'votes:within:10:miles': tenmilevotes
