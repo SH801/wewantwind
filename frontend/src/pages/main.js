@@ -1441,10 +1441,10 @@ class Main extends Component {
                 <IonList lines="none" style={{paddingTop: "10px"}}>
                   <IonItem>
                     <IonText className="instruction-text">Enter your details to vote for current wind site. We will then email you a link to confirm your vote. 
-                    After you've confirmed your vote, the location of voted turbine - not your location - will be added to map.</IonText>
+                    After you've confirmed your vote, the location of voted turbine will be added to map.</IonText>
                   </IonItem>
                   <IonItem>
-                    <IonText className="instruction-text" style={{marginTop: "10px", paddingBottom: "0px"}}><i>You can only cast one vote per person / email address - please don't try and rig system!</i> You can reallocate your single vote to a different turbine site at any time.</IonText>
+                    <IonText className="instruction-text" style={{marginTop: "10px", paddingBottom: "0px"}}><b>Only cast one vote per person / email address.</b> You can reallocate your single vote to a different turbine site at any time.</IonText>
                   </IonItem>
                 </IonList>
                 <IonList lines="none">

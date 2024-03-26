@@ -412,7 +412,13 @@
     margin: -12px 0 0 -12px;
 }
 
+
 @media only screen and (max-width: 600px) {
+
+  .wob-toolbar {
+    --min-height: 40px!important;
+  }
+  
   .planning-key-title {
     font-size: 70%;
   }
