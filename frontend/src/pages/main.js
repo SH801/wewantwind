@@ -1677,7 +1677,7 @@ class Main extends Component {
                         </IonRow>
                         <IonRow className="ion-align-items-center">
                           <IonCol size="12" style={{textAlign: "center"}}>
-                            <div style={{maxWidth: "600px", textAlign: "center", margin: "auto", paddingBottom: "20px"}}>
+                            <div className="wewantwind-bodyarea">
                               <IonText className="wewantwind-bodytext"><b>wewantwind.org</b> was created by Stefan Haselwimmer to help communities get started with community wind.<br/><br/>
                               To contact us, email <b>info@wewantwind.org</b></IonText>
                             </div>
