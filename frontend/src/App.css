@@ -12,7 +12,19 @@
   --ion-font-weigth: 800;
 }
 
+
+ion-content::part(scroll)::-webkit-scrollbar {
+  display: none;
+}
+
+ion-content::part(scroll) {
+  -ms-overflow-style: none; 
+  scrollbar-width: none;
+}
+
 .background-image {
+  animation: breath 30s linear;
+  animation-fill-mode: forwards;
   background: url(wewantwind.jpg) no-repeat center center fixed;
   -webkit-background-size: cover;
   -moz-background-size: cover;
@@ -25,6 +37,7 @@
   left: 0px;
 }
 
+  
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
@@ -412,6 +425,10 @@
     margin: -12px 0 0 -12px;
 }
 
+@keyframes breath {
+  0%   {   transform: scale(1);}
+  100% {   transform: scale(1.2);  }
+}
 
 @media only screen and (max-width: 600px) {
 
