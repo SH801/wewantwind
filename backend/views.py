@@ -40,7 +40,7 @@ from time import sleep
 from random import randrange
 from itertools import islice
 
-from .models import Site, Vote, Message, Boundary
+from .models import Site, Vote, Message, Boundary, EventLog
 
 # Create your views here.
 
@@ -273,6 +273,10 @@ def NearestTurbine(request):
     results['distance_mi'] = site.distance.mi
     results['distance_km'] = site.distance.km
     results['distance_m'] = site.distance.m
+
+    ip, is_routable = get_client_ip(request)
+    eventlog = EventLog(name='NearestTurbine', content=json.dumps(results, indent=2), ip=ip)
+    eventlog.save()
 
     return OutputJson(results)
 

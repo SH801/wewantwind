@@ -113,6 +113,24 @@ class MessageAdmin(LeafletGeoAdmin):
         'date'
     )
 
+class EventLog(models.Model):
+    """
+    EventLog - stores info about particular events
+    """
+
+    name = models.CharField(max_length=100, default='', blank=True)
+    ip = models.CharField(max_length=100, default='', blank=True)
+    content = models.TextField(blank=True)
+    date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ('name', '-date') 
+        indexes = [
+            models.Index(fields=['name',]),
+            models.Index(fields=['ip',]),
+        ]
+
+
 class Boundary(models.Model):
     """
     Stores boundary areas, eg counties, to allow geography-specific views
