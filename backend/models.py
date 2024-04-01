@@ -130,6 +130,18 @@ class EventLog(models.Model):
             models.Index(fields=['ip',]),
         ]
 
+class EventLogAdmin(LeafletGeoAdmin):
+    list_display = ['name', 'ip', 'date']
+
+    list_filter = (
+        'name',
+    )
+
+    search_fields = (
+        'name',
+        'ip',
+        'date'
+    )
 
 class Boundary(models.Model):
     """
