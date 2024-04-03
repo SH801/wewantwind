@@ -221,8 +221,12 @@ export const fetchEntity = (searchcriteria) => {
                 const northEast = [res.data.bounds[2], res.data.bounds[3]]
                 centre = [(res.data.bounds[0] + res.data.bounds[2]) / 2, 
                           (res.data.bounds[1] + res.data.bounds[3]) / 2];
+                const maxdegree = 0.015;
+                const maxSouthWest = [centre[0] - maxdegree, centre[1] - maxdegree];
+                const maxNorthEast = [centre[0] + maxdegree, centre[1] + maxdegree];
                 if (map.getZoom() > 15) map.setZoom(15);
-                map.fitBounds([southWest, northEast], {animate: true}); 
+                if ((maxSouthWest[0] < southWest[0]) && (maxSouthWest[1] < southWest[1])) map.fitBounds([southWest, northEast], {animate: true}); 
+                else map.fitBounds([maxSouthWest, maxNorthEast], {animate: true}); 
             }
           }
 
