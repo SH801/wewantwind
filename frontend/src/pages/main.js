@@ -912,7 +912,7 @@ class Main extends Component {
                     var bearing = map.getBearing();
                     if (zoom < THREED_ZOOM) {
                         this.setState({showmarker: true});
-                        if ((pitch !== 0) || (bearing !== 0)) map.jumpTo({pitch: 0, bearing: 0, duration: 0})
+                        // if ((pitch !== 0) || (bearing !== 0)) map.jumpTo({pitch: 0, bearing: 0, duration: 0})
                     } else {
                         this.setState({showmarker: false});
                         if (pitch === 0) map.easeTo({pitch: 85, duration: 1000});
