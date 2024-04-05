@@ -317,6 +317,9 @@ def CheckRenderer(request):
 
 @csrf_exempt
 def RestartRenderer(request):
+    if request.user.is_authenticated is False:
+        return OutputJson({'error': 'You need to be logged in'})
+
     sys.stdout.reconfigure(encoding='utf-8')
     shelloutput = subprocess.run(RESTART_SCRIPT, encoding="utf8", capture_output=True, text=True, universal_newlines=True) 
     return OutputJson({'result': shelloutput.stderr})
