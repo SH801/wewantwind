@@ -325,7 +325,7 @@ def CheckRestartRenderer(request):
         coordinates = GetRandomPointInBounds()
         inboundary = CheckInBoundary(coordinates)
         if inboundary is True: break
-    threedimensionsparameters = {'width': '600', 'height': '600', 'ratio': '3', 'zoom': '15', 'pitch': '45', 'bearing': '0', 'center': str(coordinates[0]) + ',' + str(coordinates[1])}
+    threedimensionsparameters = {'width': '5', 'height': '5', 'ratio': '1', 'zoom': '15', 'pitch': '45', 'bearing': '0', 'center': str(coordinates[0]) + ',' + str(coordinates[1])}
     with open(cwd + '/styles/3d.json', encoding='utf-8') as fp: threedimensions = json.load(fp)
     threedimensions['style']['sources']['customgeojson'] = {
         "type": "geojson",
