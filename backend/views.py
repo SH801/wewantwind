@@ -344,6 +344,7 @@ def CheckRestartRenderer(request):
         else:
             return OutputJson(r)
     except requests.exceptions.ConnectionError:
+        SendErrorEmail("Failed to load tilerenderer so restarting")
         sys.stdout.reconfigure(encoding='utf-8')
         shelloutput = subprocess.run(RESTART_SCRIPT, encoding="utf8", capture_output=True, text=True, universal_newlines=True) 
         return OutputJson({'result': shelloutput.stderr})
