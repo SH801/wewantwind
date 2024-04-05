@@ -293,7 +293,11 @@ def NearestTurbine(request):
 def CheckRenderer(request):
     if request.user.is_authenticated is False:
         return OutputJson({'error': 'You need to be logged in'})
-    coordinates = GetRandomPointInBounds()
+    while True:
+        coordinates = GetRandomPointInBounds()
+        inboundary = CheckInBoundary(coordinates)
+        if inboundary is True: break
+
     threedimensionsparameters = {'width': '600', 'height': '600', 'ratio': '3', 'zoom': '15', 'pitch': '45', 'bearing': '0', 'center': str(coordinates[0]) + ',' + str(coordinates[1])}
     with open(cwd + '/styles/3d.json', encoding='utf-8') as fp: threedimensions = json.load(fp)
     threedimensions['style']['sources']['customgeojson'] = {
@@ -314,6 +318,35 @@ def CheckRenderer(request):
             return OutputJson(r)
     except requests.exceptions.ConnectionError:
         return OutputJson({'error': 'Unable to connect to tilerenderer server'})
+
+@csrf_exempt
+def CheckRestartRenderer(request):
+    while True:
+        coordinates = GetRandomPointInBounds()
+        inboundary = CheckInBoundary(coordinates)
+        if inboundary is True: break
+    threedimensionsparameters = {'width': '600', 'height': '600', 'ratio': '3', 'zoom': '15', 'pitch': '45', 'bearing': '0', 'center': str(coordinates[0]) + ',' + str(coordinates[1])}
+    with open(cwd + '/styles/3d.json', encoding='utf-8') as fp: threedimensions = json.load(fp)
+    threedimensions['style']['sources']['customgeojson'] = {
+        "type": "geojson",
+        "data": {"type": "FeatureCollection", "features": [{
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": coordinates
+            }
+    }]}}
+    for key in threedimensionsparameters: threedimensions[key] = threedimensionsparameters[key]
+    try:
+        r = requests.post('http://localhost:81/render', json=threedimensions, stream=True)
+        if r.status_code == 200:
+            return HttpResponse(r.raw, content_type="image/png")        
+        else:
+            return OutputJson(r)
+    except requests.exceptions.ConnectionError:
+        sys.stdout.reconfigure(encoding='utf-8')
+        shelloutput = subprocess.run(RESTART_SCRIPT, encoding="utf8", capture_output=True, text=True, universal_newlines=True) 
+        return OutputJson({'result': shelloutput.stderr})
 
 @csrf_exempt
 def RestartRenderer(request):
