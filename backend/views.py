@@ -1,5 +1,6 @@
 import os
 from docx import Document
+import sys
 import docx
 import json
 import requests
@@ -7,6 +8,7 @@ import shutil
 import uuid
 import urllib
 import geojson
+import subprocess
 from turfpy.transformation import intersect
 from turfpy.measurement import points_within_polygon
 from geojson import Point as GeoJSONPoint, Feature, FeatureCollection, Polygon
@@ -47,7 +49,7 @@ from .models import Site, Vote, Message, Boundary, EventLog
 COORDINATE_PRECISION = 5
 LOCAL_DISTANCE = 10 # miles
 
-
+RESTART_SCRIPT = os.environ.get("RESTART_SCRIPT")
 GOOGLE_RECAPTCHA_SECRET_KEY = os.environ.get("GOOGLE_RECAPTCHA_SECRET_KEY")
 
 cwd = os.path.dirname(os.path.realpath(__file__))
@@ -172,6 +174,13 @@ def OutputJson(json_array={'result': 'failure'}):
 def OutputError():
     return OutputJson()
 
+def SendErrorEmail(messagecontent):
+    """
+    Send message to sysadmin in event of error
+    """
+    message = EmailMessage("wewantwind.org - Error message", messagecontent, from_email="info@wewantwind.org", to=[os.environ.get("ERROR_EMAIL")])
+    message.send()
+
 def home(request):
     """
     Shows default home page or other frontend-specific pages to be rendered by frontend React app
@@ -280,6 +289,38 @@ def NearestTurbine(request):
 
     return OutputJson(results)
 
+@csrf_exempt
+def CheckRenderer(request):
+    if request.user.is_authenticated is False:
+        return OutputJson({'error': 'You need to be logged in'})
+    coordinates = GetRandomPointInBounds()
+    threedimensionsparameters = {'width': '600', 'height': '600', 'ratio': '3', 'zoom': '15', 'pitch': '45', 'bearing': '0', 'center': str(coordinates[0]) + ',' + str(coordinates[1])}
+    with open(cwd + '/styles/3d.json', encoding='utf-8') as fp: threedimensions = json.load(fp)
+    threedimensions['style']['sources']['customgeojson'] = {
+        "type": "geojson",
+        "data": {"type": "FeatureCollection", "features": [{
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": coordinates
+            }
+    }]}}
+    for key in threedimensionsparameters: threedimensions[key] = threedimensionsparameters[key]
+    try:
+        r = requests.post('http://localhost:81/render', json=threedimensions, stream=True)
+        if r.status_code == 200:
+            return HttpResponse(r.raw, content_type="image/png")        
+        else:
+            return OutputJson(r)
+    except requests.exceptions.ConnectionError:
+        return OutputJson({'error': 'Unable to connect to tilerenderer server'})
+
+@csrf_exempt
+def RestartRenderer(request):
+    sys.stdout.reconfigure(encoding='utf-8')
+    shelloutput = subprocess.run(RESTART_SCRIPT, encoding="utf8", capture_output=True, text=True, universal_newlines=True) 
+    return OutputJson({'result': shelloutput.stderr})
+
 def processimages(id, coordinates, constraintslist, parameters):
     with open(cwd + '/styles/planningconstraint.json', encoding='utf-8') as fp: planningconstraint = json.load(fp)
     with open(cwd + '/styles/planningconstraints.json', encoding='utf-8') as fp: planningconstraints = json.load(fp)
@@ -301,12 +342,15 @@ def processimages(id, coordinates, constraintslist, parameters):
     }]}}
     for key in threedimensionsparameters: threedimensions[key] = threedimensionsparameters[key]
 
-    r = requests.post('http://localhost:81/render', json=threedimensions, stream=True)
-    if r.status_code == 200:
-        imagepath = imagedirectory + '/3d.png'
-        with open(imagepath, 'wb') as f:
-            r.raw.decode_content = True
-            shutil.copyfileobj(r.raw, f)
+    try:
+        r = requests.post('http://localhost:81/render', json=threedimensions, stream=True)
+        if r.status_code == 200:
+            imagepath = imagedirectory + '/3d.png'
+            with open(imagepath, 'wb') as f:
+                r.raw.decode_content = True
+                shutil.copyfileobj(r.raw, f)
+    except requests.exceptions.ConnectionError:
+        SendErrorEmail("Couldn't connect to tilerenderer server")
 
     windturbine = Image.open(cwd + "/windturbine_bright.png")
     windturbinescale = 0.4
