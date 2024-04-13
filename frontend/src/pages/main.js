@@ -1666,6 +1666,13 @@ class Main extends Component {
                           </a>
                           </IonCol>
                         </IonRow>
+                        <IonRow className="ion-align-items-center">
+                          <IonCol size="12" style={{textAlign: "center"}}>
+                          <a target="_new" href="https://ckan.wewantwind.org" className="wewantwind-link">
+                              <IonButton shape="round">Open Data</IonButton>
+                          </a>
+                          </IonCol>
+                        </IonRow>
                     </IonGrid>
                 </div>
               ) : (

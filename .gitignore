@@ -4,6 +4,7 @@
 .env.dev
 .env.prod
 constraintfree.geojson
+constraintfree.geojson.zip
 constraintfree.qmd
 frontend/node_modules/
 frontend/build/
