@@ -14,24 +14,11 @@ export class Vote extends Component{
         this._btn.type = 'button';
         this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip-vote');
         this._btn.className = 'wewantwind-ctrl-icon maplibregl-ctrl-vote';
-        this._btn.setAttribute('data-tooltip-content', 'Vote for current site');
+        this._btn.setAttribute('data-tooltip-content', 'Vote for wind site');
         this._btn.onmouseenter = function() {_this._mapcontainer.setState({showtooltipvote: true});_this._mapcontainer.helpStop();}
         this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltipvote: false});}
         this._btn.onclick = function() { 
-            _this._mapcontainer.setState({
-              showtooltipvote: false,
-              name: '',
-              email: '',
-              contactchecked: true,
-              cookieschecked: true, 
-              showvote: true,
-              isValidName: false,
-              isValidEmail: false,
-              isTouchedName: false,
-              isTouchedEmail: false,
-              recaptcha: undefined,
-              recaptchaError: ''
-            });
+            _this._mapcontainer.startVote();          
         };
       
         this._container = document.createElement('div');

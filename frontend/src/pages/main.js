@@ -123,6 +123,7 @@ class Main extends Component {
         flyingcentre: null, 
         draggablesubmap: true,
         loosevote: null,
+        showselectsite: false,
         showloosevote: false,
         showmarker: true,
         showvote: false,
@@ -759,6 +760,28 @@ class Main extends Component {
           var entityid = event.features[0].properties.id;
           this.setState({centreset: true});
           this.props.fetchEntity(entityid);
+        } else {
+          if (this.state.showselectsite) {
+            // Check whether point is in sea
+            const lnglat = event.lngLat;
+            const map = this.mapRef.current.getMap();
+            const point = map.project(lnglat);
+            const features = map.queryRenderedFeatures(point);
+            if (features.length > 0) {
+              const firstfeature = features[0];
+              if ((firstfeature['source'] === 'openmaptiles') && (firstfeature['sourceLayer'] === 'water')) {
+                  toast.error('Error: offshore wind location');
+                  return;
+              }
+            }
+
+            // If not in sea - and not a planning constraint then reset and show loosevote dialog to confirm vote
+            mapRefreshPlanningConstraints(
+              this.props.global.showconstraints, 
+              this.props.global.planningconstraints,
+              this.mapRef.current.getMap());    
+            this.setState({loosevote: {lat: event.lngLat.lat, lng: event.lngLat.lng}, showselectsite: false, showloosevote: true});
+          }
         }
 
         return false;
@@ -1220,7 +1243,6 @@ class Main extends Component {
 
     castLooseVote = () => {
       if (this.state.isValidName && this.state.isValidEmail && (this.state.recaptcha !== undefined)) {
-        console.log(this.state);
         // Valid name, email and recaptcha so submit form
         this.setState({showloosevote: false});
         toast.success("Emailing you link to confirm vote", {duration: 4000});
@@ -1378,6 +1400,61 @@ class Main extends Component {
       }
     }
 
+    startVote = () => {
+      if ((this.props.global.page === PAGE.EXPLORE) && (this.props.global.turbinelat === null)) {
+        if (this.props.global.startinglat === null) {
+          if (navigator.geolocation) {
+            this.setState({calculatingposition: true});
+            navigator.geolocation.getCurrentPosition(this.foundCurrentPositionExploreVote, this.notfoundCurrentPosition);
+          } else {
+            this.setState({calculatingposition: false});        
+          }    
+        } else this.showSelectSite();
+
+        return;
+      } 
+      
+
+      this.setState({
+        showtooltipvote: false,
+        name: '',
+        email: '',
+        contactchecked: true,
+        cookieschecked: true, 
+        showvote: true,
+        isValidName: false,
+        isValidEmail: false,
+        isTouchedName: false,
+        isTouchedEmail: false,
+        recaptcha: undefined,
+        recaptchaError: ''
+      });
+
+    }
+
+    foundCurrentPositionExploreVote = (position) => {
+      this.props.setGlobalState({startinglat: position.coords.latitude, startinglng: position.coords.longitude});
+      this.setState({calculatingposition: false});
+      this.showSelectSite();
+    }
+
+    showSelectSite = () => {
+      this.setState({showselectsite: true});
+      mapRefreshPlanningConstraints(
+        true, 
+        {
+          "all": true,
+          "wind": false,
+          "landscape": false,
+          "heritage": false,
+          "residential": false,
+          "ecology": false,
+          "safety": false,
+          "aviation_mod": false
+        },
+        this.mapRef.current.getMap());
+
+    }
 
     render() {
         return (
@@ -1512,7 +1589,7 @@ class Main extends Component {
               <IonContent>
                 <IonList lines="none" style={{paddingTop: "10px"}}>
                   <IonItem>
-                    <IonText className="instruction-text">Enter your details to cast a vote for the clicked site. We will email you a link to confirm your vote.</IonText>
+                    <IonText className="instruction-text">Enter your details to cast a vote for the clicked site (<i>{(this.state.loosevote) ? (this.state.loosevote['lat'].toFixed(5) + "°N, " + this.state.loosevote['lng'].toFixed(5) + "°W") : null}</i>). We will email you a link to confirm your vote.</IonText>
                   </IonItem>
                   <IonItem>
                     <IonText className="instruction-text" style={{marginTop: "10px"}}><b>If you have already voted for another site, your vote will be switched to this site.</b></IonText>
@@ -1787,6 +1864,14 @@ class Main extends Component {
 
                             </>
                         ) : null}
+
+                            {(this.state.showselectsite) ? (
+                            <div className="turbine-distance-bottom">
+                                <div>
+                                    Click map to select site position to vote for
+                                </div>
+                            </div>
+                            ) : null}
 
                             <Map ref={this.mapRef}
                               width="100vw"

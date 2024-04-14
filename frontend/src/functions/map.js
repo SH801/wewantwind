@@ -98,7 +98,7 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
   const pagebuttons = PAGEBUTTONS[page];
   for(i = 0; i < pagebuttons.length; i++) {
     buttonname = pagebuttons[i];
-    if ((buttonname === 'vote') && (turbinelat === null)) continue;
+    // if ((buttonname === 'vote') && (turbinelat === null)) continue;
     if ((buttonname === 'download') && (turbinelat === null)) continue;
     if ((buttonname === 'message') && (startinglat === null)) continue;
 
