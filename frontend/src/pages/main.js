@@ -1764,7 +1764,10 @@ class Main extends Component {
                           <IonCol size="12" style={{textAlign: "center"}}>
                             <div className="wewantwind-bodyarea">
                               <IonText className="wewantwind-bodytext"><b>wewantwind.org</b> was created by Stefan Haselwimmer to help communities get started with community wind.<br/><br/>
-                              To contact us, email <b>info@wewantwind.org</b></IonText>
+                              To contact us, email <b>info@wewantwind.org</b>
+                              <br/><br/>
+                              <a target="_new" href="https://www.youtube.com/watch?v=8FFPjcLVpyU" style={{textDecoration: "none", color: "wheat"}} >Click here for video demo</a>
+                              </IonText>
                             </div>
                           </IonCol>
                         </IonRow>
