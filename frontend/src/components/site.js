@@ -1,6 +1,6 @@
 import { Component } from 'react';
 
-export class Download extends Component{
+export class Site extends Component{
     
     constructor(props) {
       super(props);
@@ -12,13 +12,13 @@ export class Download extends Component{
         let _this = this; 
         this._btn = document.createElement('button');
         this._btn.type = 'button';
-        this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip-download');
-        this._btn.className = 'wewantwind-ctrl-icon maplibregl-ctrl-download';
-        this._btn.setAttribute('data-tooltip-content', 'Download planning documents');
-        this._btn.onmouseenter = function() {_this._mapcontainer.helpStop();_this._mapcontainer.setState({showtooltipdownload: true});}
-        this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltipdownload: false});}
+        this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip-site');
+        this._btn.className = 'wewantwind-ctrl-icon maplibregl-ctrl-site';
+        this._btn.setAttribute('data-tooltip-content', 'Choose wind site position');
+        this._btn.onmouseenter = function() {_this._mapcontainer.helpStop();_this._mapcontainer.setState({showtooltipsite: true});}
+        this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltipsite: false});}
         this._btn.onclick = function() { 
-            _this._mapcontainer.setState({showtooltipdownload: false, showdownload: true});
+            _this._mapcontainer.setState({showtooltipsite: false, showsite: !_this._mapcontainer.state.showsite});
         };
       
         this._container = document.createElement('div');

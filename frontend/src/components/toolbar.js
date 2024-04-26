@@ -4,6 +4,7 @@ import { withRouter } from 'react-router-dom';
 import {IonAlert, IonTitle, IonToolbar, IonText } from '@ionic/react';
 import './toolbar.css';
 import { global } from "../actions";
+import { deleteURLState } from "../functions/urlstate";
 import { TESTING_RANDOMPOINT, TOTAL_SITES, PAGE } from '../constants';
 
 var testpagesindex = 0;
@@ -59,26 +60,35 @@ class Toolbar extends Component {
 
     singleBug = () => {
 
+        // var bugstate = {
+        //     currentlat: 52.56,
+        //     currentlng: -3.45,
+        //     startinglat: 50.828947,
+        //     startinglng: -0.1475211,
+        //     turbinelat: 50.92485452772702,
+        //     turbinelng: -0.19656070746401624
+        // }
 
         var bugstate = {
-            currentlat: 52.56,
-            currentlng: -3.45,
-            startinglat: 50.828947,
-            startinglng: -0.1475211,
+            currentlat: 50.91485452772702,
+            currentlng: -0.19656070746401624,
+            startinglat: 50.91485452772702,
+            startinglng: -0.19656070746401624,
             turbinelat: 50.92485452772702,
             turbinelng: -0.19656070746401624
         }
 
-        this.props.parent.props.fetchNearestTurbine({lat: bugstate.currentlat, lng: bugstate.currentlng}).then(() => {
-            this.props.parent.setState({calculatingnearestturbine: false});
-            this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
-        })      
+        // this.props.parent.props.fetchNearestTurbine({lat: bugstate.currentlat, lng: bugstate.currentlng}).then(() => {
+        //     this.props.parent.setState({calculatingnearestturbine: false});
+        //     this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
+        // })      
 
-        // this.props.parent.props.setGlobalState(bugstate);
-        // this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
+        this.props.parent.props.setGlobalState(bugstate);
+        this.setPage(PAGE.NEARESTTURBINE);
     }
 
     setPage = (page) => {
+        // deleteURLState({lat: '', lng: ''}, this.props.history, this.props.location);
         this.props.setGlobalState({pagetransitioning: true}).then(() => {
             this.props.parent.props.setPage(page);
         })
@@ -90,7 +100,7 @@ class Toolbar extends Component {
                 <IonToolbar className="toolbar" color="translucent">
                     <div className="toolbar-content">
                         <IonTitle className="toolbar-title">
-                            <a onClick={() => {this.props.setPage(PAGE.HOME)}}  style={{textDecoration: "none"}}><IonText className="wewantwind-headertext"><span style={{color:"#F5C242"}}>we</span><span style={{color:"#D8DFCE"}}>want</span><span style={{color:"#FFF"}}>wind</span></IonText></a>
+                            <a onClick={() => {this.setPage(PAGE.HOME)}}  style={{textDecoration: "none"}}><IonText className="wewantwind-headertext"><span style={{color:"#F5C242"}}>we</span><span style={{color:"#D8DFCE"}}>want</span><span style={{color:"#FFF"}}>wind</span></IonText></a>
                         </IonTitle>
                         <div className="links-container">
                             {this.props.global.testingenabled ? (

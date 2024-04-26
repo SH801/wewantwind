@@ -11,7 +11,11 @@
  * react-redux reducer initializers
  */ 
 
-import { PAGE } from '../constants';
+import { 
+    PAGE,
+    TURBINETOWERHEIGHT_DEFAULT,
+    TURBINEBLADERADIUS_DEFAULT
+ } from '../constants';
 
 // Set up initial state of some global variables using constants
 export const initialStateGlobal = {
@@ -21,6 +25,8 @@ export const initialStateGlobal = {
     testing: false,
     testinginterval: null,
     testpagesindex: 0,
+    turbinetowerheight: TURBINETOWERHEIGHT_DEFAULT,
+    turbinebladeradius: TURBINEBLADERADIUS_DEFAULT,
     mapref: null,
     startinglat: null,
     startinglng: null,
@@ -53,9 +59,11 @@ export const initialStateGlobal = {
     },
     buttons: null,
     buttonsstate: {
+        'site':     false,
         'vote':     false,
         'download': false,
         'message':  false,
+        'share':    false,
         'fly':      false,
         'video':    false,
         'wind':     false,

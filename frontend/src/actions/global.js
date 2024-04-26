@@ -13,6 +13,7 @@
 
 import { API_URL, FETCHAPI_URL } from "../constants";
 import { initializeMap } from "../functions/map";
+import { setURLState } from "../functions/urlstate";
 
 /**
  * setGlobalState
@@ -20,12 +21,18 @@ import { initializeMap } from "../functions/map";
  * Sets global state using a list of names/values represented by object
  * 
  * @param {*} object 
- */
-export const setGlobalState = (object) => {
-    return (dispatch, getState) => {
-      dispatch({type: 'GLOBAL_SET_STATE', object: object});
-      return Promise.resolve(true);
+ * @param {*} history 
+ * @param {*} location 
+*/
+export const setGlobalState = (object, history, location) => {
+  return (dispatch, getState) => {
+    // If setting turbinelat/lng, then modify URL to reflect this state
+    if ((object.turbinelat !== undefined) && (object.turbinelng !== undefined)) {
+      setURLState({ 'lat': object.turbinelat, 'lng': object.turbinelng}, history, location);
     }
+    dispatch({type: 'GLOBAL_SET_STATE', object: object});
+    return Promise.resolve(true);
+  }
 }
 
 /**
@@ -38,7 +45,7 @@ export const setGlobalState = (object) => {
 export const setPage = (page) => {
   return (dispatch, getState) => {
 
-    const { mapref, startinglat, startinglng, turbinelat, turbinelng, buttons, buttonsstate, planningconstraints } = getState().global;
+    const { mapref, startinglat, startinglng, currentlat, currentlng, turbinelat, turbinelng, buttons, buttonsstate, planningconstraints } = getState().global;
     var newbuttonsstate = JSON.parse(JSON.stringify(buttonsstate));
 
     if ((mapref === null) || (mapref.current === null)) {
@@ -47,7 +54,7 @@ export const setPage = (page) => {
     if (mapref !== null) {
       if (mapref.current !== null) {
         var map = mapref.current.getMap();
-        newbuttonsstate = initializeMap(map, page, planningconstraints, buttons, buttonsstate, startinglat, startinglng, turbinelat, turbinelng);
+        newbuttonsstate = initializeMap(map, page, planningconstraints, buttons, buttonsstate, startinglat, startinglng, currentlat, currentlng, turbinelat, turbinelng);
       }
     }
 
@@ -67,8 +74,10 @@ export const setPage = (page) => {
  * Fetches details about nearest turbine using lat/lng
  * 
  * @param {*} position
- */
-export const fetchNearestTurbine = (position) => {
+ * @param {*} history 
+ * @param {*} location 
+*/
+export const fetchNearestTurbine = (position, history, location) => {
   return (dispatch, getState) => {
     let headers = {"Content-Type": "application/json"};
     let body = JSON.stringify(position);
@@ -86,6 +95,11 @@ export const fetchNearestTurbine = (position) => {
       })
       .then(res => {
         if (res.status === 200) {
+          
+          if ((res.data.turbinelat !== undefined) && (res.data.turbinelng !== undefined)) {
+            setURLState({ 'lat': res.data.turbinelat, 'lng': res.data.turbinelng}, history, location);
+          }
+      
           return dispatch({type: 'FETCH_NEARESTTURBINE', data: res.data});
         }         
       })
@@ -186,6 +200,36 @@ export const sendMessage = (messageparameters) => {
   }
 }
 
+/**
+ * sendShare
+ * 
+ * Sends shareable link to email address with recaptcha
+ * 
+ * @param {*} shareparameters
+ */
+export const sendShare = (shareparameters) => {
+  return (dispatch, getState) => {
+    let headers = {"Content-Type": "application/json"};
+    let body = JSON.stringify(shareparameters);
+
+    return fetch(API_URL + "/share/", {headers, method: "POST", body})
+      .then(res => {
+        if (res.status < 500) {
+          return res.json().then(data => {
+            return {status: res.status, data};
+          })
+        } else {
+          console.log("Server Error!");
+          throw res;
+        }
+      })
+      .then(res => {
+        if (res.status === 200) {
+          return dispatch({type: 'SEND_SHARE', data: res.data});
+        }         
+      })
+  }
+}
 
 /**
  * fetchEntity

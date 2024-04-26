@@ -84,6 +84,10 @@ export default function selector(state=initialStateGlobal, action) {
             newState = {...newState};
             return newState;
 
+        case 'SEND_SHARE':
+            newState = {...newState};
+            return newState;
+    
         case 'GET_LOCALPEOPLE':
             newState = {...newState, localpeople: action.data.localpeople};
             return newState;

@@ -1,6 +1,6 @@
 import { Component } from 'react';
 
-export class Download extends Component{
+export class Share extends Component{
     
     constructor(props) {
       super(props);
@@ -12,13 +12,13 @@ export class Download extends Component{
         let _this = this; 
         this._btn = document.createElement('button');
         this._btn.type = 'button';
-        this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip-download');
-        this._btn.className = 'wewantwind-ctrl-icon maplibregl-ctrl-download';
-        this._btn.setAttribute('data-tooltip-content', 'Download planning documents');
-        this._btn.onmouseenter = function() {_this._mapcontainer.helpStop();_this._mapcontainer.setState({showtooltipdownload: true});}
-        this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltipdownload: false});}
+        this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip-share');
+        this._btn.className = 'wewantwind-ctrl-icon maplibregl-ctrl-share';
+        this._btn.setAttribute('data-tooltip-content', 'Share wind site');
+        this._btn.onmouseenter = function() {_this._mapcontainer.helpStop();_this._mapcontainer.setState({showtooltipshare: true});}
+        this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltipshare: false});}
         this._btn.onclick = function() { 
-            _this._mapcontainer.setState({showtooltipdownload: false, showdownload: true});
+            _this._mapcontainer.setState({showtooltipshare: false, showshare: true});
         };
       
         this._container = document.createElement('div');

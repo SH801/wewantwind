@@ -26,6 +26,7 @@ import {
 } from '@ionic/react';
 import { downloadOutline } from 'ionicons/icons';
 import toast, { Toaster } from 'react-hot-toast';
+import queryString from "query-string";
 import { point, centroid, bearing, buffer, bbox, destination } from '@turf/turf';
 import { useLoader, useFrame } from "@react-three/fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -49,14 +50,17 @@ import {
 } from '../constants';
 import { global } from "../actions";
 import { initializeMap, mapRefreshPlanningConstraints } from "../functions/map";
+import { setURLState } from "../functions/urlstate";
 import Toolbar from '../components/toolbar';
 import { initShaders, initVertexBuffers } from './webgl';
 import { Spacer } from '../components/spacer';
+import { Site } from '../components/site';
 import { Vote } from '../components/vote';
 import { Download } from '../components/download';
 import { Message } from '../components/message';
 import { FlyToggle } from '../components/flytoggle';
 import { RecordVideo } from '../components/recordvideo';
+import { Share } from '../components/share';
 import { Wind } from '../components/wind';
 import { Constraints } from '../components/constraints';
 import { Grid } from '../components/grid';
@@ -80,21 +84,36 @@ function WindTurbine(props) {
 
   useFrame(({ clock }) => {
     const a = clock.getElapsedTime();
-    turbinemesh.current.rotation.x = -(1.5 * a);
+    turbinemesh.current.rotation.x = (1.5 * a);
   });
+
+  // return (
+  //   <>
+  //   <mesh onClick={props.container.onClickMarker} position={[0, 2.42, 0]} rotation-y={4 * Math.PI / 4} scale={2}>
+  //     <mesh position={[0, -2.42, 0]}>
+  //       <primitive object={tower_gltf.scene} scale={1} />
+  //     </mesh>
+  //     <mesh ref={turbinemesh} position={[0, 1, 0]}>
+  //       <primitive object={blades_gltf.scene} scale={1} />
+  //     </mesh>
+  //   </mesh>
+  //   </>
+  // )
 
   return (
     <>
-    <mesh onClick={props.container.onClickMarker} position={[0, 2.42, 0]} rotation-y={4 * Math.PI / 4} scale={2}>
+    <mesh onClick={props.container.onClickMarker} position={[0, 2.42, 0]} rotation-y={4 * Math.PI / 4} scale={1}>
       <mesh position={[0, -2.42, 0]}>
-        <primitive object={tower_gltf.scene} scale={1} />
+        <primitive object={tower_gltf.scene} scale={props.container.props.global.turbinetowerheight / 100} />
       </mesh>
       <mesh ref={turbinemesh} position={[0, 1, 0]}>
-        <primitive object={blades_gltf.scene} scale={1} />
+        <primitive object={blades_gltf.scene} scale-x={1} scale-y={2.385 * props.container.props.global.turbinebladeradius / 100} scale-z={2.385 * props.container.props.global.turbinebladeradius / 100} rotation-x={3.1 * Math.PI / 4} />
       </mesh>
     </mesh>
     </>
   )
+
+
 }
 
 var mutex = false;
@@ -111,6 +130,7 @@ class Main extends Component {
       this.state = {
         calculatingposition: false, 
         calculatingnearestturbine: false, 
+        loadingurl: false,
         positionerror: false,
         locationnotenabled: false,
         locationinitialized: false,
@@ -126,14 +146,18 @@ class Main extends Component {
         showselectsite: false,
         showloosevote: false,
         showmarker: true,
+        showsite: false,
         showvote: false,
         showdownload: false,
         showmessage: false,
+        showshare: false,
         showwind: false,
         showgrid: false,
+        showtooltipsite: false,
         showtooltipvote: false,
         showtooltipdownload: false,
         showtooltipmessage: false,
+        showtooltipshare: false,
         showtooltipfly: false,
         showtooltiprecord: false,
         generatingfile: false,
@@ -175,10 +199,32 @@ class Main extends Component {
         this.props.history.push("/");
       }
   
+      let params = queryString.parse(this.props.location.search);
+      if ((params.lat !== undefined) && (params.lng !== undefined)) {
+          var lat = parseFloat(params.lat);
+          var lng = parseFloat(params.lng);
+          this.state.loadingurl = true;
+
+          if ((this.props.global.startinglat !== null) && (this.props.global.startinglng !== null)) 
+          {
+            this.showTurbine({startingposition: {latitude: this.props.global.startinglat, longitude: this.props.global.startinglng}, turbineposition: {latitude: lat, longitude: lng}});
+          } else {
+              if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition((position) => {
+                    this.showTurbine({startingposition: {latitude: position.coords.latitude, longitude: position.coords.longitude}, turbineposition: {latitude: lat, longitude: lng}})
+                  }, this.notfoundCurrentPosition);
+              } else {
+                this.state.loadingurl = false;
+              }              
+          }
+      }         
+
       const buttons = {
+        'site':           new Site({mapcontainer: this}),
         'vote':           new Vote({mapcontainer: this}),
         'download':       new Download({mapcontainer: this}),
         'message':        new Message({mapcontainer: this}),
+        'share':          new Share({mapcontainer: this}),
         'fly':            new FlyToggle({mapcontainer: this}),
         'video':          new RecordVideo({mapcontainer: this}),
         'wind':           new Wind({mapcontainer: this}),
@@ -189,6 +235,24 @@ class Main extends Component {
       this.props.setGlobalState({'buttons': buttons});
 
       this.hoveredPolygonId = null;
+    }
+
+    showTurbine = (params) => {
+      var startingposition = params.startingposition;
+      var turbineposition = params.turbineposition;
+      var currentposition = JSON.parse(JSON.stringify(params.turbineposition));
+      currentposition.latitude -= 0.01;        
+      this.props.setGlobalState({
+        startinglat: startingposition.latitude, 
+        startinglng: startingposition.longitude, 
+        currentlat: currentposition.latitude, 
+        currentlng: currentposition.longitude, 
+        turbinelat: turbineposition.latitude,
+        turbinelng: turbineposition.longitude
+      }).then(() => {
+        this.ignoremovend = true;
+        this.setPage(PAGE.SHOWTURBINE);
+      });            
     }
 
     verifyCallback(recaptchaToken) {
@@ -206,12 +270,13 @@ class Main extends Component {
     showSubMap = (page) => {
         switch (page) {
             case PAGE.NEARESTTURBINE: return true;
+            case PAGE.SHOWTURBINE: return true;
             default: return false;
         }
     }
 
     showMarkers = (page) => {
-        if ((this.props.global.currentlat === null) || (this.props.global.turbinelat === null)) return false;
+        if (this.props.global.turbinelat === null) return false;
 
         switch (page) {
             case PAGE.NEARESTTURBINE_OVERVIEW: return true;
@@ -224,6 +289,7 @@ class Main extends Component {
         switch (page) {
             case PAGE.EXPLORE: return this.explorelayer;
             case PAGE.NEARESTTURBINE: return this.satellitelayer;
+            case PAGE.SHOWTURBINE: return this.satellitelayer;
             default: return this.nonsatellitelayer;
         }
     }
@@ -425,9 +491,19 @@ class Main extends Component {
     onMapLoad = (event) => {
         
         this.helpStart();
+        this.setState({loadingurl: false});
 
         var map = this.mapRef.current.getMap();
+        let scale = new maplibregl.ScaleControl({
+          maxWidth: 2000,
+          unit: 'metric',
+          style: 'map-scale'
+        });
+  
+        // map.addControl(scale, 'bottom-left');
+
         map.addControl(new Spacer(), 'top-right');
+
         var newbuttonsstate = initializeMap(  map, 
                                           this.props.global.page,
                                           this.props.global.planningconstraints,
@@ -435,6 +511,8 @@ class Main extends Component {
                                           this.props.global.buttonsstate, 
                                           this.props.global.startinglat, 
                                           this.props.global.startinglng, 
+                                          this.props.global.currentlat,
+                                          this.props.global.currentlng,
                                           this.props.global.turbinelat, 
                                           this.props.global.turbinelng );
 
@@ -718,6 +796,19 @@ class Main extends Component {
 
         if (this.props.global.page !== PAGE.EXPLORE) return;
 
+        if (this.state.showsite) {
+          const map = this.mapRef.current.getMap();
+          const lnglat = event.lngLat;
+          if (lnglat.lng < -180) lnglat.lng += 360;
+          var newbuttonsstate = JSON.parse(JSON.stringify(this.props.global.buttonsstate));
+          newbuttonsstate['share'] = true;
+          if (this.props.global.buttonsstate['share']) map.removeControl(this.props.global.buttons['share'], 'top-left'); 
+          map.addControl(this.props.global.buttons['share'], 'top-left'); 
+          this.props.setGlobalState({turbinelat: lnglat.lat, turbinelng: lnglat.lng, buttonsstate: newbuttonsstate});
+          this.setState({showmarker: true, showsite: false});
+          return;
+        }
+
         // Don't select features if adding asset
         if (event.features.length > 0) {
           var id = event.features[0]['layer']['id'];
@@ -805,7 +896,7 @@ class Main extends Component {
     }
   
     onTurbineMarkerDragEnd = (event) => {
-        if (this.state.flying) return;
+        if (this.state.flying) return;        
         const lnglat = event.target.getLngLat();
         const map = event.target._map;
         const point = map.project(lnglat);
@@ -823,7 +914,7 @@ class Main extends Component {
         }
 
         this.props.setGlobalState({turbinelat: lnglat.lat, turbinelng: lnglat.lng}).then(() => {
-            if (this.props.global.page === PAGE.NEARESTTURBINE) {
+            if ((this.props.global.page === PAGE.NEARESTTURBINE) || (this.props.global.page === PAGE.SHOWTURBINE)) {
                 var map = this.mapRef.current.getMap();
                 this.reorientToTurbine(map);    
             }
@@ -945,6 +1036,7 @@ class Main extends Component {
 
                 break;
             case PAGE.NEARESTTURBINE:
+            case PAGE.SHOWTURBINE:
                 this.updatealtitude = true;
 
                 if (this.ignoremovend) {
@@ -977,14 +1069,16 @@ class Main extends Component {
     }
 
     updateHelp = () => {
-      if (this.props.global.page !== PAGE.NEARESTTURBINE) return;
+      if ((this.props.global.page !== PAGE.NEARESTTURBINE) && (this.props.global.page !== PAGE.SHOWTURBINE)) return;
 
       // console.log("updateHelp", this.helpIndex);
-      const links = ['intro', 'vote', 'download', 'message', 'fly', 'record'];
+      const links = ['intro', 'vote', 'download', 'message', 'share', 'fly', 'record'];
 
       if (this.helpIndex > (links.length)) this.helpStop();
       else {
-        if (this.helpIndex === 0) toast.success("Showing turbine from your location...", {duration: 4000});
+        if (this.helpIndex === 0) {
+          if (this.props.global.page === PAGE.NEARESTTURBINE) toast.success("Showing turbine from your location...", {duration: 4000});
+        }
         else {
           if (this.helpIndex > 0) {
             var oldtooltipdata = {};
@@ -1010,7 +1104,7 @@ class Main extends Component {
     helpStop = () => {
       if (this.props.global.helpInterval !== null) {
         clearInterval(this.props.global.helpInterval);
-        this.setState({'showtooltipvote': false, 'showtooltipdownload': false, 'showtooltipmessage': false, 'showtooltipfly': false, 'showtooltiprecord': false});
+        this.setState({'showtooltipsite': false, 'showtooltipvote': false, 'showtooltipdownload': false, 'showtooltipmessage': false, 'showtooltipshare': false, 'showtooltipfly': false, 'showtooltiprecord': false});
         this.props.setGlobalState({helpInterval: null});
         this.helpIndex = 0;
       }
@@ -1020,7 +1114,7 @@ class Main extends Component {
       if (!this.state.flying) {
         this.setState({flying: true, draggablesubmap: false, preflightposition: {lat: this.props.global.currentlat, lng: this.props.global.currentlng }}, () => {          
 
-          if (this.props.global.page === PAGE.NEARESTTURBINE) {
+          if ((this.props.global.page === PAGE.NEARESTTURBINE) || (this.props.global.page === PAGE.SHOWTURBINE)) {
             this.submapInterval = setInterval(this.updateSubmapPosition, 200);
             // Start camera from specific position high up and certain bearing from wind turbine
             var turbinepos = point([this.props.global.turbinelng, this.props.global.turbinelat]);
@@ -1052,7 +1146,7 @@ class Main extends Component {
     }
 
     flyingStop = () => {
-      if (this.props.global.page === PAGE.NEARESTTURBINE) {
+      if ((this.props.global.page === PAGE.NEARESTTURBINE) || (this.props.global.page === PAGE.SHOWTURBINE)) {
         clearInterval(this.submapInterval);
         this.props.setGlobalState({currentlat: this.state.preflightposition.lat, currentlng: this.state.preflightposition.lng }).then(() => {
           if (this.mapRef) {
@@ -1079,7 +1173,7 @@ class Main extends Component {
   
       if (this.mapRef) {
         var map = this.mapRef.current.getMap();
-        if (this.props.global.page === PAGE.NEARESTTURBINE) {
+        if ((this.props.global.page === PAGE.NEARESTTURBINE) || (this.props.global.page === PAGE.SHOWTURBINE)) {
           var centre = map.getCenter();
           var zoom = map.getZoom();
           if (this.props.global.centre) centre = this.props.global.centre;
@@ -1281,9 +1375,27 @@ class Main extends Component {
         if (this.state.recaptcha === undefined) this.setState({recaptchaError: "Please click \"I'm not a robot\""})
       }
     }  
+
+    sendShare = () => {  
+      if (this.state.isValidEmail && (this.state.recaptcha !== undefined)) {
+        // Valid email and recaptcha so submit form
+        this.setState({showshare: false});
+        toast.success("Emailing link to user", {duration: 4000});
+        this.props.sendShare(
+        {
+          email: this.state.email, 
+          recaptcha: this.state.recaptcha,
+          turbinelocation: {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}
+        });
+      } else {
+        if (!this.state.isTouchedEmail) this.setState({isTouchedEmail: true});
+        if (this.state.recaptcha === undefined) this.setState({recaptchaError: "Please click \"I'm not a robot\""})
+      }
+    }  
     
     setPage = (page) => {
         this.props.setGlobalState({pagetransitioning: true}).then(() => {
+          console.log("About to setPage");
             this.props.setPage(page);
         })
     }
@@ -1308,9 +1420,9 @@ class Main extends Component {
             {
                 this.setState({calculatingposition: false, calculatingnearestturbine: true});
                 this.props.fetchNearestTurbine({lat: this.props.global.startinglat, lng: this.props.global.startinglng}).then(() => {
-                this.setState({calculatingnearestturbine: false});
-                this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
-            })
+                  this.setState({calculatingnearestturbine: false});
+                  this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
+                })
             } else {
                 if (navigator.geolocation) {
                     this.setState({calculatingposition: true});
@@ -1347,7 +1459,7 @@ class Main extends Component {
     }
 
     notfoundCurrentPosition = () => {
-        this.setState({calculatingposition: false, positionerror: true});
+        this.setState({loadingurl: false, calculatingposition: false, positionerror: true});
   
         console.log("Unable to retrieve your location");
     }
@@ -1466,6 +1578,7 @@ class Main extends Component {
           <IonContent fullscreen="true">
 
             <IonAlert isOpen={this.state.calculatingposition} backdropDismiss={false} header="Calculating your position..." />            
+            <IonAlert isOpen={this.state.loadingurl} backdropDismiss={false} header="Loading wind site location..." />            
             <IonAlert isOpen={this.state.positionerror} backdropDismiss={false} header="Please enable location access to use this feature" onDidDismiss={() => this.setState({positionerror: false})} buttons={['OK']}/>            
             <IonAlert isOpen={this.state.calculatingnearestturbine} backdropDismiss={false} header={"Searching " + String(TOTAL_SITES) + " locations for nearest optimal wind site..."} />            
             <IonAlert isOpen={this.state.generatingfile} backdropDismiss={false} header={"Generating new file, please wait... " + String(this.state.progress) + "%"} />         
@@ -1714,6 +1827,57 @@ class Main extends Component {
               </IonContent>
             </IonModal>
 
+            <IonModal className="wewantwind-modal" isOpen={this.state.showshare} onDidDismiss={() => this.setState({showshare: false})}>
+              <IonHeader>
+                <IonToolbar className="wob-toolbar">
+                  <IonTitle mode="ios">Share wind site</IonTitle>
+                </IonToolbar>
+              </IonHeader>
+              <IonContent>
+                <IonList lines="none">
+                  <IonItem>
+                    <IonInput 
+                      label="Shareable link"
+                      labelPlacement="stacked"
+                      placeholder="" 
+                      value={window.location.href}
+                      />
+                  </IonItem> 
+                  <IonItem>
+                    <IonButton color="success" size="medium" fill="solid" shape="round" onClick={() => {navigator.clipboard.writeText(window.location.href);}}>Copy link</IonButton>
+                  </IonItem> 
+                  <IonItem>
+                    <IonInput 
+                      errorText="Enter valid email address" 
+                      className={`${this.state.isValidEmail && 'ion-valid'} ${this.state.isValidEmail === false && 'ion-invalid'} ${this.state.isTouchedEmail && 'ion-touched'}`} 
+                      label="Send link to user" 
+                      labelPlacement="stacked" 
+                      placeholder="Enter email address" 
+                      onIonInput={(event) => this.validateEmail(event)}
+                      onIonBlur={() => {this.setState({isTouchedEmail: true})}}
+                      ></IonInput>
+                  </IonItem>
+                </IonList>
+                <IonList lines="none">
+                  {(this.state.recaptchaError !== '') ? (
+                  <IonItem color="danger">
+                  <IonText>{this.state.recaptchaError}</IonText>
+                  </IonItem>
+                  ) : null}
+                  <IonItem className={this.recaptcha ? 'ion-no-padding ion-invalid': 'ion-no-padding ion-valid'} style={{paddingTop: "0px"}}>
+                    <ReCAPTCHA sitekey={process.env.REACT_APP_GOOGLE_RECAPTCHA_SITE_KEY} onChange={this.verifyCallback}/>
+                  </IonItem>
+
+                  <IonItem>
+                    <IonText style={{margin: "auto", paddingTop: "10px"}}>  
+                      <IonButton onClick={() => {this.setState({showshare: false})}} color="light" shape="round" size="medium" fill="solid">Cancel</IonButton>
+                      <IonButton onClick={() => {this.sendShare()}} color="success" shape="round" size="medium" fill="solid">Send link</IonButton>
+                    </IonText>
+                  </IonItem>
+                </IonList>
+              </IonContent>
+            </IonModal>
+
             {((this.props.global.page === PAGE.HOME) || (this.props.global.page === PAGE.ABOUT)) ? (
               <>
               {(this.props.global.page === PAGE.HOME) ? (
@@ -1849,7 +2013,7 @@ class Main extends Component {
                                     </div>
                                 </div>
 
-                                <div style={{zIndex:1000, position: "absolute", top: "40px", width: "100%"}}>
+                                <div style={{zIndex:1000, position: "absolute", top: "80px", width: "100%"}}>
                                     <IonGrid>
                                         <IonRow className="ion-align-items-center">
                                         <IonCol size="12" style={{textAlign: "center"}}>
@@ -1867,6 +2031,14 @@ class Main extends Component {
 
                             </>
                         ) : null}
+
+                            {(this.state.showsite) ? (
+                            <div className="turbine-distance-bottom">
+                                <div>
+                                    Click map to select site position
+                                </div>
+                            </div>
+                            ) : null}
 
                             {(this.state.showselectsite) ? (
                             <div className="turbine-distance-bottom">
@@ -1899,9 +2071,11 @@ class Main extends Component {
                               maxPitch: 85
                               }} >
                                 <Tooltip id="ctrlpanel-tooltip" place="right" variant="light" style={{fontSize: "120%"}} />
+                                <Tooltip id="ctrlpanel-tooltip-site" isOpen={this.state.showtooltipsite} place="right" variant="light" style={{fontSize: "120%"}} />
                                 <Tooltip id="ctrlpanel-tooltip-vote" isOpen={this.state.showtooltipvote} place="right" variant="light" style={{fontSize: "120%"}} />
                                 <Tooltip id="ctrlpanel-tooltip-download" isOpen={this.state.showtooltipdownload} place="right" variant="light" style={{fontSize: "120%"}} />
                                 <Tooltip id="ctrlpanel-tooltip-message" isOpen={this.state.showtooltipmessage} place="right" variant="light" style={{fontSize: "120%"}} />
+                                <Tooltip id="ctrlpanel-tooltip-share" isOpen={this.state.showtooltipshare} place="right" variant="light" style={{fontSize: "120%"}} />
                                 <Tooltip id="ctrlpanel-tooltip-fly" isOpen={this.state.showtooltipfly} place="right" variant="light" style={{fontSize: "120%"}} />
                                 <Tooltip id="ctrlpanel-tooltip-record" isOpen={this.state.showtooltiprecord} place="right" variant="light" style={{fontSize: "120%"}} />
 
@@ -2009,16 +2183,16 @@ export const mapStateToProps = state => {
   }
 }
     
-export const mapDispatchToProps = dispatch => {
+export const mapDispatchToProps = (dispatch, ownProps) => {
     return {
         setGlobalState: (globalstate) => {
-            return dispatch(global.setGlobalState(globalstate));
+            return dispatch(global.setGlobalState(globalstate, ownProps.history, ownProps.location));
         },  
         setPage: (page) => {
             return dispatch(global.setPage(page));
         },  
         fetchNearestTurbine: (position) => {
-            return dispatch(global.fetchNearestTurbine(position));
+            return dispatch(global.fetchNearestTurbine(position, ownProps.history, ownProps.location));
         },
         fetchRandomPoint: () => {
             return dispatch(global.fetchRandomPoint());
@@ -2031,6 +2205,9 @@ export const mapDispatchToProps = dispatch => {
         },  
         sendMessage: (messageparameters) => {
             return dispatch(global.sendMessage(messageparameters));
+        },  
+        sendShare: (shareparameters) => {
+          return dispatch(global.sendShare(shareparameters));
         },  
         fetchEntity: (id) => {
             return dispatch(global.fetchEntity({list: false, id: id}));

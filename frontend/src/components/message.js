@@ -17,7 +17,7 @@ export class Message extends Component{
         this._btn.setAttribute('data-tooltip-id', 'ctrlpanel-tooltip-message');
         this._btn.className = 'wewantwind-ctrl-icon maplibregl-ctrl-message';
         this._btn.setAttribute('data-tooltip-content', 'Contact interested local people');
-        this._btn.onmouseenter = function() {_this._mapcontainer.setState({showtooltipmessage: true});_this._mapcontainer.helpStop();}
+        this._btn.onmouseenter = function() {_this._mapcontainer.helpStop();_this._mapcontainer.setState({showtooltipmessage: true});}
         this._btn.onmouseleave = function() {_this._mapcontainer.setState({showtooltipmessage: false});}
         this._btn.onclick = function() { 
           _this._mapcontainer.props.getLocalPeople({

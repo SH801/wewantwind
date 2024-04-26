@@ -82,7 +82,7 @@ export function getBearing(currentpos, turbinepos) {
   return bearing(point1, point2);
 }
 
-export function initializeMap(map, page, planningconstraints, buttons, buttonsstate, startinglat, startinglng, turbinelat, turbinelng) {
+export function initializeMap(map, page, planningconstraints, buttons, buttonsstate, startinglat, startinglng, currentlat, currentlng, turbinelat, turbinelng) {
 
   var newbuttonsstate = JSON.parse(JSON.stringify(buttonsstate));
   // Remove all existing buttons
@@ -101,11 +101,14 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
     // if ((buttonname === 'vote') && (turbinelat === null)) continue;
     if ((buttonname === 'download') && (turbinelat === null)) continue;
     if ((buttonname === 'message') && (startinglat === null)) continue;
+    if ((buttonname === 'share') && (turbinelat === null)) continue;
 
     switch (buttonname) {
+      case 'site':        map.addControl(buttons[buttonname], 'top-left'); break;
       case 'vote':        map.addControl(buttons[buttonname], 'top-left'); break;
       case 'download':    map.addControl(buttons[buttonname], 'top-left'); break;
       case 'message':     map.addControl(buttons[buttonname], 'top-left'); break;
+      case 'share':       map.addControl(buttons[buttonname], 'top-left'); break;
       case 'fly':         map.addControl(buttons[buttonname], 'top-right'); break;
       case 'video':       map.addControl(buttons[buttonname], 'top-right'); break;
       case 'wind':        map.addControl(buttons[buttonname], 'top-right'); break;
@@ -147,6 +150,17 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
       setCameraPosition(map, {lng: startinglng, lat: startinglat, altitude: 50, pitch: 85, bearing: pointbearing});
       map.flyTo({center: map.getCenter(), animate: true});
       break;
+    case PAGE.SHOWTURBINE:
+      map.jumpTo({center: {lng: turbinelng, lat: turbinelat}, zoom: 17, pitch: 85, animate: false});
+      var pointbearing = getBearing({lat: currentlat, lng: currentlng}, {lat: turbinelat, lng: turbinelng});
+      setCameraPosition(map, {lng: currentlng, lat: currentlat, altitude: 50, pitch: 85, bearing: pointbearing});
+      map.setLayoutProperty('votes', 'visibility', 'none');
+      map.setLayoutProperty('votes_line', 'visibility', 'none');
+      map.setPaintProperty('background', 'raster-brightness-min', 0.1);
+      map.setLayoutProperty('3d-buildings', 'visibility', 'visible');
+      map.setLayoutProperty('renewables_windturbine', 'visibility', 'none');
+      mapRefreshPlanningConstraints(false, planningconstraints, map);      
+      break;  
     case PAGE.EXPLORE:
       map.setLayoutProperty('votes', 'visibility', 'visible');
       map.setLayoutProperty('votes_line', 'visibility', 'visible');

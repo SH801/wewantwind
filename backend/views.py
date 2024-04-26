@@ -924,6 +924,44 @@ def SendMessage(request):
     return OutputJson({'result': 'success'})
 
 @csrf_exempt
+def SendShare(request):
+    """
+    Send shareable link to email
+    """
+
+    try:
+        parameters = json.loads(request.body)
+    except ValueError:
+        return OutputError()
+
+    ''' Begin reCAPTCHA validation '''
+
+    recaptcha_response = parameters['recaptcha']
+    url = 'https://www.google.com/recaptcha/api/siteverify'
+    values = {
+        'secret': GOOGLE_RECAPTCHA_SECRET_KEY,
+        'response': recaptcha_response
+    }
+    recaptchadata = urllib.parse.urlencode(values).encode()
+    req =  urllib.request.Request(url, data=recaptchadata)
+    response = urllib.request.urlopen(req)
+    result = json.loads(response.read().decode())
+
+    ''' End reCAPTCHA validation '''
+    ip, is_routable = get_client_ip(request)
+
+    if result['success']:
+        # Attempt to send email
+        from_email = '"wewantwind.org" <info@wewantwind.org>'
+        subject = "wewantwind.org: Someone has shared a wind turbine site link with you"
+        current_site = get_current_site(request)
+        parameters['domain'] = current_site.domain
+        message = render_to_string('backend/share.html', parameters)        
+        message = EmailMessage(subject, message, from_email=from_email, to=[parameters['email']])
+        message.send()
+    return OutputJson({'result': 'success'})
+
+@csrf_exempt
 def ProcessMessageQueue(request):
     """
     Process message queue

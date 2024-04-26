@@ -41,6 +41,12 @@ export const TOTAL_SITES = "179,273";
 // Animation interval
 export const ANIMATION_INTERVAL = 800;
 
+// Default height of 3D turbine tower
+export const TURBINETOWERHEIGHT_DEFAULT = 100;
+
+// Default radius of 3D turbine blades
+export const TURBINEBLADERADIUS_DEFAULT = 50;
+
 // Different page types
 export const PAGE = {
     HOME: 0,
@@ -48,15 +54,17 @@ export const PAGE = {
     NEARESTTURBINE: 2,
     EXPLORE: 3,
     ABOUT: 4,
+    SHOWTURBINE: 5,
 }
 
 // Buttons on each page
 export const PAGEBUTTONS = [
     [],
     [],
-    ['vote', 'download', 'message', 'fly', 'video'],
-    ['vote', 'download', 'message', 'fly', 'video', 'wind', 'planning', 'grid'],
-    []
+    ['vote', 'download', 'message', 'share', 'fly', 'video'],
+    ['site', 'vote', 'download', 'message', 'share', 'fly', 'video', 'wind', 'planning', 'grid'],
+    [],
+    ['vote', 'download', 'message', 'share', 'fly', 'video'],
 ]
 
 // Default maxbounds 

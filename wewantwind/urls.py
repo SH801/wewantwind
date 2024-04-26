@@ -28,6 +28,7 @@ urlpatterns = [
     path('votes/', views.Votes, name='votes'),
     path('localpeople/', views.LocalPeople, name='localpeople'),
     path('message/', views.SendMessage, name='sendmessage'),
+    path('share/', views.SendShare, name='sendshare'),
     path('processqueue/', views.ProcessMessageQueue, name='processmessagequeue'),
     path('test/', views.Test, name='test'),
     path('checkrenderer/', views.CheckRenderer, name='checkrenderer'),
