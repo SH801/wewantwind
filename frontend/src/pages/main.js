@@ -130,7 +130,6 @@ class Main extends Component {
       this.state = {
         calculatingposition: false, 
         calculatingnearestturbine: false, 
-        loadingurl: false,
         positionerror: false,
         locationnotenabled: false,
         locationinitialized: false,
@@ -179,6 +178,7 @@ class Main extends Component {
       this.helpIndex = 0;
       this.updatealtitude = false;
       this.ignoremovend = false;
+      this.loadingurl = false;
       this.mapRef = React.createRef();
       this.threeRef = React.createRef();
       this.submapRef = React.createRef();
@@ -199,26 +199,6 @@ class Main extends Component {
         this.props.history.push("/");
       }
   
-      let params = queryString.parse(this.props.location.search);
-      if ((params.lat !== undefined) && (params.lng !== undefined)) {
-          var lat = parseFloat(params.lat);
-          var lng = parseFloat(params.lng);
-          this.state.loadingurl = true;
-
-          if ((this.props.global.startinglat !== null) && (this.props.global.startinglng !== null)) 
-          {
-            this.showTurbine({startingposition: {latitude: this.props.global.startinglat, longitude: this.props.global.startinglng}, turbineposition: {latitude: lat, longitude: lng}});
-          } else {
-              if (navigator.geolocation) {
-                  navigator.geolocation.getCurrentPosition((position) => {
-                    this.showTurbine({startingposition: {latitude: position.coords.latitude, longitude: position.coords.longitude}, turbineposition: {latitude: lat, longitude: lng}})
-                  }, this.notfoundCurrentPosition);
-              } else {
-                this.state.loadingurl = false;
-              }              
-          }
-      }         
-
       const buttons = {
         'site':           new Site({mapcontainer: this}),
         'vote':           new Vote({mapcontainer: this}),
@@ -235,6 +215,29 @@ class Main extends Component {
       this.props.setGlobalState({'buttons': buttons});
 
       this.hoveredPolygonId = null;
+    }
+
+    componentDidMount(){
+      let params = queryString.parse(this.props.location.search);
+      if ((params.lat !== undefined) && (params.lng !== undefined)) {
+          var lat = parseFloat(params.lat);
+          var lng = parseFloat(params.lng);
+          this.loadingurl = true;
+
+          if ((this.props.global.startinglat !== null) && (this.props.global.startinglng !== null)) 
+          {
+            this.showTurbine({startingposition: {latitude: this.props.global.startinglat, longitude: this.props.global.startinglng}, turbineposition: {latitude: lat, longitude: lng}});
+          } else {
+            if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition((position) => {
+                    this.showTurbine({startingposition: {latitude: position.coords.latitude, longitude: position.coords.longitude}, turbineposition: {latitude: lat, longitude: lng}})
+                  }, this.notfoundCurrentPosition);
+            } else {
+              this.loadingurl = false;
+            }              
+        }
+      }         
+
     }
 
     showTurbine = (params) => {
@@ -491,7 +494,7 @@ class Main extends Component {
     onMapLoad = (event) => {
         
         this.helpStart();
-        this.setState({loadingurl: false});
+        this.loadingurl = false;
 
         var map = this.mapRef.current.getMap();
         let scale = new maplibregl.ScaleControl({
@@ -788,7 +791,17 @@ class Main extends Component {
     onDrag = (event) => {
       this.setState({centreset: false});  
     }
-  
+
+    setButton = (map, buttonname, state) => {
+      var newbuttonsstate = JSON.parse(JSON.stringify(this.props.global.buttonsstate));
+      if (this.props.global.buttonsstate[buttonname] !== state) {
+        newbuttonsstate[buttonname] = state;
+        if (state) map.addControl(this.props.global.buttons[buttonname], 'top-left'); 
+        else map.removeControl(this.props.global.buttons[buttonname]);
+        this.props.setGlobalState({buttonsstate: newbuttonsstate});
+      }      
+    }
+
     onClick = (event) => {
 
         // User clicks so remove centre
@@ -796,16 +809,18 @@ class Main extends Component {
 
         if (this.props.global.page !== PAGE.EXPLORE) return;
 
+        const map = this.mapRef.current.getMap();
+
         if (this.state.showsite) {
-          const map = this.mapRef.current.getMap();
           const lnglat = event.lngLat;
           if (lnglat.lng < -180) lnglat.lng += 360;
-          var newbuttonsstate = JSON.parse(JSON.stringify(this.props.global.buttonsstate));
-          newbuttonsstate['share'] = true;
-          if (this.props.global.buttonsstate['share']) map.removeControl(this.props.global.buttons['share'], 'top-left'); 
-          map.addControl(this.props.global.buttons['share'], 'top-left'); 
-          this.props.setGlobalState({turbinelat: lnglat.lat, turbinelng: lnglat.lng, buttonsstate: newbuttonsstate});
-          this.setState({showmarker: true, showsite: false});
+          this.props.setGlobalState({turbinelat: lnglat.lat, turbinelng: lnglat.lng});
+          this.setButton(map, 'share', true);
+          this.props.global.buttons['site'].deactivateButton();
+          var zoom = map.getZoom();
+          if (zoom < THREED_ZOOM)   this.setState({showsite: false, showmarker: true});
+          else                      this.setState({showsite: false, showmarker: false});
+
           return;
         }
 
@@ -855,7 +870,6 @@ class Main extends Component {
           if (this.state.showselectsite) {
             // Check whether point is in sea
             const lnglat = event.lngLat;
-            const map = this.mapRef.current.getMap();
             const point = map.project(lnglat);
             const features = map.queryRenderedFeatures(point);
             if (features.length > 0) {
@@ -1395,7 +1409,6 @@ class Main extends Component {
     
     setPage = (page) => {
         this.props.setGlobalState({pagetransitioning: true}).then(() => {
-          console.log("About to setPage");
             this.props.setPage(page);
         })
     }
@@ -1459,8 +1472,9 @@ class Main extends Component {
     }
 
     notfoundCurrentPosition = () => {
-        this.setState({loadingurl: false, calculatingposition: false, positionerror: true});
-  
+      this.loadingurl = false;
+      this.setState({calculatingposition: false, positionerror: true});
+
         console.log("Unable to retrieve your location");
     }
 
@@ -1491,12 +1505,12 @@ class Main extends Component {
       const map = this.mapRef.current.getMap();
       if ((this.props.global.startinglat !== undefined) && (this.props.global.startinglng)) {
         if (!this.state.locationinitialized) {
-          map.addControl(this.props.global.buttons['message'], 'top-left'); 
+          this.setButton(map, 'message', true);
           this.setState({locationinitialized: true});
         }
       } else {
         if (this.state.locationinitialized) {
-          map.removeControl(this.props.global.buttons['message']);
+          this.setButton(map, 'message', false);
           this.setState({locationinitialized: false});
         }
       }
@@ -1578,10 +1592,10 @@ class Main extends Component {
           <IonContent fullscreen="true">
 
             <IonAlert isOpen={this.state.calculatingposition} backdropDismiss={false} header="Calculating your position..." />            
-            <IonAlert isOpen={this.state.loadingurl} backdropDismiss={false} header="Loading wind site location..." />            
-            <IonAlert isOpen={this.state.positionerror} backdropDismiss={false} header="Please enable location access to use this feature" onDidDismiss={() => this.setState({positionerror: false})} buttons={['OK']}/>            
+            <IonAlert isOpen={this.loadingurl} backdropDismiss={true} header="Loading wind site location..." />            
             <IonAlert isOpen={this.state.calculatingnearestturbine} backdropDismiss={false} header={"Searching " + String(TOTAL_SITES) + " locations for nearest optimal wind site..."} />            
             <IonAlert isOpen={this.state.generatingfile} backdropDismiss={false} header={"Generating new file, please wait... " + String(this.state.progress) + "%"} />         
+            <IonAlert isOpen={this.state.positionerror} backdropDismiss={false} header="Please enable location access to use this feature" onDidDismiss={() => this.setState({positionerror: false})} buttons={['OK']}/>            
 
             <IonModal isOpen={this.state.showdownload} onDidDismiss={() => this.setState({showdownload: false})}>
               <IonHeader>
