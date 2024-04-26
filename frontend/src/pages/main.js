@@ -323,6 +323,7 @@ class Main extends Component {
         // var elevation = this.mapRef.current.getMap().queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}) || 0;
         var cameraposition = this.getCameraPosition();
         this.props.setGlobalState({currentlat: cameraposition.lat, currentlng: cameraposition.lng});
+        this.updateAltitude();
       }
     }
   
@@ -1077,6 +1078,7 @@ class Main extends Component {
       if (this.mapRef.current !== null) {
         const map = this.mapRef.current.getMap();
         var altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, { exaggerated: false }) || 0;
+        // console.log("Altitude", altitude);
         if (altitude < 0) altitude = 0;
         this.setState({altitude: altitude});
       }
@@ -1138,7 +1140,7 @@ class Main extends Component {
             var viewingpos = destination(turbinepos, viewingdistance, viewingbearing, options);
             this.setCameraPosition({lng: viewingpos['geometry']['coordinates'][0], lat: viewingpos['geometry']['coordinates'][1], altitude: 600, pitch: 45, bearing: 180 + viewingbearing});
             // this.updateAltitude();
-            this.flyingRun();
+            // this.flyingRun();
           }
 
           if (this.props.global.page === PAGE.EXPLORE) {

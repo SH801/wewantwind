@@ -336,7 +336,7 @@ ion-content::part(scroll) {
   position: absolute;
   top: 0px;
   left: 0px;
-  padding: 10px;
+  padding: 20px;
   padding-top: 13px;
   z-index: 2;
   font-size: 70%;
@@ -347,7 +347,7 @@ ion-content::part(scroll) {
 
 .turbine-distance-bottom {
   bottom: 0px;
-  height: 65px;
+  height: 70px;
   font-size: 100%;
   top: unset;
   text-align: center;
