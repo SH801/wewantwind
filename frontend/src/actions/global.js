@@ -30,6 +30,10 @@ export const setGlobalState = (object, history, location) => {
     if ((object.turbinelat !== undefined) && (object.turbinelng !== undefined)) {
       setURLState({ 'lat': object.turbinelat, 'lng': object.turbinelng}, history, location);
     }
+    if ((object.currentlat !== undefined) && (object.currentlng !== undefined)) {
+      setURLState({ 'vlat': object.currentlat, 'vlng': object.currentlng}, history, location);
+    }
+    
     dispatch({type: 'GLOBAL_SET_STATE', object: object});
     return Promise.resolve(true);
   }

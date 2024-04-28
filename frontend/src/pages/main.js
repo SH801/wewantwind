@@ -243,8 +243,13 @@ class Main extends Component {
     showTurbine = (params) => {
       var startingposition = params.startingposition;
       var turbineposition = params.turbineposition;
-      var currentposition = JSON.parse(JSON.stringify(params.turbineposition));
-      currentposition.latitude -= 0.01;        
+      let urlparams = queryString.parse(this.props.location.search);
+      if ((urlparams.vlat !== undefined) && (urlparams.vlng !== undefined)) {
+        currentposition = {latitude: parseFloat(urlparams.vlat), longitude: parseFloat(urlparams.vlng)};
+      } else {
+        var currentposition = JSON.parse(JSON.stringify(params.turbineposition));
+        currentposition.latitude -= 0.01;          
+      }
       this.props.setGlobalState({
         startinglat: startingposition.latitude, 
         startinglng: startingposition.longitude, 
@@ -1401,7 +1406,8 @@ class Main extends Component {
         {
           email: this.state.email, 
           recaptcha: this.state.recaptcha,
-          turbinelocation: {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}
+          turbinelocation: {lat: this.props.global.turbinelat, lng: this.props.global.turbinelng},
+          currentlocation: {lat: this.props.global.currentlat, lng: this.props.global.currentlng}
         });
       } else {
         if (!this.state.isTouchedEmail) this.setState({isTouchedEmail: true});

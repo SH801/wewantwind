@@ -1,10 +1,10 @@
 {% autoescape off %}Someone has sent you a link to a wewantwind.org wind turbine site...
 
 To view the wind turbine site, click this link:
-<a href="https://{{ domain }}/?lat={{ turbinelocation.lat }}&lng={{ turbinelocation.lng }}">https://{{ domain }}/?lat={{ turbinelocation.lat }}&lng={{ turbinelocation.lng }}</a>
+<a href="https://{{ domain }}/?lat={{ turbinelocation.lat }}&lng={{ turbinelocation.lng }}&vlat={{ currentlocation.lat }}&vlng={{ currentlocation.lng }}">https://{{ domain }}/?lat={{ turbinelocation.lat }}&lng={{ turbinelocation.lng }}&vlat={{ currentlocation.lat }}&vlng={{ currentlocation.lng }}</a>
 
 If the link does not work, copy and paste this address into your browser directly:
-https://{{ domain }}/?lat={{ turbinelocation.lat }}&lng={{ turbinelocation.lng }}
+https://{{ domain }}/?lat={{ turbinelocation.lat }}&lng={{ turbinelocation.lng }}&vlat={{ currentlocation.lat }}&vlng={{ currentlocation.lng }}
 
 Best wishes,
 
