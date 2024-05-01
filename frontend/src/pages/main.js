@@ -1091,7 +1091,7 @@ class Main extends Component {
         const map = this.mapRef.current.getMap();
         var altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, { exaggerated: false }) || 0;
         // console.log("Altitude", altitude);
-        if (altitude < 0) altitude = 0;
+        // if (altitude < 0) altitude = 0;
         this.setState({altitude: altitude});
       }
     }
