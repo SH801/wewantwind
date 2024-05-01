@@ -7,6 +7,8 @@ import {
   IonApp, 
   IonHeader, 
   IonContent, 
+  IonSelect,
+  IonSelectOption,
   IonList,
   IonItem,
   IonText, 
@@ -102,17 +104,16 @@ function WindTurbine(props) {
 
   return (
     <>
-    <mesh onClick={props.container.onClickMarker} position={[0, 2.42, 0]} rotation-y={4 * Math.PI / 4} scale={1}>
-      <mesh position={[0, -2.42, 0]}>
+    <mesh onClick={props.container.onClickMarker} position={[0, 0, 0]} rotation-y={4 * Math.PI / 4} scale={1}>
+      <mesh position={[0, 0, 0]}>
         <primitive object={tower_gltf.scene} scale={props.container.props.global.turbinetowerheight / 100} />
       </mesh>
-      <mesh ref={turbinemesh} position={[0, 1, 0]}>
-        <primitive object={blades_gltf.scene} scale-x={1} scale-y={2.385 * props.container.props.global.turbinebladeradius / 100} scale-z={2.385 * props.container.props.global.turbinebladeradius / 100} rotation-x={3.1 * Math.PI / 4} />
+      <mesh ref={turbinemesh} position={[0, (3.42 * props.container.props.global.turbinetowerheight / 100), 0]}>
+        <primitive object={blades_gltf.scene} scale-x={1 * props.container.props.global.turbinetowerheight / 100} scale-y={2.385 * props.container.props.global.turbinebladeradius / 100} scale-z={2.385 * props.container.props.global.turbinebladeradius / 100} rotation-x={3.1 * Math.PI / 4} />
       </mesh>
     </mesh>
     </>
   )
-
 
 }
 
@@ -147,6 +148,7 @@ class Main extends Component {
         showmarker: true,
         showsite: false,
         showvote: false,
+        showturbine: false,
         showdownload: false,
         showmessage: false,
         showshare: false,
@@ -173,7 +175,11 @@ class Main extends Component {
         recaptchaError: '',
         centreset: false,
         alertIsOpen: false,
-        alertText: ''    
+        alertText: ''  ,
+        windturbine: '',  
+        turbineparameters: {},
+        hubheight: null,
+        hubheights: [],
       };
       this.helpIndex = 0;
       this.updatealtitude = false;
@@ -183,6 +189,7 @@ class Main extends Component {
       this.threeRef = React.createRef();
       this.submapRef = React.createRef();
       this.popupRef = React.createRef();
+      this.windturbines = require('../constants/windturbines.json');
       this.style_explore = require('../constants/style_explore.json');
       this.style_threedimensions = require('../constants/style_threedimensions.json');
       this.style_twodimensions = require('../constants/style_twodimensions.json');
@@ -1590,6 +1597,39 @@ class Main extends Component {
 
     }
 
+    editTurbine = () => {
+      var turbineparameters = this.getTurbineFromName(this.props.global.windturbine);
+      this.setState({windturbine: this.props.global.windturbine, turbineparameters: turbineparameters, hubheight: this.props.global.turbinetowerheight.toString(), hubheights: turbineparameters.hubheights, showturbine: true});
+    }
+
+    setTurbine = () => {
+      this.props.setGlobalState({windturbine: this.state.windturbine, turbinetowerheight: this.state.hubheight, turbinebladeradius: (this.state.turbineparameters['Rotor diameter'] / 2)});
+      this.setState({showturbine: false});
+    }
+
+    getTurbineFromName = (name) => {
+      var turbineparameters = [];
+      for(var i = 0; i < this.windturbines.length; i++) {
+        if (this.windturbines[i].Name === name) {
+          turbineparameters = this.windturbines[i];
+          turbineparameters['hubheights'] = turbineparameters['Hub heights'].split(';');
+          break;
+        }
+      }
+      return turbineparameters;
+    }
+
+    changeTurbineType = (e) => {
+      var turbinename = e.detail.value;
+      var turbineparameters = this.getTurbineFromName(turbinename);
+      this.setState({windturbine: turbinename, turbineparameters: turbineparameters, hubheight: turbineparameters.hubheights[0], hubheights: turbineparameters.hubheights});
+    }
+
+    changeTurbineHeight = (e) => {
+      var turbineheight = e.detail.value;
+      this.setState({hubheight: turbineheight});
+    }
+
     render() {
         return (
           <>
@@ -1604,6 +1644,92 @@ class Main extends Component {
             <IonAlert isOpen={this.state.calculatingnearestturbine} backdropDismiss={false} header={"Searching " + String(TOTAL_SITES) + " locations for nearest optimal wind site..."} />            
             <IonAlert isOpen={this.state.generatingfile} backdropDismiss={false} header={"Generating new file, please wait... " + String(this.state.progress) + "%"} />         
             <IonAlert isOpen={this.state.positionerror} backdropDismiss={false} header="Please enable location access to use this feature" onDidDismiss={() => this.setState({positionerror: false})} buttons={['OK']}/>            
+
+            <IonModal className="wewantwind-modal" isOpen={this.state.showturbine} onDidDismiss={() => this.setState({showturbine: false})}>
+            <IonHeader>
+                <IonToolbar className="wob-toolbar">
+                  <IonTitle mode="ios">Edit wind turbine</IonTitle>
+                </IonToolbar>
+              </IonHeader>
+              <IonContent>
+                <IonList lines="none">
+                  <IonItem>
+                    <IonSelect label="Wind turbine" value={this.state.windturbine} onIonChange={this.changeTurbineType}>
+                    {this.windturbines.map((turbine, index) => {
+                      return (
+                        <IonSelectOption value={turbine.Name} key={index}>{turbine.Name}</IonSelectOption>
+                    );
+                    })}
+                    </IonSelect>
+                  </IonItem>
+                  <IonItem>
+                    <IonSelect label="Hub height" value={this.state.hubheight} onIonChange={this.changeTurbineHeight}>
+                    {this.state.hubheights.map((hubheight, index) => {
+                      return (
+                        <IonSelectOption value={hubheight} key={index}>{hubheight} metres</IonSelectOption>
+                    );
+                    })}
+                    </IonSelect>
+                  </IonItem>
+                  {(this.state.turbineparameters['Wind class']) ? (
+                    <IonItem>
+                      <IonGrid class="ion-no-padding">
+                        <IonRow>
+                        <IonCol size="6" style={{textAlign: "left"}}><IonText class="ion-no-margin">Wind class</IonText></IonCol>
+                        <IonCol size="6" style={{textAlign: "right"}}><IonText class="ion-no-margin">{this.state.turbineparameters['Wind class']}</IonText></IonCol>
+                        </IonRow>
+                      </IonGrid>
+                      </IonItem>
+                  ) : null}
+                  {(this.state.turbineparameters['Power']) ? (
+                    <IonItem>
+                      <IonGrid class="ion-no-padding">
+                        <IonRow>
+                        <IonCol size="6" style={{textAlign: "left"}}><IonText class="ion-no-margin">Power</IonText></IonCol>
+                        <IonCol size="6" style={{textAlign: "right"}}><IonText class="ion-no-margin">{this.state.turbineparameters['Power']} mW</IonText></IonCol>
+                        </IonRow>
+                      </IonGrid>
+                      </IonItem>
+                  ) : null}
+                  {(this.state.turbineparameters['Sound power']) ? (
+                    <IonItem>
+                      <IonGrid class="ion-no-padding">
+                        <IonRow>
+                        <IonCol size="6" style={{textAlign: "left"}}><IonText class="ion-no-margin">Sound power</IonText></IonCol>
+                        <IonCol size="6" style={{textAlign: "right"}}><IonText class="ion-no-margin">{this.state.turbineparameters['Sound power']} dB</IonText></IonCol>
+                        </IonRow>
+                      </IonGrid>
+                      </IonItem>
+                  ) : null}
+                  {(this.state.turbineparameters['Rotor diameter']) ? (
+                    <IonItem>
+                      <IonGrid class="ion-no-padding">
+                        <IonRow>
+                        <IonCol size="6" style={{textAlign: "left"}}><IonText class="ion-no-margin">Rotor diameter</IonText></IonCol>
+                        <IonCol size="6" style={{textAlign: "right"}}><IonText class="ion-no-margin">{this.state.turbineparameters['Rotor diameter']} metres</IonText></IonCol>
+                        </IonRow>
+                      </IonGrid>
+                      </IonItem>
+                  ) : null}
+                  {(this.state.turbineparameters['Carbon footprint']) ? (
+                    <IonItem>
+                      <IonGrid class="ion-no-padding">
+                        <IonRow>
+                        <IonCol size="6" style={{textAlign: "left"}}><IonText class="ion-no-margin">Carbon footprint</IonText></IonCol>
+                        <IonCol size="6" style={{textAlign: "right"}}><IonText class="ion-no-margin">{this.state.turbineparameters['Carbon footprint']}g CO<sub>2</sub>e/kWh</IonText></IonCol>
+                        </IonRow>
+                      </IonGrid>
+                      </IonItem>
+                  ) : null}
+                  <IonItem>
+                    <IonText style={{margin: "auto", paddingTop: "10px"}}>  
+                      <IonButton onClick={() => {this.setState({showturbine: false})}} color="light" shape="round" size="medium" fill="solid">Cancel</IonButton>
+                      <IonButton onClick={() => {this.setTurbine()}} color="success" shape="round" size="medium" fill="solid">Set turbine</IonButton>
+                    </IonText>
+                  </IonItem>
+                </IonList>
+              </IonContent>
+            </IonModal>
 
             <IonModal isOpen={this.state.showdownload} onDidDismiss={() => this.setState({showdownload: false})}>
               <IonHeader>
@@ -2022,6 +2148,22 @@ class Main extends Component {
                       ) : null}
 
                       <div style={{ height: "100%" }}>
+
+                        {((this.props.global.page !== PAGE.HOME) && (this.props.global.page !== PAGE.NEARESTTURBINE_OVERVIEW)) ? (
+                          <div className="turbine-button">
+                              <IonGrid>
+                                  <IonRow className="ion-align-items-center">
+                                  <IonCol size="12" style={{textAlign: "center"}}>
+                                      <div className="horizontal-centred-container">
+                                          <a onClick={() => {this.editTurbine()}} className="wewantwind-link">
+                                              <IonButton shape="round" color="dark" size="small">{this.props.global.windturbine} - {this.props.global.turbinetowerheight} m</IonButton>
+                                          </a>
+                                      </div>
+                                  </IonCol>
+                                  </IonRow>
+                              </IonGrid>
+                          </div>
+                        ) : null}
 
                         {(this.props.global.page === PAGE.NEARESTTURBINE_OVERVIEW) ? (
                             <>

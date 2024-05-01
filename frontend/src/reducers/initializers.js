@@ -27,6 +27,7 @@ export const initialStateGlobal = {
     testpagesindex: 0,
     turbinetowerheight: TURBINETOWERHEIGHT_DEFAULT,
     turbinebladeradius: TURBINEBLADERADIUS_DEFAULT,
+    windturbine: 'WeWantWind Average Turbine',
     mapref: null,
     startinglat: null,
     startinglng: null,

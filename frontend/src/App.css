@@ -331,12 +331,19 @@ ion-content::part(scroll) {
   margin-top: -2px;
 }
 
+.turbine-button {
+  z-index:  1000;
+  position: absolute;
+  bottom:   30px;
+  width:    auto;
+}
+
 .turbine-distance-bottom,
 .turbine-distance {
   position: absolute;
   top: 0px;
   left: 0px;
-  padding: 20px;
+  padding: 10px;
   padding-top: 13px;
   z-index: 2;
   font-size: 70%;
@@ -349,6 +356,8 @@ ion-content::part(scroll) {
   bottom: 0px;
   height: 70px;
   font-size: 100%;
+  /* padding: 30px; */
+  padding-bottom: 30px;
   top: unset;
   text-align: center;
   color: white;
@@ -501,7 +510,12 @@ ion-content::part(scroll) {
   }
 
   .turbine-distance {
-    padding: 5px;
+    padding: 10px;
+    padding-top: 15px;
+  }
+  
+  .turbine-button {
+    bottom:   45%;
   }
   
   .wewantwind-largetext {

@@ -42,10 +42,10 @@ export const TOTAL_SITES = "179,273";
 export const ANIMATION_INTERVAL = 800;
 
 // Default height of 3D turbine tower
-export const TURBINETOWERHEIGHT_DEFAULT = 100;
+export const TURBINETOWERHEIGHT_DEFAULT = 108.3;
 
 // Default radius of 3D turbine blades
-export const TURBINEBLADERADIUS_DEFAULT = 50;
+export const TURBINEBLADERADIUS_DEFAULT = (138.5 / 2);
 
 // Different page types
 export const PAGE = {
