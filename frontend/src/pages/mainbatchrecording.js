@@ -2786,7 +2786,7 @@ class Main extends Component {
                             ) : null}
 
                             <Map ref={this.mapRef}
-                              mapboxAccessToken="pk.eyJ1Ijoic3BhY2VhcnQiLCJhIjoiY2x2dG5vdTUzMTJoazJqcXpyb2Z1cjYzMSJ9.eKw4WXN9hn4LHuJiBS4G4g"
+                              mapboxAccessToken=""
                               width="100vw"
                               height="100vh"
                               onLoad={this.onMapLoad} 
