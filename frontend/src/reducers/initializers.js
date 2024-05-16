@@ -48,6 +48,7 @@ export const initialStateGlobal = {
     showconstraints: false,
     showgrid: false,
     helpInterval: null,
+    allwindturbines: [],
     planningconstraints: {
         "all": true,
         "wind": false,

@@ -672,7 +672,7 @@ def GetReport(type, lat, lng):
     id = str(uuid.uuid4())
     lat, lng = round(lat, COORDINATE_PRECISION), round(lng, COORDINATE_PRECISION)
     filestem = str(lat) + "_" + str(lng)
-    readableposition = str(lat) + "°N, " + str(lng) + "°W"
+    readableposition = str(lat) + "°N, " + str(lng) + "°E"
     downloadsdirectory = cwd + '/downloads/'
     pdfpath = downloadsdirectory + filestem + '.pdf'
     wordpath = downloadsdirectory + filestem + '.docx'
@@ -838,7 +838,7 @@ def Votes(request):
             "properties": {
                 'name': 'Site votes', 
                 'subtype': 'votes',
-                'position': str(round(distinctpoint['site'].coords[1], COORDINATE_PRECISION)) + "°N, " + str(round(distinctpoint['site'].coords[0], COORDINATE_PRECISION)) + "°W",
+                'position': str(round(distinctpoint['site'].coords[1], COORDINATE_PRECISION)) + "°N, " + str(round(distinctpoint['site'].coords[0], COORDINATE_PRECISION)) + "°E",
                 'votes': allvotes,
                 'lat': distinctpoint['site'].coords[1],
                 'lng': distinctpoint['site'].coords[0],
@@ -1056,3 +1056,4 @@ def RemoveMailingList(request, uidb64, token):
 @csrf_exempt
 def Test(request):
     return render(request, 'backend/vote_not_confirmed.html')
+

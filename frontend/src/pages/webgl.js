@@ -82,6 +82,8 @@ export function makeShader(gl, src, type) {
 
 export function renderImage(gl, image) {
 
+    if (image === undefined) return;
+    
     var vertCode =
     'attribute vec2 a_position;' +
     'attribute vec2 a_texCoord;' +
@@ -172,7 +174,8 @@ export function renderImage(gl, image) {
     offset = 0;
     var count = 6;
 
-    gl.viewport(gl.canvas.width - (image.width + (20 * devicePixelRatio)), - (gl.canvas.height - (image.height + (devicePixelRatio * 20))), gl.canvas.width, gl.canvas.height);
+    // gl.viewport(gl.canvas.width - (image.width + (20 * devicePixelRatio)), - (gl.canvas.height - (image.height + (devicePixelRatio * 20))), gl.canvas.width, gl.canvas.height);
+    gl.viewport(gl.canvas.width - (image.width), - (gl.canvas.height - image.height), gl.canvas.width, gl.canvas.height);
     gl.enable( gl.BLEND );
     gl.blendEquation( gl.FUNC_ADD );
     gl.blendFunc( gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA );

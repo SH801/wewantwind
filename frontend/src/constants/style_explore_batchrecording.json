@@ -7,7 +7,7 @@
     "sources": {
         "background": {
           "type": "raster",
-          "tiles": ["https://www.google.com/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}"],
+          "tiles": ["https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.jpg90?access_token=pk.eyJ1Ijoic3BhY2VhcnQiLCJhIjoiY2x2dG5vdTUzMTJoazJqcXpyb2Z1cjYzMSJ9.eKw4WXN9hn4LHuJiBS4G4g"],
           "tileSize": 256,
           "attribution": "Imagery ©2023 Google, Imagery ©2023 Bluesky, Getmapping plc, Infoterra Ltd & Bluesky, Maxar Technologies, Map data ©2023"
         },
@@ -18,29 +18,27 @@
         "planningconstraints": {
           "type": "vector",
           "buffer": 512,
-          "url": "/data/planningconstraints.json",
-          "attribution": "Source data copyright of multiple organisations - for list of data sources, see https://positiveplaces.org/datasets"
+          "url": "/data/planningconstraints_new.json",
+          "attribution": "Source data copyright of multiple organisations - for list of data sources, see https://ckan.wewantwind.org"
         },  
         "terrainSource": {
           "type": "raster-dem",
           "tiles": [
-              "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
+              "https://api.mapbox.com/v4/mapbox.terrain-rgb/{z}/{x}/{y}.png?access_token=pk.eyJ1Ijoic3BhY2VhcnQiLCJhIjoiY2x2dG5vdTUzMTJoazJqcXpyb2Z1cjYzMSJ9.eKw4WXN9hn4LHuJiBS4G4g"
           ],
           "minzoom": 0,
-          "maxzoom": 15,
-          "tileSize": 256,
-          "encoding": "terrarium",
+          "maxzoom": 14,
+          "tileSize": 512,
           "attribution": "United Kingdom terrain data © Environment Agency copyright and/or database right 2015. All rights reserved"
         },
         "hillshadeSource": {
           "type": "raster-dem",
           "tiles": [
-              "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
+            "https://api.mapbox.com/v4/mapbox.terrain-rgb/{z}/{x}/{y}@2x.jpg90?access_token=pk.eyJ1Ijoic3BhY2VhcnQiLCJhIjoiY2x2dG5vdTUzMTJoazJqcXpyb2Z1cjYzMSJ9.eKw4WXN9hn4LHuJiBS4G4g"
           ],
           "minzoom": 0,
-          "maxzoom": 15,
-          "tileSize": 256,
-          "encoding": "terrarium",
+          "maxzoom": 20,
+          "tileSize": 512,
           "attribution": "United Kingdom terrain data © Environment Agency copyright and/or database right 2015. All rights reserved"
         },
         "grid": {
@@ -53,11 +51,6 @@
           "url": "/data/windspeed.json",
           "attribution": "Estimated average wind speeds from NOABL Wind Speed Database © Department for Business, Enterprise & Regulatory Reform 1996"
         },      
-        "test": {
-          "type": "vector",
-          "url": "http://localhost:8080/data/test.json",
-          "attribution": "Test vector tiles"
-        },      
         "renewables": {
           "type": "vector",
           "url": "/data/renewables.json",
@@ -65,7 +58,7 @@
         },
         "votes": {
           "type": "geojson",
-          "data": "http://localhost:8000/votes/"
+          "data": "https://wewantwind.org/votes/"
         }
     },
     "glyphs": "/fonts/{fontstack}/{range}.pbf",
@@ -99,7 +92,11 @@
         "type": "hillshade",
         "source": "hillshadeSource",
         "layout": { "visibility": "visible" },
-        "paint": { "hillshade-shadow-color": "#473B2422" }
+        "paint": { 
+          "hillshade-shadow-color": "black",
+          "hillshade-exaggeration": 1,
+          "hillshade-illumination-direction": 315          
+        }
       }, 
       {
         "id": "hills2",
@@ -107,7 +104,11 @@
         "type": "hillshade",
         "source": "hillshadeSource",
         "layout": { "visibility": "visible" },
-        "paint": { "hillshade-shadow-color": "black" }
+        "paint": { 
+          "hillshade-shadow-color": "#333333",
+          "hillshade-exaggeration": 1,
+          "hillshade-illumination-direction": 315          
+        }
       }, 
       {
         "filter": [
@@ -1559,7 +1560,7 @@
         "source": "openmaptiles",
         "source-layer": "boundary",
         "type": "line"
-      },
+      },  
       {
         "id": "3d-buildings",
         "source": "openmaptiles",
@@ -1570,13 +1571,319 @@
             "visibility": "visible"
         },             
         "paint": {
-            "fill-extrusion-color": "lightgray",                
+            "fill-extrusion-color": "darkgray",                
             "fill-extrusion-height": ["get", "render_height"],
             "fill-extrusion-base": ["case",
                 [">=", ["get", "zoom"], 12],
                 ["get", "render_min_height"], 0
             ]
         }
+      },  
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Point"
+          ],
+          [
+            "==",
+            "rank",
+            1
+          ]
+        ],
+        "id": "poi_label",
+        "layout": {
+          "icon-size": 1,
+          "text-anchor": "top",
+          "text-field": "{name}",
+          "text-font": [
+            "Noto Sans Regular"
+          ],
+          "text-max-width": 8,
+          "text-offset": [
+            0,
+            0.5
+          ],
+          "text-size": 11
+        },
+        "minzoom": 13,
+        "paint": {
+          "text-color": "#666",
+          "text-halo-blur": 1,
+          "text-halo-color": "rgba(255,255,255,0.75)",
+          "text-halo-width": 1
+        },
+        "source": "openmaptiles",
+        "source-layer": "poi",
+        "type": "symbol"
+      },
+      {
+        "filter": [
+          "all",
+          [
+            "has",
+            "iata"
+          ]
+        ],
+        "id": "airport-label",
+        "layout": {
+          "icon-size": 1,
+          "text-anchor": "top",
+          "text-field": "{name}",
+          "text-font": [
+            "Noto Sans Regular"
+          ],
+          "text-max-width": 8,
+          "text-offset": [
+            0,
+            0.5
+          ],
+          "text-size": 11
+        },
+        "minzoom": 10,
+        "paint": {
+          "text-color": "#666",
+          "text-halo-blur": 1,
+          "text-halo-color": "rgba(255,255,255,0.75)",
+          "text-halo-width": 1
+        },
+        "source": "openmaptiles",
+        "source-layer": "aerodrome_label",
+        "type": "symbol"
+      },
+      {
+        "filter": [
+          "==",
+          "$type",
+          "LineString"
+        ],
+        "id": "road_major_label",
+        "layout": {
+          "symbol-placement": "line",
+          "text-field": "{name}",
+          "text-font": [
+            "Noto Sans Regular"
+          ],
+          "text-letter-spacing": 0.1,
+          "text-rotation-alignment": "map",
+          "text-size": {
+            "base": 1.4,
+            "stops": [
+              [
+                10,
+                8
+              ],
+              [
+                20,
+                14
+              ]
+            ]
+          },
+          "text-transform": "uppercase"
+        },
+        "paint": {
+          "text-color": "#000",
+          "text-halo-color": "hsl(0, 0%, 100%)",
+          "text-halo-width": 2
+        },
+        "source": "openmaptiles",
+        "source-layer": "transportation_name",
+        "type": "symbol"
+      },
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Point"
+          ],
+          [
+            "!in",
+            "class",
+            "city",
+            "state",
+            "country",
+            "continent"
+          ]
+        ],
+        "id": "place_label_other",
+        "maxzoom": 13,
+        "layout": {
+          "text-anchor": "center",
+          "text-field": "{name}",
+          "text-font": [
+            "Noto Sans Regular"
+          ],
+          "text-max-width": 6,
+          "text-size": {
+            "stops": [
+              [
+                6,
+                10
+              ],
+              [
+                12,
+                14
+              ]
+            ]
+          }
+        },
+        "minzoom": 8,
+        "paint": {
+          "text-color": "hsl(0, 0%, 25%)",
+          "text-halo-blur": 0,
+          "text-halo-color": "hsl(0, 0%, 100%)",
+          "text-halo-width": 2
+        },
+        "source": "openmaptiles",
+        "source-layer": "place",
+        "type": "symbol"
+      },
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Point"
+          ],
+          [
+            "==",
+            "class",
+            "city"
+          ]
+        ],
+        "id": "place_label_city",
+        "layout": {
+          "text-field": "{name}",
+          "text-font": [
+            "Noto Sans Regular"
+          ],
+          "text-max-width": 10,
+          "text-size": {
+            "stops": [
+              [
+                3,
+                12
+              ],
+              [
+                8,
+                16
+              ]
+            ]
+          }
+        },
+        "maxzoom": 16,
+        "paint": {
+          "text-color": "hsl(0, 0%, 0%)",
+          "text-halo-blur": 0,
+          "text-halo-color": "hsla(0, 0%, 100%, 0.75)",
+          "text-halo-width": 2
+        },
+        "source": "openmaptiles",
+        "source-layer": "place",
+        "type": "symbol"
+      },
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Point"
+          ],
+          [
+            "==",
+            "class",
+            "country"
+          ],
+          [
+            "!has",
+            "iso_a2"
+          ]
+        ],
+        "id": "country_label-other",
+        "layout": {
+          "text-field": "{name:latin}",
+          "text-font": [
+            "Noto Sans Regular"
+          ],
+          "text-max-width": 10,
+          "text-size": {
+            "stops": [
+              [
+                3,
+                12
+              ],
+              [
+                8,
+                22
+              ]
+            ]
+          }
+        },
+        "maxzoom": 13,
+        "paint": {
+          "text-color": "hsl(0, 0%, 13%)",
+          "text-halo-blur": 0,
+          "text-halo-color": "rgba(255,255,255,0.75)",
+          "text-halo-width": 2
+        },
+        "source": "openmaptiles",
+        "source-layer": "place",
+        "type": "symbol"
+      },
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Point"
+          ],
+          [
+            "==",
+            "class",
+            "country"
+          ],
+          [
+            "has",
+            "iso_a2"
+          ]
+        ],
+        "id": "country_label",
+        "layout": {
+          "text-field": "{name:latin}",
+          "text-font": [
+            "Noto Sans Regular"
+          ],
+          "text-max-width": 10,
+          "text-size": {
+            "stops": [
+              [
+                3,
+                12
+              ],
+              [
+                8,
+                22
+              ]
+            ]
+          }
+        },
+        "maxzoom": 13,
+        "paint": {
+          "text-color": "hsl(0, 0%, 13%)",
+          "text-halo-blur": 0,
+          "text-halo-color": "rgba(255,255,255,0.75)",
+          "text-halo-width": 2
+        },
+        "source": "openmaptiles",
+        "source-layer": "place",
+        "type": "symbol"
       },  
       {
         "filter": [
@@ -1912,319 +2219,23 @@
         "source": "grid",
         "source-layer": "grid",
         "type": "symbol"
-      },      
-      {
-        "filter": [
-          "all",
-          [
-            "==",
-            "$type",
-            "Point"
-          ],
-          [
-            "==",
-            "rank",
-            1
-          ]
-        ],
-        "id": "poi_label",
-        "layout": {
-          "icon-size": 1,
-          "text-anchor": "top",
-          "text-field": "{name}",
-          "text-font": [
-            "Noto Sans Regular"
-          ],
-          "text-max-width": 8,
-          "text-offset": [
-            0,
-            0.5
-          ],
-          "text-size": 11
-        },
-        "minzoom": 13,
-        "paint": {
-          "text-color": "#666",
-          "text-halo-blur": 1,
-          "text-halo-color": "rgba(255,255,255,0.75)",
-          "text-halo-width": 1
-        },
-        "source": "openmaptiles",
-        "source-layer": "poi",
-        "type": "symbol"
-      },
-      {
-        "filter": [
-          "all",
-          [
-            "has",
-            "iata"
-          ]
-        ],
-        "id": "airport-label",
-        "layout": {
-          "icon-size": 1,
-          "text-anchor": "top",
-          "text-field": "{name}",
-          "text-font": [
-            "Noto Sans Regular"
-          ],
-          "text-max-width": 8,
-          "text-offset": [
-            0,
-            0.5
-          ],
-          "text-size": 11
-        },
-        "minzoom": 10,
-        "paint": {
-          "text-color": "#666",
-          "text-halo-blur": 1,
-          "text-halo-color": "rgba(255,255,255,0.75)",
-          "text-halo-width": 1
-        },
-        "source": "openmaptiles",
-        "source-layer": "aerodrome_label",
-        "type": "symbol"
-      },
-      {
-        "filter": [
-          "==",
-          "$type",
-          "LineString"
-        ],
-        "id": "road_major_label",
-        "layout": {
-          "symbol-placement": "line",
-          "text-field": "{name}",
-          "text-font": [
-            "Noto Sans Regular"
-          ],
-          "text-letter-spacing": 0.1,
-          "text-rotation-alignment": "map",
-          "text-size": {
-            "base": 1.4,
-            "stops": [
-              [
-                10,
-                8
-              ],
-              [
-                20,
-                14
-              ]
-            ]
-          },
-          "text-transform": "uppercase"
-        },
-        "paint": {
-          "text-color": "#000",
-          "text-halo-color": "hsl(0, 0%, 100%)",
-          "text-halo-width": 2
-        },
-        "source": "openmaptiles",
-        "source-layer": "transportation_name",
-        "type": "symbol"
-      },
-      {
-        "filter": [
-          "all",
-          [
-            "==",
-            "$type",
-            "Point"
-          ],
-          [
-            "!in",
-            "class",
-            "city",
-            "state",
-            "country",
-            "continent"
-          ]
-        ],
-        "id": "place_label_other",
-        "maxzoom": 13,
-        "layout": {
-          "text-anchor": "center",
-          "text-field": "{name}",
-          "text-font": [
-            "Noto Sans Regular"
-          ],
-          "text-max-width": 6,
-          "text-size": {
-            "stops": [
-              [
-                6,
-                10
-              ],
-              [
-                12,
-                14
-              ]
-            ]
-          }
-        },
-        "minzoom": 8,
-        "paint": {
-          "text-color": "hsl(0, 0%, 25%)",
-          "text-halo-blur": 0,
-          "text-halo-color": "hsl(0, 0%, 100%)",
-          "text-halo-width": 2
-        },
-        "source": "openmaptiles",
-        "source-layer": "place",
-        "type": "symbol"
-      },
-      {
-        "filter": [
-          "all",
-          [
-            "==",
-            "$type",
-            "Point"
-          ],
-          [
-            "==",
-            "class",
-            "city"
-          ]
-        ],
-        "id": "place_label_city",
-        "layout": {
-          "text-field": "{name}",
-          "text-font": [
-            "Noto Sans Regular"
-          ],
-          "text-max-width": 10,
-          "text-size": {
-            "stops": [
-              [
-                3,
-                12
-              ],
-              [
-                8,
-                16
-              ]
-            ]
-          }
-        },
-        "maxzoom": 16,
-        "paint": {
-          "text-color": "hsl(0, 0%, 0%)",
-          "text-halo-blur": 0,
-          "text-halo-color": "hsla(0, 0%, 100%, 0.75)",
-          "text-halo-width": 2
-        },
-        "source": "openmaptiles",
-        "source-layer": "place",
-        "type": "symbol"
-      },
-      {
-        "filter": [
-          "all",
-          [
-            "==",
-            "$type",
-            "Point"
-          ],
-          [
-            "==",
-            "class",
-            "country"
-          ],
-          [
-            "!has",
-            "iso_a2"
-          ]
-        ],
-        "id": "country_label-other",
-        "layout": {
-          "text-field": "{name:latin}",
-          "text-font": [
-            "Noto Sans Regular"
-          ],
-          "text-max-width": 10,
-          "text-size": {
-            "stops": [
-              [
-                3,
-                12
-              ],
-              [
-                8,
-                22
-              ]
-            ]
-          }
-        },
-        "maxzoom": 13,
-        "paint": {
-          "text-color": "hsl(0, 0%, 13%)",
-          "text-halo-blur": 0,
-          "text-halo-color": "rgba(255,255,255,0.75)",
-          "text-halo-width": 2
-        },
-        "source": "openmaptiles",
-        "source-layer": "place",
-        "type": "symbol"
-      },
-      {
-        "filter": [
-          "all",
-          [
-            "==",
-            "$type",
-            "Point"
-          ],
-          [
-            "==",
-            "class",
-            "country"
-          ],
-          [
-            "has",
-            "iso_a2"
-          ]
-        ],
-        "id": "country_label",
-        "layout": {
-          "text-field": "{name:latin}",
-          "text-font": [
-            "Noto Sans Regular"
-          ],
-          "text-max-width": 10,
-          "text-size": {
-            "stops": [
-              [
-                3,
-                12
-              ],
-              [
-                8,
-                22
-              ]
-            ]
-          }
-        },
-        "maxzoom": 13,
-        "paint": {
-          "text-color": "hsl(0, 0%, 13%)",
-          "text-halo-blur": 0,
-          "text-halo-color": "rgba(255,255,255,0.75)",
-          "text-halo-width": 2
-        },
-        "source": "openmaptiles",
-        "source-layer": "place",
-        "type": "symbol"
       },  
       {
         "id": "renewables_windturbine",
         "type": "symbol",
         "source": "renewables",
         "source-layer": "renewables",
+        "paint": {
+          "icon-opacity": [
+            "step",
+            ["zoom"],
+            1,
+            12,
+            0
+          ]            
+        },
         "layout": {
+            "visibility": "none",
             "icon-image": "windturbine_grey", 
             "icon-size": [
               "interpolate", ["exponential", 2], ["zoom"], 
@@ -2347,42 +2358,6 @@
         "source": "openmaptiles",
         "source-layer": "place",
         "type": "symbol"
-      },
-      {
-        "filter": [
-          "all",
-          [
-            "==",
-            "$type",
-            "Polygon"
-          ]
-        ],
-        "id": "test-red",
-        "paint": {
-          "fill-color": "red",
-          "fill-opacity": 0.3
-        },
-        "source": "test",
-        "source-layer": "other_technical_constraints_lo",
-        "type": "fill"
-      },
-      {
-        "filter": [
-          "all",
-          [
-            "==",
-            "$type",
-            "Polygon"
-          ]
-        ],
-        "id": "test-blue",
-        "paint": {
-          "fill-color": "blue",
-          "fill-opacity": 0.3
-        },
-        "source": "test",
-        "source-layer": "other_technical_constraints_hi",
-        "type": "fill"
       }
     ],
     "id": "basic-preview"

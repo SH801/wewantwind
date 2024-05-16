@@ -72,6 +72,10 @@ export default function selector(state=initialStateGlobal, action) {
             newState = {...newState, zoom: action.zoom, centre: action.centre};
             return newState;
 
+        case 'FETCH_ALLWINDTURBINES':
+            newState = {...newState, allwindturbines: action.allwindturbines};
+            return newState;
+
         case 'FETCH_RANDOMPOINT':
             newState = {...newState, randompoint: action.randompoint};
             return newState;

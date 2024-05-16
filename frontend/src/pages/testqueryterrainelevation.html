@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Query terrain elevation</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<script src="turbines.js"></script>
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
+<body>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+<div id="map"></div>
+<script>
+    var index = 0;
+
+    var keys = Object.entries(turbines);
+    var elevations = {};
+
+    console.log(turbines); // output 'testing'
+
+    mapboxgl.accessToken = 'pk.eyJ1Ijoic3BhY2VhcnQiLCJhIjoiY2x2dG5vdTUzMTJoazJqcXpyb2Z1cjYzMSJ9.eKw4WXN9hn4LHuJiBS4G4g';
+
+    (async () => {
+
+
+        const map = new mapboxgl.Map({
+            container: 'map',
+            zoom: 20,
+            center: [turbines[keys[0][0]][0], turbines[keys[0][0]][1]],
+            pitch: 76,
+            bearing: 150,
+            // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+            style: 'mapbox://styles/mapbox/satellite-streets-v12',
+            interactive: true,
+            hash: false
+        });
+
+        // Add terrain source, with slight exaggeration
+        map.addSource('mapbox-dem', {
+            'type': 'raster-dem',
+            'url': 'mapbox://mapbox.terrain-rgb',
+            'tileSize': 512,
+            'maxzoom': 14
+        });
+        map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+
+        map.on('idle', function() {
+            return;
+            
+            var currpos = {lng: turbines[keys[index][0]][0], lat: turbines[keys[index][0]][1]};
+            const currentelevation = map.queryTerrainElevation(currpos, { exaggerated: false });
+            console.log(currpos, currentelevation);
+            elevations[keys[index][0]] = currentelevation;
+            index++;
+            if (keys.length > index) {
+                map.flyTo({center: {lng: turbines[keys[index][0]][0], lat: turbines[keys[index][0]][1], zoom: 20, animation: true, duration: 1000}})
+            } else {
+                console.log(elevations);
+                const element = document.createElement("a");
+                element.href =  URL.createObjectURL(new Blob([JSON.stringify(elevations, null, 2)], {type: "application/json"}));
+                element.download = "allelevations.json";
+                element.click();                
+            }
+        })
+
+    })();
+</script>
+
+</body>
+</html>

@@ -93,8 +93,7 @@
         "maxzoom": 13,
         "type": "hillshade",
         "source": "hillshadeSource",
-        "layout": { "visibility": "visible" },
-        "paint": { "hillshade-shadow-color": "#473B2422" }
+        "layout": { "visibility": "visible" }
       }, 
       {
         "id": "hills2",
@@ -1871,7 +1870,7 @@
             "visibility": "visible"
         },             
         "paint": {
-            "fill-extrusion-color": "lightgray",                
+            "fill-extrusion-color": "darkgray",                
             "fill-extrusion-height": ["get", "render_height"],
             "fill-extrusion-base": ["case",
                 [">=", ["get", "zoom"], 12],
@@ -2219,8 +2218,17 @@
         "type": "symbol",
         "source": "renewables",
         "source-layer": "renewables",
+        "paint": {
+          "icon-opacity": [
+            "step",
+            ["zoom"],
+            1,
+            12,
+            0
+          ]            
+        },
         "layout": {
-            "visibility": "visible",
+            "visibility": "none",
             "icon-image": "windturbine_grey", 
             "icon-size": [
               "interpolate", ["exponential", 2], ["zoom"], 

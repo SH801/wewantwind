@@ -113,6 +113,20 @@ class Toolbar extends Component {
                                 </a>
                             </>
                             ) : null}
+                            {(typeof this.props.parent.runVideoGeneration !== "undefined") ? (
+                            <>
+                                <a onClick={() => {var test = window.open('http://localhost:3000', 'test', 'height=');test.resizeTo(540, 1023);}} className="wewantwind-link">
+                                    <IonText>open (1080 / 2) x (1920 / 2) window</IonText>
+                                </a>
+                                <a onClick={() => {var test = window.open('http://localhost:3000', 'test', 'height=');test.resizeTo(1920, 1143);}} className="wewantwind-link">
+                                    <IonText>open 1920x1080 window</IonText>
+                                </a>
+                                <a onClick={() => {this.props.parent.runVideoGeneration()}} className="wewantwind-link">
+                                    <IonText>run video generation</IonText>
+                                </a>
+                            </>
+
+                            ) : null}
                             <a onClick={() => {this.props.parent.selectNearestWindturbine()}} className="wewantwind-link">
                                 <IonText>start</IonText>
                             </a>

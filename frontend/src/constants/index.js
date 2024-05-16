@@ -23,6 +23,9 @@ export var TESTING_RANDOMPOINT = true;
 // URL of fetch system
 export const FETCHAPI_URL = "https://positiveplaces.org";
 
+// Local URL of fetch system
+export const FETCHAPI_LOCALURL = "http://localhost";
+
 // Base url of tile server
 export const TILESERVER_BASEURL = isDev() ? "http://localhost:8080" : "https://tiles.wewantwind.org";
 

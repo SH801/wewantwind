@@ -33,8 +33,11 @@ import { point, centroid, bearing, buffer, bbox, destination } from '@turf/turf'
 import { useLoader, useFrame } from "@react-three/fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import 'maplibre-gl/dist/maplibre-gl.css';
-import Map, { Popup, Marker, GeolocateControl } from 'react-map-gl/maplibre';
-import { Canvas, Coordinates } from "react-three-map/maplibre";
+// import 'mapbox-gl/dist/mapbox-gl.css';
+import { Map as MaplibreGL } from 'react-map-gl/maplibre';
+import Map, { Popup, Marker, GeolocateControl } from 'react-map-gl';
+import { Canvas, Coordinates } from "react-three-map";
+import { useGLTF, useBoxProjectedEnv, CubeCamera, Environment, OrbitControls, BakeShadows } from '@react-three/drei'
 import { v4 as uuidv4 } from 'uuid';
 import maplibregl from '!maplibre-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 
@@ -71,7 +74,34 @@ import {
   TILESERVER_BASEURL
 } from "../constants";
 
+import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+import MapLibreGL from 'maplibre-gl';
+
+// mapboxgl.accessToken = 'sk.eyJ1Ijoic3BhY2VhcnQiLCJhIjoiY2x2dG53bzZvMTJrMjJqcXp3ZnlkOHlpYiJ9.G9c917GbNcF3IjULEXgDMg';
+
+var allturbines = {};
+var tiktok = true;
+
 var turf = require('@turf/turf');
+
+const videogenerationsteps = [
+  {action: 'loadsite', delay: 5},
+  {action: 'centre', delay: 1},
+  {action: 'rotatestart', delay: 10},
+  {action: 'recordstart', delay: 1},
+  {action: 'fadeup', delay: 5},
+  {action: 'hold', delay: 40},
+  // {action: 'hold', delay: 5},
+  {action: 'fadedown', delay: 5},
+  {action: 'endscreen', delay: 2},
+  {action: 'recordstop', delay: 1},
+  {action: 'rotatestop', delay: 2}
+]
+
+// const videogenerationsteps = [
+//   {action: 'orthogonalloadsite', delay: 5},
+//   {action: 'getfeatures', delay: 3},
+// ]
 
 window.Ionic = {
   config: {
@@ -184,7 +214,15 @@ class Main extends Component {
         hubheights: [],
         currentwindturbines: [],
         currentaltitudes: [],
+        videogenerationtimer: null,
+        videogenerationrunning: false,
+        videogenerationitemindex: 0,
+        videogenerationprocessindex: 0,
+        videotransitionopacity: 0,
+        videotransitioncache: [],
+        videoendscreen: null,
         textimage: null,
+        logo: null,
       };
       this.data = []; 
       this.helpIndex = 0;
@@ -192,18 +230,62 @@ class Main extends Component {
       this.ignoremovend = false;
       this.loadingurl = false;
       this.mapRef = React.createRef();
+      this.maplibreRef = React.createRef();
       this.threeRef = React.createRef();
       this.submapRef = React.createRef();
       this.popupRef = React.createRef();
+      this.elevations = require('../constants/allelevations.json');
       this.windturbines = require('../constants/windturbines.json');
-      this.style_explore = require('../constants/style_explore.json');
+      this.style_explore = require('../constants/style_explore_batchrecording.json');
       this.style_threedimensions = require('../constants/style_threedimensions.json');
       this.style_twodimensions = require('../constants/style_twodimensions.json');
       this.style_planningconstraints_defaults = require('../constants/style_planningconstraints_defaults.json');
       this.style_planningconstraints = this.constructPlanningConstraints(require('../constants/style_planningconstraints.json'));
       this.explorelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_planningconstraints, this.style_explore);
       this.satellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_planningconstraints, this.style_threedimensions);
+      // this.explorelayer = 'mapbox://styles/mapbox/satellite-v9';
+      // this.satellitelayer = 'mapbox://styles/mapbox/satellite-v9';
+
+      var newelevations = {};
+      var elevationskeys = Object.keys(this.elevations);
+      for(var i = 0; i < elevationskeys.length; i++) {
+        var currentkey = elevationskeys[i];
+        var keysplit = currentkey.split(",");
+        var lng = parseFloat(keysplit[0]).toFixed(4);
+        var lat = parseFloat(keysplit[1]).toFixed(4);
+        newelevations[lng + "," + lat] = this.elevations[currentkey];
+      }
+      this.elevations = newelevations;
+      console.log(this.elevations);
+
+      const logocanvas = document.createElement('canvas');
+      if (tiktok) {
+        logocanvas.height = (2 * 58) + 240 + 240;
+        logocanvas.width = 2 * (540 - 17);  
+      } else {
+        logocanvas.height = 2 * 98;
+        logocanvas.width = 2 * (1920 - 17);  
+      }
+      const logoctx = logocanvas.getContext('2d');
+
+      var logopath = new Path2D('M9.07917722,0.0888888889 C4.06575949,0.0888888889 0,4.52222222 0,9.98888889 C0,15.4555556 4.06575949,19.8888889 9.07917722,19.8888889 C14.0925949,19.8888889 18.1583544,15.4555556 18.1583544,9.98888889 C18.1583544,4.52222222 14.0925949,0.0888888889 9.07917722,0.0888888889 Z M55.7284177,2.27777778 C55.6061392,2.27777778 55.5042405,2.38888889 55.5042405,2.52222222 L55.5042405,13.9888889 C55.5042405,14.1222222 55.6061392,14.2333333 55.7284177,14.2333333 L57.0938608,14.2333333 C57.2161392,14.2333333 57.318038,14.1222222 57.318038,13.9888889 L57.318038,13.2 C58.0211392,14 58.9891772,14.4555556 59.9979747,14.4555556 C62.1276582,14.4555556 63.8599367,12.4555556 63.8599367,9.97777778 C63.8599367,7.5 62.1276582,5.51111111 59.9979747,5.51111111 C58.9789873,5.51111111 58.0109494,5.96666667 57.318038,6.76666667 L57.318038,2.52222222 C57.318038,2.38888889 57.2161392,2.27777778 57.0938608,2.27777778 L55.7284177,2.27777778 Z M10.0166456,3.93333333 C11.1782911,3.96666667 12.3501266,4.46666667 13.2468354,5.45555556 C15.050443,7.42222222 15.1115823,10.5333333 13.3894937,12.4222222 C10.2815823,15.8111111 4.74848101,14.7222222 4.74848101,14.7222222 C4.74848101,14.7222222 3.74987342,8.68888889 6.85778481,5.3 C7.72392405,4.36666667 8.86518987,3.91111111 10.0166456,3.93333333 Z M26.3510127,5.51111111 C25.515443,5.51111111 24.7308228,5.95555556 24.231519,6.68888889 L24.231519,5.97777778 C24.231519,5.84444444 24.1296203,5.73333333 24.0073418,5.73333333 L22.6418987,5.73333333 C22.5196203,5.73333333 22.4177215,5.84444444 22.4177215,5.97777778 L22.4177215,14 C22.4177215,14.1333333 22.5196203,14.2444444 22.6418987,14.2444444 L24.0073418,14.2444444 C24.1296203,14.2444444 24.231519,14.1333333 24.231519,14 L24.231519,9.2 C24.2824684,8.12222222 24.9651899,7.27777778 25.8007595,7.27777778 C26.6668987,7.27777778 27.3903797,8.06666667 27.3903797,9.11111111 L27.3903797,14 C27.3903797,14.1333333 27.4922785,14.2444444 27.614557,14.2444444 L28.9901899,14.2444444 C29.1124684,14.2444444 29.2143671,14.1333333 29.2143671,14 L29.2041772,9.01111111 C29.3264557,8.03333333 29.9786076,7.27777778 30.7632278,7.27777778 C31.6293671,7.27777778 32.3528481,8.06666667 32.3528481,9.11111111 L32.3528481,14 C32.3528481,14.1333333 32.4547468,14.2444444 32.5770253,14.2444444 L33.9526582,14.2444444 C34.0749367,14.2444444 34.1768354,14.1333333 34.1768354,14 L34.1666456,8.48888889 C34.1972152,6.84444444 32.9132911,5.51111111 31.3236709,5.51111111 C30.3046835,5.52222222 29.3672152,6.16666667 28.9290506,7.17777778 C28.419557,6.14444444 27.4311392,5.5 26.3510127,5.51111111 L26.3510127,5.51111111 Z M39.3838608,5.51111111 C37.2541772,5.51111111 35.5218987,7.51111111 35.5218987,9.98888889 C35.5218987,12.4666667 37.2541772,14.4666667 39.3838608,14.4666667 C40.4028481,14.4666667 41.3708861,14.0111111 42.0637975,13.2111111 L42.0637975,14 C42.0637975,14.1333333 42.1656962,14.2444444 42.2879747,14.2444444 L43.6534177,14.2444444 C43.7756962,14.2444444 43.8775949,14.1333333 43.8775949,14 L43.8775949,5.97777778 C43.8877848,5.84444444 43.7858861,5.73333333 43.6534177,5.73333333 L42.2879747,5.73333333 C42.1656962,5.73333333 42.0637975,5.84444444 42.0637975,5.97777778 L42.0637975,6.76666667 C41.3606962,5.96666667 40.3926582,5.51111111 39.3838608,5.51111111 Z M50.1953165,5.51111111 C49.1763291,5.51111111 48.2082911,5.96666667 47.5153797,6.76666667 L47.5153797,5.97777778 C47.5153797,5.84444444 47.413481,5.73333333 47.2912025,5.73333333 L45.9257595,5.73333333 C45.803481,5.73333333 45.7015823,5.84444444 45.7015823,5.97777778 L45.7015823,17.4444444 C45.7015823,17.5777778 45.803481,17.6888889 45.9257595,17.6888889 L47.2912025,17.6888889 C47.413481,17.6888889 47.5153797,17.5777778 47.5153797,17.4444444 L47.5153797,13.2 C48.218481,14 49.186519,14.4555556 50.1953165,14.4555556 C52.325,14.4555556 54.0572785,12.4555556 54.0572785,9.97777778 C54.0572785,7.5 52.325,5.51111111 50.1953165,5.51111111 Z M69.0975316,5.51111111 C66.7844304,5.51111111 64.9196835,7.51111111 64.9196835,9.98888889 C64.9196835,12.4666667 66.7946203,14.4666667 69.0975316,14.4666667 C71.400443,14.4666667 73.2753797,12.4666667 73.2753797,9.98888889 C73.2753797,7.51111111 71.4106329,5.51111111 69.0975316,5.51111111 Z M73.7237342,5.73333333 C73.6116456,5.73333333 73.5199367,5.83333333 73.5199367,5.95555556 C73.5199367,6 73.5301266,6.04444444 73.5505063,6.07777778 L75.8941772,9.96666667 L73.5199367,13.9 C73.4587975,14 73.4791772,14.1444444 73.5810759,14.2111111 C73.6116456,14.2333333 73.6524051,14.2444444 73.6931646,14.2444444 L75.2725949,14.2444444 C75.3948734,14.2444444 75.506962,14.1777778 75.5681013,14.0666667 L76.9743038,11.5 L78.3805063,14.0666667 C78.4416456,14.1777778 78.5537342,14.2444444 78.6760127,14.2444444 L80.255443,14.2444444 C80.3675316,14.2444444 80.4592405,14.1444444 80.4592405,14.0222222 C80.4592405,13.9777778 80.4490506,13.9444444 80.4286709,13.9 L78.0544304,9.96666667 L80.3981013,6.07777778 C80.4592405,5.97777778 80.4388608,5.83333333 80.336962,5.76666667 C80.3063924,5.74444444 80.2656329,5.73333333 80.2248734,5.73333333 L78.645443,5.73333333 C78.5231646,5.73333333 78.4110759,5.8 78.3499367,5.91111111 L76.9743038,8.43333333 L75.5986709,5.91111111 C75.5375316,5.8 75.425443,5.73333333 75.3031646,5.73333333 L73.7237342,5.73333333 Z M10.1185443,5.88888889 L9.23202532,7.88888889 L7.40803797,8.85555556 L9.23202532,9.82222222 L10.1185443,11.8222222 L11.0152532,9.82222222 L12.8392405,8.85555556 L11.0152532,7.88888889 L10.1185443,5.88888889 Z M39.6997468,7.3 C40.9938608,7.3 42.0434177,8.48888889 42.0637975,9.95555556 L42.0637975,10.0222222 C42.0536076,11.4888889 40.9938608,12.6777778 39.6997468,12.6777778 C38.395443,12.6777778 37.3356962,11.4777778 37.3356962,9.98888889 C37.3356962,8.5 38.395443,7.3 39.6997468,7.3 L39.6997468,7.3 Z M49.8692405,7.3 C51.1735443,7.3 52.2332911,8.5 52.2332911,9.98888889 C52.2332911,11.4777778 51.1735443,12.6777778 49.8692405,12.6777778 C48.5751266,12.6777778 47.5255696,11.4888889 47.5051899,10.0222222 L47.5051899,9.95555556 C47.5255696,8.48888889 48.5751266,7.3 49.8692405,7.3 L49.8692405,7.3 Z M59.6820886,7.3 C60.9863924,7.3 62.0461392,8.5 62.0461392,9.98888889 C62.0461392,11.4777778 60.9863924,12.6777778 59.6820886,12.6777778 C58.3879747,12.6777778 57.3384177,11.4888889 57.318038,10.0222222 L57.318038,9.95555556 C57.3384177,8.48888889 58.3879747,7.3 59.6820886,7.3 L59.6820886,7.3 Z M69.0771519,7.3 C70.3814557,7.3 71.4412025,8.5 71.4412025,9.98888889 C71.4412025,11.4777778 70.3814557,12.6777778 69.0771519,12.6777778 C67.7728481,12.6777778 66.7131013,11.4777778 66.7131013,9.98888889 C66.7131013,8.5 67.7728481,7.3 69.0771519,7.3 Z');
+      logoctx.scale(1.5, 1.5);
+      logoctx.fillStyle = "#ffffff";
+      logoctx.strokeStyle = "#ffffff";
+      // logoctx.stroke(logopath);
+      logoctx.fill(logopath);
+      logoctx.fillStyle = "#ffffff";
+      logoctx.strokeStyle = "#ffffff";
+
+      const logoUrl = logocanvas.toDataURL();
+      var img = new Image();
+      img.src = logoUrl;
+      this.state.logo = img;
+
       this.nonsatellitelayer = this.incorporateBaseDomain(TILESERVER_BASEURL, this.style_planningconstraints, this.style_twodimensions);
+      this.fadestepscount = 256;
+      this.fadestepsincrement = parseFloat(100 / 256);
+      this.fademinimumtime = 200;
             
       let path = window.location.pathname;
       if (path === '/toggletesting/') {
@@ -228,6 +310,49 @@ class Main extends Component {
       this.props.setGlobalState({'buttons': buttons});
 
       this.hoveredPolygonId = null;
+
+      // **************************************************************
+      // Comment out the following when not doing batch video recording
+      // **************************************************************
+
+      this.soundtrack = new Audio('./static/audio/soundtrack.mp3');              
+
+      if (this.state.videotransitioncache.length === 0) {
+        this.endscreen = new Image();
+        if (tiktok) {
+          this.endscreen.src = "/static/icons/wewantwind_endscreen_tiktok.png";
+        } else {
+          this.endscreen.src = "/static/icons/wewantwind_endscreen.png";
+        }
+        // console.log("Creating transition cache");
+        // var videotransitioncache = [];
+        // for(var i = 0; i < 256; i++) {
+        //   var hex = Number(i).toString(16);        
+        //   while (hex.length < 2) {
+        //     hex = "0" + hex;
+        //   }
+        //   const transitioncanvas = document.createElement('canvas');
+        //   var height = 2 * 1080;
+        //   var width = 2 * 1920;  
+        //   if (tiktok) {
+        //     height = 1920;
+        //     width = 1080;  
+        //   }
+        //   transitioncanvas.height = height;
+        //   transitioncanvas.width = width;
+        //   const ctx = transitioncanvas.getContext('2d');
+        //   ctx.beginPath(); 
+        //   ctx.fillStyle = "#000000" + hex;
+        //   ctx.rect(0, 0, width, height); 
+        //   ctx.fill();
+        //   const dataUrl = transitioncanvas.toDataURL();
+        //   var img = new Image();
+        //   img.src = dataUrl;
+        //   videotransitioncache.push(img);              
+        // }
+        // this.state.videotransitioncache = videotransitioncache;
+        // console.log("Finished creating transition cache");  
+      }
     }
 
     componentDidMount(){
@@ -341,8 +466,8 @@ class Main extends Component {
         // var elevation = this.mapRef.current.getMap().queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}) || 0;
         var cameraposition = this.getCameraPosition();
         this.props.setGlobalState({currentlat: cameraposition.lat, currentlng: cameraposition.lng});
-        this.updateAltitude();
-        this.updateCurrentWindTurbines(this.mapRef.current.getMap());
+        // this.updateAltitude();
+        // this.updateCurrentWindTurbines(this.mapRef.current.getMap());
       }
     }
   
@@ -480,7 +605,7 @@ class Main extends Component {
       const pitch = map.transform._pitch;
       const altitude = Math.cos(pitch) * map.transform.cameraToCenterDistance;
       const latOffset = Math.tan(pitch) * map.transform.cameraToCenterDistance;
-      const latPosPointInPixels = map.transform.centerPoint.add(new maplibregl.Point(0, latOffset));
+      const latPosPointInPixels = map.transform.centerPoint.add(new mapboxgl.Point(0, latOffset));
       const latLong = map.transform.pointLocation(latPosPointInPixels);
       const verticalScaleConstant = map.transform.worldSize / (2 * Math.PI * 6378137 * Math.abs(Math.cos(latLong.lat * (Math.PI / 180))));
       const altitudeInMeters = altitude / verticalScaleConstant;
@@ -500,8 +625,8 @@ class Main extends Component {
       const worldsize = (pixelAltitude / altitude) * metersInWorldAtLat;
       const zoom = Math.log(worldsize / map.transform.tileSize) / Math.LN2;
       const latOffset = Math.tan(pitch_) * cameraToCenterDistance;
-      const newPixelPoint = new maplibregl.Point(map.transform.width / 2, map.transform.height / 2 + latOffset);
-      const newLongLat = new maplibregl.LngLat(lng, lat);
+      const newPixelPoint = new mapboxgl.Point(map.transform.width / 2, map.transform.height / 2 + latOffset);
+      const newLongLat = new mapboxgl.LngLat(lng, lat);
       // console.log(cameraToCenterDistance, pixelAltitude, metersInWorldAtLat, worldsize, latOffset, newPixelPoint, newLongLat, lng, lat, zoom, pitch, bearing);
       if (!isNaN(zoom)) map.transform.zoom = zoom;
       map.transform.pitch = pitch;
@@ -517,12 +642,65 @@ class Main extends Component {
         this.loadingurl = false;
 
         var map = this.mapRef.current.getMap();
-        let scale = new maplibregl.ScaleControl({
+        let scale = new mapboxgl.ScaleControl({
           maxWidth: 2000,
           unit: 'metric',
           style: 'map-scale'
         });
 
+        // map.setFog({
+        //   'range': [0, 5],
+        //   'horizon-blend': 0.5,
+        //   'color': '#fffff6',
+        //   'high-color': '#fffff6',
+        //   'space-color': '#6699ff',
+        //   'star-intensity': 0.0
+        // });
+
+      //   map.setFog({
+      //     'range': [-0.5, 2],
+      //     'color': '#def',
+      //     'high-color': '#def',
+      //     'space-color': '#def'
+      // });
+
+        // // Add a directional light
+        // map.setLights([{
+        //   "id": "sun_light",
+        //   "type": "directional",
+        //   // "position": [1.5, 180 + sunPos.azimuth * 180 / Math.PI, 90 - sunPos.altitude * 180 / Math.PI],
+        //   "properties": {
+        //       "color": "rgba(255.0, 0.0, 0.0, 1.0)",
+        //       "intensity": 1,
+        //       "direction": [200.0, 40.0],
+        //       "cast-shadows": true,
+        //       "shadow-intensity": 0.2
+        //   }
+        // }]);
+
+      //   var SunCalc = require('suncalc');
+      //   var date = new Date();
+      //   var sunPos = SunCalc.getPosition(date, 51, 0);
+
+      //   console.log(sunPos);
+      //   sunPos.altitude = 1;
+
+      //   map.setLight({
+      //     anchor: 'map',
+      //     position: [1.5, 180 + sunPos.azimuth * 180 / Math.PI, 90 - sunPos.altitude * 180 / Math.PI],
+      //     'position-transition': {duration: 0}
+      // }, {duration: 0});
+
+        // map.addSource('mapbox-dem', {
+        //   type: 'raster-dem',
+        //   url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+        //   tileSize: 512,
+        //   maxzoom: 20
+        // });
+        // map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1 });
+      
+
+        // map.setFog({});
         // map.addControl(scale, 'bottom-left');
 
         map.addControl(new Spacer(), 'top-right');
@@ -607,9 +785,9 @@ class Main extends Component {
   
         if (!isiOS) setTimeout(this.animateIcons, 1000);
 
-        map.addControl(new maplibregl.AttributionControl(), 'bottom-left');
+        map.addControl(new mapboxgl.AttributionControl(), 'bottom-left');
     }
-    
+
     isiOS = () => {
         // From https://stackoverflow.com/questions/9038625/detect-if-device-is-ios
         // and https://davidwalsh.name/detect-iphone
@@ -959,7 +1137,7 @@ class Main extends Component {
       var submap = this.submapRef.current.getMap();
       submap.dragRotate.disable();
       submap.touchZoomRotate.disableRotation();
-      let scale = new maplibregl.ScaleControl({
+      let scale = new mapboxgl.ScaleControl({
         maxWidth: 80,
         unit: 'imperial',
         style: 'map-scale'
@@ -1024,7 +1202,23 @@ class Main extends Component {
             return;
         }
 
-        gl.drawArrays(gl.TRIANGLES, 0, n);  
+        // gl.drawArrays(gl.TRIANGLES, 0, n);
+
+        if (this.state.textimage) {
+          renderImage(gl, this.state.textimage);
+        }
+
+        if (this.state.logo) {
+          renderImage(gl, this.state.logo);
+        }
+
+        if (this.state.videoendscreen) {
+          renderImage(gl, this.state.videoendscreen);          
+        }
+
+        if ((this.state.videotransitioncache.length === 256) && (this.state.videotransitionopacity !== 0)) {
+          renderImage(gl, this.state.videotransitioncache[parseInt(255 * this.state.videotransitionopacity / 100)]);
+        }
     }
     
     onIdle = () => {
@@ -1032,6 +1226,8 @@ class Main extends Component {
         this.updatealtitude = false;
         this.updateAltitude();
       }
+
+      // this.updateCurrentWindTurbines(this.mapRef.current.getMap());
 
       if (this.state.flying) {
         console.log("onIdle, triggering flyaround");
@@ -1052,21 +1248,29 @@ class Main extends Component {
             case PAGE.EXPLORE:
 
                 this.updatealtitude = true;
-                if (this.mapRef.current !== null) {
+                if (this.state.videogenerationrunning) {
                   var map = this.mapRef.current.getMap();
                   var zoom = map.getZoom();
-                  var pitch = map.getPitch();
-                  var bearing = map.getBearing();
-                  if (zoom < THREED_ZOOM) {
-                      this.setState({showmarker: true});
-                      // if ((pitch !== 0) || (bearing !== 0)) map.jumpTo({pitch: 0, bearing: 0, duration: 0})
-                      if (pitch === 85) map.jumpTo({pitch: 0, duration: 0});
-                    } else {
-                      this.setState({showmarker: false});
-                      if (pitch < 80) map.easeTo({pitch: 85, duration: 1000});
-                  }
-
+                  if (zoom < THREED_ZOOM) map.setZoom(THREED_ZOOM);
+                  this.setState({showmarker: false});
                   this.updateCurrentWindTurbines(map);
+                } else {
+                  if (this.mapRef.current !== null) {
+                    var map = this.mapRef.current.getMap();
+                    var zoom = map.getZoom();
+                    var pitch = map.getPitch();
+                    var bearing = map.getBearing();
+                    if (zoom < THREED_ZOOM) {
+                        this.setState({showmarker: true});
+                        // if ((pitch !== 0) || (bearing !== 0)) map.jumpTo({pitch: 0, bearing: 0, duration: 0})
+                        if (pitch === 85) map.jumpTo({pitch: 0, duration: 0});
+                      } else {
+                        this.setState({showmarker: false});
+                        if (pitch < 80) map.easeTo({pitch: 85, duration: 1000});
+                    }
+
+                    this.updateCurrentWindTurbines(map);
+                  }
                 }
 
                 break;
@@ -1095,9 +1299,9 @@ class Main extends Component {
     }
 
     updateAltitude = () => {
-      if (this.mapRef.current !== null) {
-        const map = this.mapRef.current.getMap();
-        var altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, { exaggerated: false }) || 0;
+      if (this.maplibreRef.current !== null) {
+        const map = this.maplibreRef.current.getMap();
+        var altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, { exaggerated: true }) || 0;
         // console.log("Altitude", altitude);
         // if (altitude < 0) altitude = 0;
         this.setState({altitude: altitude});
@@ -1112,16 +1316,24 @@ class Main extends Component {
       for(var i = 0; i < windturbines.length; i++) {
         currentwindturbines.push(windturbines[i].geometry.coordinates);
       }
+      console.log("Current turbines count", windturbines.length, currentwindturbines);
       this.updateCurrentAltitudes(currentwindturbines);
       this.setState({currentwindturbines: currentwindturbines});
     }
 
     updateCurrentAltitudes = (currentwindturbines) => {
+      // const viewablemap = this.mapRef.current.getMap();
       if (this.mapRef.current !== null) {
         const map = this.mapRef.current.getMap();
         var currentaltitudes = [];
         for(var i = 0; i < currentwindturbines.length; i++) {
-          var altitude = map.queryTerrainElevation({lat: currentwindturbines[i][1], lng: currentwindturbines[i][0]}, { exaggerated: false }) || 0;
+          // map.jumpTo({center: viewablemap.getCenter(), zoom: viewablemap.getZoom(), bearing: viewablemap.getBearing(), pitch: viewablemap.getPitch(), animate: false});
+          var altitude = map.queryTerrainElevation({lng: currentwindturbines[i][0], lat: currentwindturbines[i][1]}, { exaggerated: false });
+          // var altitude = map.queryTerrainElevation([currentwindturbines[i][0], currentwindturbines[i][1]]);
+          // var altitude = map.queryTerrainElevation(map.getCenter());
+          altitude = 267.9;
+          // altitude = 0;
+          // console.log("Altitude for index", i, currentwindturbines[i], altitude);
           currentaltitudes.push(altitude);
         }
         this.setState({currentaltitudes: currentaltitudes});
@@ -1677,6 +1889,319 @@ class Main extends Component {
       this.setState({hubheight: turbineheight});
     }
 
+    stepVideoGenerationProcess = () => {
+      if (!this.state.videogenerationrunning) return;
+
+      console.log(this.props.global.allwindturbines);
+      var step = this.state.videogenerationprocessindex;
+      var itemindex = this.state.videogenerationitemindex;
+      if (step === videogenerationsteps.length) {
+        step = 0;
+        itemindex++;
+        // if (itemindex === 2) {
+        if (this.props.global.allwindturbines.length === itemindex) {
+          console.log("Reached end of video generation loop - quitting");
+          const element = document.createElement("a");
+          element.href =  URL.createObjectURL(new Blob([JSON.stringify(allturbines, null, 2)], {type: "application/json"}));
+          element.download = "allwindturbines.json";
+          element.click();
+          return;
+        }
+      }
+
+      var currentstep = videogenerationsteps[step];
+      var currentwindfarm = this.props.global.allwindturbines[itemindex];
+      console.log("Itemindex", itemindex, "Step", step, 'Action', currentstep['action'])
+      if ((this.mapRef === null) || (this.mapRef.current === null)) {
+        this.setState({videogenerationtimer: videogenerationtimer, videogenerationitemindex: itemindex, videogenerationprocessindex: step});
+        var videogenerationtimer = setTimeout(this.stepVideoGenerationProcess, 1000);
+        return;
+      }
+
+      const map = this.mapRef.current.getMap();
+      const canvas = map.getCanvas();
+      const fadedelayincrement = 1000 * currentstep['delay'] / this.fadestepscount;
+
+      switch(currentstep['action']) {
+        case 'endscreen':
+          this.setState({videotransitionopacity: 100, videoendscreen: this.endscreen});
+          setTimeout(() => {this.transitionFadeUp(fadedelayincrement)}, fadedelayincrement);  
+          break;
+        case 'hold':
+          break;
+        case 'orthogonalloadsite':
+          map.fitBounds(currentwindfarm.bbox, {duration: 1000, padding: {top: 40, bottom: 40, left: 40, right: 40}});   
+          break;
+        case 'getfeatures':
+          const windturbines = map.queryRenderedFeatures(
+            {layers: ['renewables_windturbine']}
+          );
+          for(var i = 0; i < windturbines.length; i++) {
+            var coordinates = windturbines[i].geometry.coordinates;
+            var key = coordinates[0].toString() + "," + coordinates[1].toString();
+            allturbines[key] = coordinates; 
+          }
+    
+          break;
+        case 'loadsite':
+          if (tiktok) {
+            const textcanvas = document.createElement('canvas');
+            textcanvas.height = 720;
+            textcanvas.width = canvas.width;
+            const ctx = textcanvas.getContext('2d');
+            ctx.font = '50px Open Sans, light';
+            ctx.beginPath(); // Start a new path
+            ctx.fillStyle = "#00000099";
+            ctx.rect(0, 0, canvas.width, canvas.height); 
+            ctx.fill();
+            ctx.beginPath();
+            ctx.fillStyle = "#ffffff";
+            var title = currentwindfarm.name;
+            ctx.fillText(title, 35, 65);
+            var subtitle = '';
+            if (currentwindfarm.extraproperties['number:of:elements'] !== undefined) {
+              subtitle += currentwindfarm.extraproperties['number:of:elements'] + " turbine";
+              if (currentwindfarm.extraproperties['number:of:elements'] !== 1) subtitle += "s";
+            }
+            if (currentwindfarm.extraproperties['plant:output:electricity'] !== undefined) {
+              if (subtitle !== '') subtitle += ", ";
+              subtitle += parseFloat(currentwindfarm.extraproperties['plant:output:electricity']).toFixed(1) + ' MW';
+
+            }
+            if (subtitle !== '') subtitle += ", ";
+            subtitle += currentwindfarm.centre[1].toFixed(5) + "°N, " + currentwindfarm.centre[0].toFixed(5) + "°W";
+            ctx.beginPath(); 
+            ctx.font = '35px Open Sans, light';
+            ctx.fillText(subtitle, 35, 110);
+            ctx.font = '20px Open Sans';
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("Terrain data and satellite imagery © Mapbox https://www.mapbox.com/about/maps/", 165, 145);
+            ctx.fillText("Renewables data and © OpenMapTiles from © OpenStreetMap contributors", 35, 180);
+            ctx.fillText("Created by WeWantWind.org", 35, 210);
+
+            const dataUrl = textcanvas.toDataURL();
+            var img = new Image();
+            img.src = dataUrl;
+            this.setState({videoendscreen: null, videotransitionopacity: 100, textimage: img});
+            var currentwindfarmpos = point([currentwindfarm.centre[0], currentwindfarm.centre[1]]);
+            var viewingdistance = 0.6;
+            var viewingbearing = -180;
+            var options = {units: 'kilometres'};
+            var viewingpos = destination(currentwindfarmpos, viewingdistance, viewingbearing, options);
+            map.fitBounds(currentwindfarm.bbox, {duration: 1000, padding: {top: 0, bottom: 0, left: 0, right: 0}});   
+          } else {
+            const textcanvas = document.createElement('canvas');
+            textcanvas.height = 300;
+            textcanvas.width = canvas.width;
+            const ctx = textcanvas.getContext('2d');
+            ctx.font = '50px Open Sans, light';
+            ctx.beginPath(); // Start a new path
+            ctx.fillStyle = "#00000099";
+            ctx.rect(0, 0, canvas.width, canvas.height); 
+            ctx.fill();
+            ctx.beginPath();
+            ctx.fillStyle = "#ffffff";
+            var title = currentwindfarm.name;
+            if (currentwindfarm.extraproperties['number:of:elements'] !== undefined) {
+              title += ", " + currentwindfarm.extraproperties['number:of:elements'] + " turbine";
+              if (currentwindfarm.extraproperties['number:of:elements'] !== 1) title += "s";
+            }
+            if (currentwindfarm.extraproperties['plant:output:electricity'] !== undefined) title += ", " + parseFloat(currentwindfarm.extraproperties['plant:output:electricity']).toFixed(1) + ' MW';
+            title += ', ' + currentwindfarm.centre[1].toFixed(5) + "°N, " + currentwindfarm.centre[0].toFixed(5) + "°W";
+            ctx.fillText(title, 35, 85);
+            ctx.beginPath(); 
+            ctx.font = '25px Open Sans';
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("Terrain data and satellite imagery © Mapbox https://www.mapbox.com/about/maps/ Renewables data and © OpenMapTiles from © OpenStreetMap contributors. Created by WeWantWind.org", 165, 125);
+            const dataUrl = textcanvas.toDataURL();
+            var img = new Image();
+            img.src = dataUrl;
+            this.setState({videoendscreen: null, videotransitionopacity: 100, textimage: img});
+            var currentwindfarmpos = point([currentwindfarm.centre[0], currentwindfarm.centre[1]]);
+            var viewingdistance = 0.6;
+            var viewingbearing = -180;
+            var options = {units: 'kilometres'};
+            var viewingpos = destination(currentwindfarmpos, viewingdistance, viewingbearing, options);
+            // this.setCameraPosition({lng: viewingpos['geometry']['coordinates'][0], lat: viewingpos['geometry']['coordinates'][1], altitude: 600, pitch: 60, bearing: 180 + viewingbearing});
+            // map.jumpTo({center: map.getCenter(), pitch: 60, animation: true, duration: 1000});
+            map.fitBounds(currentwindfarm.bbox, {duration: 1000, padding: {top: 40, bottom: 40, left: 40, right: 40}});               
+          }
+          break;
+        case 'centre':
+          map.jumpTo({center: {lat: currentwindfarm.centre[1], lng: currentwindfarm.centre[0]}, pitch: 80, animate: true, duration: 500});
+          break;
+        case 'fadeup':
+          setTimeout(() => {this.transitionFadeUp(fadedelayincrement)}, fadedelayincrement);  
+          break;
+        case 'fadedown':
+          setTimeout(() => {this.transitionFadeDown(fadedelayincrement)}, fadedelayincrement);  
+          break;
+        case 'rotatestart':
+          this.setState({flying: true});
+          this.setState({flying: true, draggablesubmap: false, preflightposition: {lat: this.props.global.currentlat, lng: this.props.global.currentlng }}, () => {          
+            this.submapInterval = setInterval(this.updateSubmapPosition, 200);
+            this.flyingRun();  
+          });
+          break;
+        case 'rotatestop':
+          this.flyingStop();
+          break;
+        case 'zoom':
+          map.flyTo({animate: true, duration: 1000 * currentstep['delay'], zoom: map.getZoom() + currentstep['value']});
+          break;
+        case 'recordstart':
+          // Use MediaRecorder to record video as it's most efficient
+          // Tried using MP4 conversion but too CPU intensive when main app is already working hard
+          // this.data = []; 
+          const data = []; 
+          this.soundtrack.play().then( () => {
+            const audioStream = this.soundtrack.captureStream();
+            const videoStream = canvas.captureStream(25); 
+            videoStream.addTrack(audioStream.getAudioTracks()[0]);          
+            // const mediaRecorder = new MediaRecorder(videoStream, {videoBitsPerSecond: 1000000000});
+            var mediaRecorder = new MediaRecorder(videoStream, {videoBitsPerSecond: 100000000});        
+            if (tiktok) {
+              mediaRecorder = new MediaRecorder(videoStream, {videoBitsPerSecond: 20000000});        
+            }
+            this.setState({mediarecorder: mediaRecorder});
+            mediaRecorder.ondataavailable = (e) => data.push(e.data);
+            mediaRecorder.onstop = (e) => {
+              const anchor = document.createElement("a");
+              anchor.href =  URL.createObjectURL(new Blob(data, {type: "video/webm;codecs=h264"}));
+              const now = new Date();
+              const timesuffix = now.toISOString().substring(0,19).replaceAll('T', ' ').replaceAll(':', '-');
+              anchor.download = currentwindfarm.name + ' - ' + currentwindfarm.centre[1].toFixed(5) + "°N, " + currentwindfarm.centre[0].toFixed(5) + "°W.webm";
+              anchor.click();  
+            }  
+            mediaRecorder.start();  
+          });
+          break;
+        case 'recordstop':
+          if (this.state.mediarecorder) {
+            this.soundtrack.pause();
+            this.soundtrack.currentTime = 0;
+            this.state.mediarecorder.stop(); 
+            this.setState({mediarecorder: null});
+          }
+          break;
+      }
+
+      step++;
+      // clearTimeout(this.state.videogenerationtimer);
+      if (this.state.videogenerationrunning) {
+        var videogenerationtimer = setTimeout(this.stepVideoGenerationProcess, 1000 * currentstep['delay']);
+        this.setState({videogenerationtimer: videogenerationtimer, videogenerationitemindex: itemindex, videogenerationprocessindex: step});  
+      }
+    }
+
+    transitionFadeUp = (fadedelayincrement) => {
+      // console.log("transitionFadeUp");
+      if (!this.state.videogenerationrunning) return;
+      var currentfade = this.state.videotransitionopacity;
+      var fadedelay = fadedelayincrement;
+      while (fadedelay < this.fademinimumtime) {
+        fadedelay += fadedelayincrement;
+        currentfade -= this.fadestepsincrement;
+      }
+      if (currentfade > 0) {
+        this.setState({videotransitionopacity: currentfade});
+        setTimeout(() => {this.transitionFadeUp(fadedelayincrement)}, fadedelayincrement);
+      } else {
+        this.setState({videotransitionopacity: 0});
+      }
+    }
+
+    transitionFadeDown = (fadedelayincrement) => {
+      // console.log("transitionFadeDown");
+      if (!this.state.videogenerationrunning) return;
+      var currentfade = this.state.videotransitionopacity;
+      var fadedelay = fadedelayincrement;
+      while (fadedelay < this.fademinimumtime) {
+        fadedelay += fadedelayincrement;
+        currentfade += this.fadestepsincrement;
+      }
+      if (currentfade < 100) {
+        this.setState({videotransitionopacity: currentfade});
+        setTimeout(() => {this.transitionFadeDown(fadedelayincrement)}, fadedelayincrement);
+      } else {
+        this.setState({videotransitionopacity: 100});
+      }
+    }
+
+    combineBoundingBox = (bbox1, bbox2) => {
+      var retbbox = bbox1;
+
+      if (bbox2[0][0] < retbbox[0][0]) retbbox[0][0] = bbox2[0][0];
+      if (bbox2[0][1] < retbbox[0][1]) retbbox[0][1] = bbox2[0][1];
+      if (bbox2[1][0] > retbbox[1][0]) retbbox[1][0] = bbox2[1][0];
+      if (bbox2[1][1] > retbbox[1][1]) retbbox[1][1] = bbox2[1][1];
+
+      return retbbox;
+    }
+
+    combineSites = (site1, site2) => {
+      var name = site1['name'];
+      var number_of_elements = site1['extraproperties']['number:of:elements'] + site2['extraproperties']['number:of:elements'];
+      var plant_output_electricity = parseFloat(site1['extraproperties']['plant:output:electricity']) + parseFloat(site2['extraproperties']['plant:output:electricity']) + ' MW';
+      var bbox = this.combineBoundingBox(site1.bbox, site2.bbox);
+      var centre = [(bbox[0][0] + bbox[1][0]) / 2, (bbox[0][1] + bbox[1][1]) / 2];
+      return {name: name, centre: centre, bbox: bbox, extraproperties: {'number:of:elements': number_of_elements, 'plant:output:electricity': plant_output_electricity}};
+    }
+
+    runVideoGeneration = () => {
+      if (!this.state.videogenerationrunning) {
+        this.setPage(PAGE.EXPLORE);
+        this.props.loadAllWindTurbines().then(() => {
+          var consolidatedwindturbines = [];
+          var consolidatedlist = {};
+          var consolidatelist = ['Aikengall', 'Altahullion', 'Mynydd Portref', 'Parc Cynog', 'Glass Moor', 'Ardrossan', 'Blantyre Muir', 'Withernwick', 'Lochluichart', 'Beinn Tharsuinn', 'Gordonbush', 'Tullo', "St John's Well", 'Slieve Divena', 'Winscales', 'Beinn an Tuirc', 'Lochelbank', 'Goole Fields'];
+
+          for (var i = 0; i < this.props.global.allwindturbines.length; i++) {
+            var consolidate = false;
+            var currentwindturbine = this.props.global.allwindturbines[i];
+            for(var j = 0; j < consolidatelist.length; j++) {
+                if (consolidatelist[j] === currentwindturbine['name'].substr(0, consolidatelist[j].length)) {
+                  consolidate = true;
+                  if (consolidatedlist[consolidatelist[j]] === undefined) {
+                    currentwindturbine['name'] = consolidatelist[j] + ' Wind Farm';
+                    consolidatedlist[consolidatelist[j]] = [];
+                  }
+                  consolidatedlist[consolidatelist[j]].push(currentwindturbine);
+                  break;
+                }
+            }
+
+            if (!consolidate) consolidatedwindturbines.push(currentwindturbine);
+          }
+
+          var consolidatedkeys = Object.keys(consolidatedlist);
+          for(var i = 0; i < consolidatedkeys.length; i++) {
+            var consolidateditems = consolidatedlist[consolidatedkeys[i]];
+            if (consolidateditems.length === 1) consolidatedwindturbines.push(consolidateditems[0]);
+            else {
+              var cumulativeconsolidated = consolidateditems[0];
+              for(var j = 1; j < consolidateditems.length; j++) {
+                cumulativeconsolidated = this.combineSites(cumulativeconsolidated, consolidateditems[j]);
+              }              
+              consolidatedwindturbines.push(cumulativeconsolidated);
+            }
+          }
+
+          this.props.setGlobalState({allwindturbines: consolidatedwindturbines}).then(() => {
+            var videogenerationtimer = setTimeout(this.stepVideoGenerationProcess, 1000);
+            this.setState({allwindturbines: consolidatedwindturbines, videogenerationrunning: true, videogenerationtimer: videogenerationtimer, videogenerationitemindex: 0, videogenerationprocessindex: 0});  
+          })
+        })  
+      } else {
+        console.log("Stopping video generation");
+        this.soundtrack.pause();
+        this.soundtrack.currentTime = 0;
+        clearTimeout(this.state.videogenerationtimer);
+        if (this.state.flying) this.flyingStop();
+        this.setState({videotransitionopacity: 0, videoendscreen: null, videogenerationrunning: false, videogenerationtimer: null, videogenerationitemindex: 0, videogenerationprocessindex: 0});
+      }
+    }
+
     render() {
         return (
           <>
@@ -2153,6 +2678,7 @@ class Main extends Component {
                       Turbine distance: {this.props.global.distance_mi.toFixed(1) + ' miles'} / {this.props.global.distance_km.toFixed(1) + ' km'}
                       </div>
                       <Map ref={this.submapRef}
+                      mapboxAccessToken="pk.eyJ1Ijoic3BhY2VhcnQiLCJhIjoiY2x2dG5vdTUzMTJoazJqcXpyb2Z1cjYzMSJ9.eKw4WXN9hn4LHuJiBS4G4g"
                       onLoad={this.onSubmapLoad}
                       mapStyle={this.nonsatellitelayer}
                       attributionControl={false}
@@ -2196,7 +2722,7 @@ class Main extends Component {
 
                       <div style={{ height: "100%" }}>
 
-                        {((this.props.global.page !== PAGE.HOME) && (this.props.global.page !== PAGE.NEARESTTURBINE_OVERVIEW)) ? (
+                        {/* {((this.props.global.page !== PAGE.HOME) && (this.props.global.page !== PAGE.NEARESTTURBINE_OVERVIEW)) ? (
                           <div className="turbine-button">
                               <IonGrid>
                                   <IonRow className="ion-align-items-center">
@@ -2210,7 +2736,7 @@ class Main extends Component {
                                   </IonRow>
                               </IonGrid>
                           </div>
-                        ) : null}
+                        ) : null} */}
 
                         {(this.props.global.page === PAGE.NEARESTTURBINE_OVERVIEW) ? (
                             <>
@@ -2260,6 +2786,7 @@ class Main extends Component {
                             ) : null}
 
                             <Map ref={this.mapRef}
+                              mapboxAccessToken="pk.eyJ1Ijoic3BhY2VhcnQiLCJhIjoiY2x2dG5vdTUzMTJoazJqcXpyb2Z1cjYzMSJ9.eKw4WXN9hn4LHuJiBS4G4g"
                               width="100vw"
                               height="100vh"
                               onLoad={this.onMapLoad} 
@@ -2304,7 +2831,7 @@ class Main extends Component {
                                     </Coordinates>
                                     {this.state.currentwindturbines.map((turbine, index) => 
                                       (
-                                        <Coordinates key={index} latitude={turbine[1]} longitude={turbine[0]} altitude={this.state.currentaltitudes[index]}>
+                                        <Coordinates key={index} latitude={turbine[1]} longitude={turbine[0]} altitude={1.1 * this.elevations[turbine[0].toFixed(4) + ',' + turbine[1].toFixed(4)]}>
                                           <hemisphereLight args={["#ffffff", "#60666C"]} position={[1, 4.5, 3]}/>
                                           <object3D visible="true" scale={25} rotation={[0, 1, 0]}>
                                               <WindTurbine container={this}/>
@@ -2312,6 +2839,7 @@ class Main extends Component {
                                         </Coordinates>
                                       )
                                     )}
+
                                 </Canvas>
 
                                 <Marker 
@@ -2332,6 +2860,31 @@ class Main extends Component {
                                     <img alt="Your location" width="40" src="./static/icons/eye.png" />
                                 </Marker>                  
                             </Map>
+
+                            {/* <MaplibreGL ref={this.maplibreRef}
+                              width="100vw"
+                              height="100vh"
+                              // onLoad={this.onMapLoad} 
+                              // onMouseEnter={this.onMouseEnter}
+                              // onMouseMove={this.onMouseMove}
+                              // onMouseLeave={this.onMouseLeave}   
+                              // onClick={this.onClick}    
+                              // onDrag={this.onDrag}
+                              // onRender={this.onRender}
+                              // onMoveEnd={this.onMapMoveEnd}
+                              // onIdle={this.onIdle}
+                              // interactiveLayerIds={this.interactivelayers}
+                              mapStyle={this.explorelayer}
+                              terrain={{source: "terrainSource", exaggeration: 1.1 }}
+                              // attributionControl={false}
+                              // maxBounds={DEFAULT_MAXBOUNDS}
+                              initialViewState={{
+                              longitude: this.props.global.currentlng,
+                              latitude: this.props.global.currentlat,
+                              maxPitch: 85
+                              }} 
+                              /> */}
+
 
                       </div>
                   </div>

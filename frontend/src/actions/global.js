@@ -11,7 +11,7 @@
  * Actions for global redux object
  */ 
 
-import { API_URL, FETCHAPI_URL } from "../constants";
+import { API_URL, FETCHAPI_URL, FETCHAPI_LOCALURL } from "../constants";
 import { initializeMap } from "../functions/map";
 import { setURLState } from "../functions/urlstate";
 
@@ -236,6 +236,35 @@ export const sendShare = (shareparameters) => {
 }
 
 /**
+ * loadAllWindTurbines
+ * 
+ * Load all wind turbines from backend database
+ * 
+ */
+export const loadAllWindTurbines = () => {
+  return (dispatch, getState) => {
+    const { mapref } = getState().global;
+    let headers = {"Content-Type": "application/json"};
+    return fetch(FETCHAPI_LOCALURL + "/allwindfarms/", {headers, method: "POST"})
+      .then(res => {
+        if (res.status < 500) {
+          return res.json().then(data => {
+            return {status: res.status, data};
+          })
+        } else {
+          console.log("Server Error!");
+          throw res;
+        }
+      })
+      .then(res => {
+        if (res.status === 200) {
+          return dispatch({type: 'FETCH_ALLWINDTURBINES', allwindturbines: res.data});
+        }         
+      })
+  }
+}
+
+/**
  * fetchEntity
  * 
  * Fetch entity from backend server using search criteria
@@ -272,7 +301,7 @@ export const fetchEntity = (searchcriteria) => {
                 const maxdegree = 0.015;
                 const maxSouthWest = [centre[0] - maxdegree, centre[1] - maxdegree];
                 const maxNorthEast = [centre[0] + maxdegree, centre[1] + maxdegree];
-                if (map.getZoom() > 15) map.setZoom(15);
+                // if (map.getZoom() > 15) map.setZoom(15);
                 if ((maxSouthWest[0] < southWest[0]) && (maxSouthWest[1] < southWest[1])) map.fitBounds([southWest, northEast], {animate: true}); 
                 else map.fitBounds([maxSouthWest, maxNorthEast], {animate: true}); 
             }

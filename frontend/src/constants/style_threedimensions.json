@@ -63,8 +63,7 @@
             "id": "hills",
             "type": "hillshade",
             "source": "hillshadeSource",
-            "layout": { "visibility": "visible" },
-            "paint": { "hillshade-shadow-color": "#473B24" }
+            "layout": { "visibility": "visible" }
         }, 
         {
             "filter": [
@@ -270,6 +269,7 @@
               "visibility": "visible"
           },             
           "paint": {
+              "fill-color": "darkgray",
               "fill-extrusion-color": "darkgray",                
               "fill-extrusion-height": ["get", "render_height"],
               "fill-extrusion-base": ["case",
