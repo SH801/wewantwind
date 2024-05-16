@@ -890,6 +890,7 @@ class Main extends Component {
           if (this.state.showselectsite) {
             // Check whether point is in sea
             const lnglat = event.lngLat;
+            if (lnglat.lng < -180) lnglat.lng += 360;  
             const point = map.project(lnglat);
             const features = map.queryRenderedFeatures(point);
             if (features.length > 0) {
@@ -1290,7 +1291,7 @@ class Main extends Component {
       const precision = 5
       lat = lat.toFixed(precision);
       lng = lng.toFixed(precision);
-      const readableposition = String(lat) + "°N, " + String(lng) + "°W"
+      const readableposition = String(lat) + "°N, " + String(lng) + "°E"
       const geojson = {
         "type": "FeatureCollection",
         "features": [
@@ -1897,7 +1898,7 @@ class Main extends Component {
               <IonContent>
                 <IonList lines="none" style={{paddingTop: "10px"}}>
                   <IonItem>
-                    <IonText className="instruction-text">Enter your details to cast a vote for the clicked site (<i>{(this.state.loosevote) ? (this.state.loosevote['lat'].toFixed(5) + "°N, " + this.state.loosevote['lng'].toFixed(5) + "°W") : null}</i>). We will email you a link to confirm your vote.</IonText>
+                    <IonText className="instruction-text">Enter your details to cast a vote for the clicked site (<i>{(this.state.loosevote) ? (this.state.loosevote['lat'].toFixed(5) + "°N, " + this.state.loosevote['lng'].toFixed(5) + "°E") : null}</i>). We will email you a link to confirm your vote.</IonText>
                   </IonItem>
                   <IonItem>
                     <IonText className="instruction-text" style={{marginTop: "10px"}}><b>If you have already voted for another site, your vote will be switched to this site.</b></IonText>

@@ -1502,7 +1502,7 @@ class Main extends Component {
       const precision = 5
       lat = lat.toFixed(precision);
       lng = lng.toFixed(precision);
-      const readableposition = String(lat) + "°N, " + String(lng) + "°W"
+      const readableposition = String(lat) + "°N, " + String(lng) + "°E"
       const geojson = {
         "type": "FeatureCollection",
         "features": [
@@ -1969,7 +1969,7 @@ class Main extends Component {
 
             }
             if (subtitle !== '') subtitle += ", ";
-            subtitle += currentwindfarm.centre[1].toFixed(5) + "°N, " + currentwindfarm.centre[0].toFixed(5) + "°W";
+            subtitle += currentwindfarm.centre[1].toFixed(5) + "°N, " + currentwindfarm.centre[0].toFixed(5) + "°E";
             ctx.beginPath(); 
             ctx.font = '35px Open Sans, light';
             ctx.fillText(subtitle, 35, 110);
@@ -2007,7 +2007,7 @@ class Main extends Component {
               if (currentwindfarm.extraproperties['number:of:elements'] !== 1) title += "s";
             }
             if (currentwindfarm.extraproperties['plant:output:electricity'] !== undefined) title += ", " + parseFloat(currentwindfarm.extraproperties['plant:output:electricity']).toFixed(1) + ' MW';
-            title += ', ' + currentwindfarm.centre[1].toFixed(5) + "°N, " + currentwindfarm.centre[0].toFixed(5) + "°W";
+            title += ', ' + currentwindfarm.centre[1].toFixed(5) + "°N, " + currentwindfarm.centre[0].toFixed(5) + "°E";
             ctx.fillText(title, 35, 85);
             ctx.beginPath(); 
             ctx.font = '25px Open Sans';
@@ -2070,7 +2070,7 @@ class Main extends Component {
               anchor.href =  URL.createObjectURL(new Blob(data, {type: "video/webm;codecs=h264"}));
               const now = new Date();
               const timesuffix = now.toISOString().substring(0,19).replaceAll('T', ' ').replaceAll(':', '-');
-              anchor.download = currentwindfarm.name + ' - ' + currentwindfarm.centre[1].toFixed(5) + "°N, " + currentwindfarm.centre[0].toFixed(5) + "°W.webm";
+              anchor.download = currentwindfarm.name + ' - ' + currentwindfarm.centre[1].toFixed(5) + "°N, " + currentwindfarm.centre[0].toFixed(5) + "°E.webm";
               anchor.click();  
             }  
             mediaRecorder.start();  
@@ -2422,7 +2422,7 @@ class Main extends Component {
               <IonContent>
                 <IonList lines="none" style={{paddingTop: "10px"}}>
                   <IonItem>
-                    <IonText className="instruction-text">Enter your details to cast a vote for the clicked site (<i>{(this.state.loosevote) ? (this.state.loosevote['lat'].toFixed(5) + "°N, " + this.state.loosevote['lng'].toFixed(5) + "°W") : null}</i>). We will email you a link to confirm your vote.</IonText>
+                    <IonText className="instruction-text">Enter your details to cast a vote for the clicked site (<i>{(this.state.loosevote) ? (this.state.loosevote['lat'].toFixed(5) + "°N, " + this.state.loosevote['lng'].toFixed(5) + "°E") : null}</i>). We will email you a link to confirm your vote.</IonText>
                   </IonItem>
                   <IonItem>
                     <IonText className="instruction-text" style={{marginTop: "10px"}}><b>If you have already voted for another site, your vote will be switched to this site.</b></IonText>

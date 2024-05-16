@@ -10,8 +10,8 @@ import '@ionic/react/css/core.css';
 
 import wewantwindApp from "./reducers";
 
-// import Main from './pages/main.js';
-import Main from './pages/mainbatchrecording.js';
+import Main from './pages/main.js';
+// import Main from './pages/mainbatchrecording.js';
 
 import { setupIonicReact } from '@ionic/react';
  
