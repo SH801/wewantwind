@@ -514,9 +514,9 @@ ion-content::part(scroll) {
     padding-top: 15px;
   }
   
-  .turbine-button {
+  /* .turbine-button {
     bottom:   45%;
-  }
+  } */
   
   .wewantwind-largetext {
     font-size: 200%;
