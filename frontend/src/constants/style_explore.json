@@ -58,6 +58,11 @@
           "url": "/data/renewables.json",
           "attribution": "Renewables data from © OpenStreetMap contributors"
         },
+        "planningapplications": {
+          "type": "geojson",
+          "data": "https://wewantwind.org/static/geojson/planningapplications.geojson",
+          "attribution": "Planning application data obtained from public local authority websites via planit.org.uk. All data copyright of respective local authorities / planning authorities"
+        },      
         "votes": {
           "type": "geojson",
           "data": "https://wewantwind.org/votes/"
@@ -2275,6 +2280,33 @@
               "step",
               ["zoom"],
               true,
+              12,
+              true
+            ]            
+        }
+      },
+      {
+        "id": "planningapplications",
+        "type": "symbol",
+        "source": "planningapplications",
+        "maxzoom": 20, 
+        "layout": {
+            "visibility": "none",
+            "icon-image": ["case",
+              ["==", ["get", "status"], "Permitted"], "point_green",
+              ["==", ["get", "status"], "Rejected"], "point_red",
+              "point_orange"
+            ], 
+            "icon-size": [
+              "interpolate", ["exponential", 2], ["zoom"], 
+              12, 0.03125,
+              20, 16
+            ],
+            "icon-anchor": "bottom",
+            "icon-allow-overlap": [
+              "step",
+              ["zoom"],
+              false,
               12,
               true
             ]            

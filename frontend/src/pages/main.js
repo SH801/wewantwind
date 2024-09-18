@@ -66,6 +66,7 @@ import { Share } from '../components/share';
 import { Wind } from '../components/wind';
 import { Constraints } from '../components/constraints';
 import { Grid } from '../components/grid';
+import { PlanningApplications } from '../components/planningapplications';
 
 import { 
   TILESERVER_BASEURL
@@ -156,6 +157,7 @@ class Main extends Component {
         showshare: false,
         showwind: false,
         showgrid: false,
+        showplanningapplications: false,
         showtooltipsite: false,
         showtooltipvote: false,
         showtooltipdownload: false,
@@ -213,16 +215,17 @@ class Main extends Component {
       }
   
       const buttons = {
-        'site':           new Site({mapcontainer: this}),
-        'vote':           new Vote({mapcontainer: this}),
-        'download':       new Download({mapcontainer: this}),
-        'message':        new Message({mapcontainer: this}),
-        'share':          new Share({mapcontainer: this}),
-        'fly':            new FlyToggle({mapcontainer: this}),
-        'video':          new RecordVideo({mapcontainer: this}),
-        'wind':           new Wind({mapcontainer: this}),
-        'planning':       new Constraints({mapcontainer: this}),
-        'grid':           new Grid({mapcontainer: this})
+        'site':                   new Site({mapcontainer: this}),
+        'vote':                   new Vote({mapcontainer: this}),
+        'download':               new Download({mapcontainer: this}),
+        'message':                new Message({mapcontainer: this}),
+        'share':                  new Share({mapcontainer: this}),
+        'fly':                    new FlyToggle({mapcontainer: this}),
+        'video':                  new RecordVideo({mapcontainer: this}),
+        'wind':                   new Wind({mapcontainer: this}),
+        'planning':               new Constraints({mapcontainer: this}),
+        'grid':                   new Grid({mapcontainer: this}),
+        'planningapplications':   new PlanningApplications({mapcontainer: this})
       }
 
       this.props.setGlobalState({'buttons': buttons});
@@ -383,6 +386,7 @@ class Main extends Component {
           'grid',
           'grid_outline',
           'grid_substation',
+          'planningapplications',
           'windspeed',
           'votes',
           'votes_line',
@@ -570,9 +574,29 @@ class Main extends Component {
         var isiOS = this.isiOS();
   
         // isiOS = true;
-  
+
+        console.log("Attempting to load point icons");
+        url = process.env.PUBLIC_URL + "/static/icons/point_green.png";
+        map.loadImage(url, (error, image) => {
+            if (error) throw error;
+            map.addImage('point_green', image);    
+        });            
+
+        url = process.env.PUBLIC_URL + "/static/icons/point_orange.png";
+        map.loadImage(url, (error, image) => {
+            if (error) throw error;
+            map.addImage('point_orange', image);    
+        });            
+
+        url = process.env.PUBLIC_URL + "/static/icons/point_red.png";
+        map.loadImage(url, (error, image) => {
+            if (error) throw error;
+            map.addImage('point_red', image);    
+        });            
+        
         if (!isiOS) {
           console.log("Initializing images...");
+
           var url = null;
           for(let i = 1; i < 6; i++) {
             url = process.env.PUBLIC_URL + "/static/icons/windturbine_white_animated_" + i.toString() + ".png";
@@ -759,6 +783,17 @@ class Main extends Component {
                 description += '<p class="popup-p"><b>Votes within 10 miles:</b> ' + properties['votes:within:10:miles'] + '</p>';
                 description += '<p class="popup-p"><i>Click to vote for this site</i></p>';
               }
+              if (properties['subtype'] === 'planningapplications') {
+                description = '<h1 class="popup-h1">Planning&nbsp;application:&nbsp;' + properties['status'] + '</h1>';
+                description += '<p class="popup-p"><b>Position: </b>' + properties['lat'].toString() + '°N ' + properties['lng'].toString() + '°E</p>';
+                description += '<p class="popup-p"><b>Identifier: </b>' + properties['id'] + '</p>';
+                description += '<p class="popup-p"><b>Date: </b>' + properties['date:of:decision'] + '</p>';
+                description += '<p class="popup-p">' + properties['name'] + '</p>';
+                description += '<p class="popup-p"><b>Type of application: </b>' + properties['type:of:application'] + '</p>';
+                description += '<p class="popup-p"><i>Planning application data obtained from planning websites via planit.org.uk. All data copyright of respective planning authorities</i></p>';
+                description += '<p class="popup-p"><b>Click point to view application</b></p>';
+              }
+
               if (description === undefined) {
                 description = "No name available";
                 source = "";
@@ -773,6 +808,7 @@ class Main extends Component {
                 popup.setOffset([0, 0]);
                 if (properties['renewabletype'] !== undefined) popup.setOffset([0, -10]);
                 if (properties['subtype'] === 'votes') popup.setOffset([0, -30]);
+                if (properties['subtype'] === 'planningapplications') popup.setOffset([0, -30]);
                 popup.setLngLat(featurecentroid.geometry.coordinates).setHTML(description).addTo(map);    
             }
           }  
@@ -877,7 +913,11 @@ class Main extends Component {
             } else this.setState({showloosevote: true});
             return false;
           }
-  
+
+          if (event.features[0].source === 'planningapplications') {
+            window.open(event.features[0].properties['link'], "_new");
+          }
+          
           // Don't respond to clicking on power lines or substations
           if (properties['power'] !== undefined) {
             if (['line', 'minor_line', 'cable', 'substation'].includes(properties['power'])) return;

@@ -44,6 +44,11 @@ export function mapRefreshElectricity(showelectricity, map) {
     }
 }
 
+export function mapRefreshPlanningApplications(showplanningapplications, map) {
+  if (showplanningapplications) map.setLayoutProperty('planningapplications', 'visibility', 'visible');
+  else map.setLayoutProperty('planningapplications', 'visibility', 'none');
+}
+
 export function setCameraPosition(map, camPos) {
   var { lng, lat, altitude, pitch, bearing } = camPos;
   altitude += map.queryTerrainElevation({lat: lat, lng: lng}) || 0;
@@ -104,17 +109,18 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
     if ((buttonname === 'share') && (turbinelat === null)) continue;
 
     switch (buttonname) {
-      case 'site':        map.addControl(buttons[buttonname], 'top-left'); break;
-      case 'vote':        map.addControl(buttons[buttonname], 'top-left'); break;
-      case 'download':    map.addControl(buttons[buttonname], 'top-left'); break;
-      case 'message':     map.addControl(buttons[buttonname], 'top-left'); break;
-      case 'share':       map.addControl(buttons[buttonname], 'top-left'); break;
-      case 'fly':         map.addControl(buttons[buttonname], 'top-right'); break;
-      case 'video':       map.addControl(buttons[buttonname], 'top-right'); break;
-      case 'wind':        map.addControl(buttons[buttonname], 'top-right'); break;
-      case 'planning':    map.addControl(buttons[buttonname], 'top-right'); break;
-      case 'grid':        map.addControl(buttons[buttonname], 'top-right'); break;
-      default:            break;
+      case 'site':                  map.addControl(buttons[buttonname], 'top-left'); break;
+      case 'vote':                  map.addControl(buttons[buttonname], 'top-left'); break;
+      case 'download':              map.addControl(buttons[buttonname], 'top-left'); break;
+      case 'message':               map.addControl(buttons[buttonname], 'top-left'); break;
+      case 'share':                 map.addControl(buttons[buttonname], 'top-left'); break;
+      case 'fly':                   map.addControl(buttons[buttonname], 'top-right'); break;
+      case 'video':                 map.addControl(buttons[buttonname], 'top-right'); break;
+      case 'wind':                  map.addControl(buttons[buttonname], 'top-right'); break;
+      case 'planning':              map.addControl(buttons[buttonname], 'top-right'); break;
+      case 'grid':                  map.addControl(buttons[buttonname], 'top-right'); break;
+      case 'planningapplications':  map.addControl(buttons[buttonname], 'top-right'); break;
+      default:                      break;
     }
     if (buttonname in newbuttonsstate) newbuttonsstate[buttonname] = true;
   }
@@ -128,6 +134,7 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
       map.setPaintProperty('background', 'raster-brightness-min', 0.5);
       map.setLayoutProperty('3d-buildings', 'visibility', 'none');
       map.setLayoutProperty('renewables_windturbine', 'visibility', 'visible');
+      mapRefreshPlanningApplications(false, map);
       mapRefreshPlanningConstraints(true, {all: true}, map);      
       if ((startinglat !== null) && (startinglng !== null) && (turbinelat !== null) && (turbinelng !== null)) {
         const deltalat = turbinelat - startinglat;
@@ -145,6 +152,7 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
       map.setPaintProperty('background', 'raster-brightness-min', 0.1);
       map.setLayoutProperty('3d-buildings', 'visibility', 'visible');
       map.setLayoutProperty('renewables_windturbine', 'visibility', 'none');
+      mapRefreshPlanningApplications(false, map);
       mapRefreshPlanningConstraints(false, planningconstraints, map);      
       var pointbearing = getBearing({lat: startinglat, lng: startinglng}, {lat: turbinelat, lng: turbinelng});
       setCameraPosition(map, {lng: startinglng, lat: startinglat, altitude: 50, pitch: 85, bearing: pointbearing});
@@ -159,6 +167,7 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
       map.setPaintProperty('background', 'raster-brightness-min', 0.1);
       map.setLayoutProperty('3d-buildings', 'visibility', 'visible');
       map.setLayoutProperty('renewables_windturbine', 'visibility', 'none');
+      mapRefreshPlanningApplications(false, map);
       mapRefreshPlanningConstraints(false, planningconstraints, map);      
       break;  
     case PAGE.EXPLORE:
@@ -167,6 +176,7 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
       map.setPaintProperty('background', 'raster-brightness-min', 0.1);
       map.setLayoutProperty('3d-buildings', 'visibility', 'visible');
       map.setLayoutProperty('renewables_windturbine', 'visibility', 'visible');
+      mapRefreshPlanningApplications(false, map);
       mapRefreshPlanningConstraints(false, planningconstraints, map);      
       map.flyTo({center: {lng: DEFAULT_CENTRE[0], lat: DEFAULT_CENTRE[1]}, pitch:0, bearing: 0, zoom: 5, animate: false});
       break;

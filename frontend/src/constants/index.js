@@ -65,7 +65,7 @@ export const PAGEBUTTONS = [
     [],
     [],
     ['vote', 'download', 'message', 'share', 'fly', 'video'],
-    ['site', 'vote', 'download', 'message', 'share', 'fly', 'video', 'wind', 'planning', 'grid'],
+    ['site', 'vote', 'download', 'message', 'share', 'fly', 'video', 'wind', 'planning', 'grid', 'planningapplications'],
     [],
     ['vote', 'download', 'message', 'share', 'fly', 'video'],
 ]

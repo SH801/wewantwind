@@ -61,15 +61,16 @@ export const initialStateGlobal = {
     },
     buttons: null,
     buttonsstate: {
-        'site':     false,
-        'vote':     false,
-        'download': false,
-        'message':  false,
-        'share':    false,
-        'fly':      false,
-        'video':    false,
-        'wind':     false,
-        'planning': false,
-        'grid':     false
+        'site':                 false,
+        'vote':                 false,
+        'download':             false,
+        'message':              false,
+        'share':                false,
+        'fly':                  false,
+        'video':                false,
+        'wind':                 false,
+        'planning':             false,
+        'grid':                 false,
+        'planningapplications': false,
     }
 };
