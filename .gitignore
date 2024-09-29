@@ -1,5 +1,6 @@
 *.pyc
 .DS_Store
+__MACOSX
 .env
 .env.dev
 .env.prod

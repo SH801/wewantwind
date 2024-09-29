@@ -74,6 +74,6 @@ def importukboundary():
         geometryobject = Boundary(name='UK Boundary', geometry=geometry)
         geometryobject.save()                     
 
-# importukboundary()
+#importukboundary()
 
 generatesites()

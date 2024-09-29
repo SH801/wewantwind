@@ -360,7 +360,8 @@ def RestartRenderer(request):
 
 def processimages(id, coordinates, constraintslist, parameters):
     with open(cwd + '/styles/planningconstraint.json', encoding='utf-8') as fp: planningconstraint = json.load(fp)
-    with open(cwd + '/styles/planningconstraints.json', encoding='utf-8') as fp: planningconstraints = json.load(fp)
+    with open(cwd + '/styles/planningconstraints_osmstyle.json', encoding='utf-8') as fp: planningconstraints = json.load(fp)
+    # with open(cwd + '/styles/planningconstraints.json', encoding='utf-8') as fp: planningconstraints = json.load(fp)
 
     imagedirectory = cwd + '/downloads/' + id
     os.mkdir(imagedirectory) 
