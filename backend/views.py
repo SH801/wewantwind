@@ -18,6 +18,7 @@ from matplotlib import colors
 from pprint import pprint
 from ipware import get_client_ip
 from docx.shared import Cm, Pt, RGBColor
+from docx.enum.style import WD_STYLE_TYPE
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.units import cm, inch
 from reportlab.lib.pagesizes import A4
@@ -532,6 +533,11 @@ def createworddoc(wordpath, readableposition, imagedirectory):
     font = style.font
     font.name = 'Open Sans Light'
     font.size = Pt(11)
+    styles = document.styles
+    style = styles.add_style('Attribution', WD_STYLE_TYPE.PARAGRAPH)
+    font = style.font
+    font.name = 'Open Sans Light'
+    font.size = Pt(9)
     style = document.styles['Heading 1']
     font = style.font
     font.name = 'Open Sans ExtraBold'
@@ -564,9 +570,10 @@ def createworddoc(wordpath, readableposition, imagedirectory):
 
     image = imagedirectory + '/3d.png'
     document.add_picture(image, width=Cm(19))
-    paragraph = document.add_paragraph('Satellite images © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community, ESRI')
-    paragraph.paragraph_format.space_before = Pt(0)
-    paragraph.paragraph_format.space_after = Pt(0)
+    p = document.add_paragraph(style='Attribution')
+    run = p.add_run('Satellite images © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community, ESRI')
+    p.paragraph_format.space_before = Pt(0)
+    p.paragraph_format.space_after = Pt(0)
     document.add_page_break()
 
     p = document.add_paragraph('Below is a summary of all wind turbine planning constraints used to create your optimal wind turbine site.')
@@ -594,10 +601,21 @@ def createworddoc(wordpath, readableposition, imagedirectory):
 
         image = imagedirectory + '/' + constraint['heading'] + '.png'
         document.add_picture(image, width=Cm(19))
-        paragraph = document.add_paragraph('Constraints data from multiple sources and copyright of respective data providers - for full list, go to ')
-        add_hyperlink(paragraph, 'ckan.wewantwind.org', "https://ckan.wewantwind.org")
-        paragraph.paragraph_format.space_before = Pt(0)
-        paragraph.paragraph_format.space_after = Pt(0)
+        p = document.add_paragraph(style='Attribution')
+        run = p.add_run('Constraints data from multiple sources and copyright of respective data providers - for full list, go to ')
+        add_hyperlink(p, 'ckan.wewantwind.org', "https://ckan.wewantwind.org")
+        run.font.color.rgb = RGBColor.from_string('000000')
+        p.paragraph_format.space_before = Pt(0)
+        p.paragraph_format.space_after = Pt(0)
+        p = document.add_paragraph(style='Attribution')
+        run = p.add_run(" © ")
+        add_hyperlink(p, 'OpenMapTiles', "https://www.openmaptiles.org")
+        run = p.add_run(" © ")
+        add_hyperlink(p, 'OpenStreetMap ', "https://www.openstreetmap.org/copyright")
+        run = p.add_run("contributors")
+        run.font.color.rgb = RGBColor.from_string('000000')
+        p.paragraph_format.space_before = Pt(0)
+        p.paragraph_format.space_after = Pt(0)
 
         if constraint != lastcontraint:
             document.add_page_break()
@@ -656,9 +674,10 @@ def createpdfdoc(pdfpath, readableposition, imagedirectory):
 
         image = imagedirectory + '/' + constraint['heading'] + '.png'
         canvas.drawInlineImage(image, 40 , vpos - (48 * 7) - 100, width=72*7,height=420)
-        canvas.setFont("OpenSansLt", 9)
+        canvas.setFont("OpenSansLt", 8)
         canvas.setFillColorRGB(0,0,0)
         canvas.drawString(40, vpos - (48 * 7) - 112, 'Constraints data from multiple sources and copyright of respective data providers - for full list, go to https://ckan.wewantwind.org')
+        canvas.drawString(40, vpos - (48 * 7) - 124, '© OpenMapTiles https://www.openmaptiles.org © OpenStreetMap contributors https://www.openstreetmap.org/copyright')
 
         if constraint != lastcontraint:
             canvas.showPage()

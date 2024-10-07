@@ -50,6 +50,9 @@ export const TURBINETOWERHEIGHT_DEFAULT = 108.3;
 // Default radius of 3D turbine blades
 export const TURBINEBLADERADIUS_DEFAULT = (138.5 / 2);
 
+// Default padding for single turbine
+export const TURBINE_PADDING = 0.5;
+
 // Different page types
 export const PAGE = {
     HOME: 0,
@@ -73,12 +76,12 @@ export const PAGEBUTTONS = [
 // Default maxbounds 
 export const DEFAULT_MAXBOUNDS = [
     [
-        -9.51967906903984584,
-        49.28352918042221376
+        -14.629154,
+        49.044464
     ],
     [
-        2.66153518411952117, 
-        61.28039265764795118 
+        5.614791, 
+        61.250553 
     ]
 ]
 

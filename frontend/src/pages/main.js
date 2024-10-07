@@ -48,7 +48,8 @@ import {
     PLANNING_CONSTRAINTS,
     PAGE,
     TESTING_RANDOMPOINT, 
-    TOTAL_SITES     
+    TOTAL_SITES,
+    TURBINE_PADDING         
 } from '../constants';
 import { global } from "../actions";
 import { initializeMap, mapRefreshPlanningConstraints } from "../functions/map";
@@ -866,12 +867,13 @@ class Main extends Component {
         if (this.props.global.page !== PAGE.EXPLORE) return;
 
         const map = this.mapRef.current.getMap();
+        const lnglat = event.lngLat;
 
         if (this.state.showsite) {
-          const lnglat = event.lngLat;
           if (lnglat.lng < -180) lnglat.lng += 360;
           this.props.setGlobalState({turbinelat: lnglat.lat, turbinelng: lnglat.lng});
           this.setButton(map, 'share', true);
+          this.setButton(map, 'download', true);
           this.props.global.buttons['site'].deactivateButton();
           var zoom = map.getZoom();
           if (zoom < THREED_ZOOM)   this.setState({showsite: false, showmarker: true});
@@ -925,7 +927,52 @@ class Main extends Component {
   
           var entityid = event.features[0].properties.id;
           this.setState({centreset: true});
-          this.props.fetchEntity(entityid);
+
+          if (event.features[0].source === 'renewables') {
+            console.log(event.features[0].properties);
+
+            // Replaced the following fetchEntity with using centre/bound properties on every feature
+            // this.props.fetchEntity(entityid);
+
+            var boundstext = event.features[0].properties.bounds;
+            var centretext = event.features[0].properties.groupcentre;
+            var bounds = null;
+            var centre = null;
+            if (boundstext !== undefined) {
+              bounds = boundstext.split(',');
+              bounds[0] = parseFloat(bounds[0]);
+              bounds[1] = parseFloat(bounds[1]);
+              bounds[2] = parseFloat(bounds[2]);
+              bounds[3] = parseFloat(bounds[3]);
+            }
+            if (centretext !== undefined) {
+              centre = event.features[0].properties.groupcentre.split(',');
+              centre[0] = parseFloat(centre[0]);
+              centre[1] = parseFloat(centre[1]);  
+            }
+
+            if (centre === null) centre = [lnglat.lng, lnglat.lat];
+            if (bounds === null) {
+              bounds = [
+                          centre[0] - TURBINE_PADDING,
+                          centre[1] - TURBINE_PADDING,
+                          centre[0] + TURBINE_PADDING,
+                          centre[1] + TURBINE_PADDING
+                      ]
+            }           
+
+            const southWest = [bounds[0], bounds[1]]
+            const northEast = [bounds[2], bounds[3]]
+            const maxdegree = 0.015;
+            const maxSouthWest = [centre[0] - maxdegree, centre[1] - maxdegree];
+            const maxNorthEast = [centre[0] + maxdegree, centre[1] + maxdegree];
+
+            if ((maxSouthWest[0] < southWest[0]) && (maxSouthWest[1] < southWest[1])) map.fitBounds([southWest, northEast], {animate: true}); 
+            else map.fitBounds([maxSouthWest, maxNorthEast], {animate: true}); 
+
+            this.props.setGlobalState({zoom: null, centre: centre});
+          }
+
         } else {
           if (this.state.showselectsite) {
             // Check whether point is in sea
