@@ -76,6 +76,9 @@ export default function selector(state=initialStateGlobal, action) {
             newState = {...newState, allwindturbines: action.allwindturbines};
             return newState;
 
+        case 'FETCH_VISIBILITY':
+            return newState;
+    
         case 'FETCH_RANDOMPOINT':
             newState = {...newState, randompoint: action.randompoint};
             return newState;

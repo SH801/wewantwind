@@ -104,11 +104,13 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
   for(i = 0; i < pagebuttons.length; i++) {
     buttonname = pagebuttons[i];
     // if ((buttonname === 'vote') && (turbinelat === null)) continue;
+    if ((buttonname === 'visibility') && (turbinelat === null)) continue;
     if ((buttonname === 'download') && (turbinelat === null)) continue;
     if ((buttonname === 'message') && (startinglat === null)) continue;
     if ((buttonname === 'share') && (turbinelat === null)) continue;
 
     switch (buttonname) {
+      case 'visibility':            map.addControl(buttons[buttonname], 'top-left'); break;
       case 'site':                  map.addControl(buttons[buttonname], 'top-left'); break;
       case 'vote':                  map.addControl(buttons[buttonname], 'top-left'); break;
       case 'download':              map.addControl(buttons[buttonname], 'top-left'); break;

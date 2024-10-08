@@ -58,6 +58,13 @@
           "url": "/data/renewables.json",
           "attribution": "Renewables data from © OpenStreetMap contributors"
         },
+        "viewshed": {
+          "type": "geojson",
+          "data": {
+            "type": "FeatureCollection", 
+            "features": []
+          }
+        },      
         "planningapplications": {
           "type": "geojson",
           "data": "https://wewantwind.org/static/geojson/planningapplications.geojson",
@@ -2219,6 +2226,50 @@
         "type": "symbol"
       },  
       {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Polygon"
+          ],
+          [
+            "==",
+            "class",
+            "viewshed_towerheight"
+          ]
+        ],
+        "id": "viewshed-towerheight",
+        "paint": {
+          "fill-color": "#813FCB",
+          "fill-opacity": 0.5
+        },
+        "source": "viewshed",
+        "type": "fill"
+      },
+      {
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Polygon"
+          ],
+          [
+            "==",
+            "class",
+            "viewshed_turbinetip"
+          ]
+        ],
+        "id": "viewshed-turbinetip",
+        "paint": {
+          "fill-color": "#B199CC",
+          "fill-opacity": 0.5
+        },
+        "source": "viewshed",
+        "type": "fill"
+      },
+      {
         "id": "renewables_windturbine",
         "type": "symbol",
         "source": "renewables",
@@ -2262,6 +2313,84 @@
             "wind"
           ]
         ]
+      },
+      {
+        "id": "viewsheds_distance_circles",
+        "type": "line",
+        "metadata": {},
+        "source": "viewshed",
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "LineString"
+          ]
+          ,
+          [
+            "in",
+            "class",
+            "Distance_Circle"
+          ]
+        ],
+        "layout": {
+          "line-cap": "round",
+          "line-join": "round"
+        },
+        "paint": {
+          "line-color": "#BC262C",
+          "line-opacity": 0.5,
+          "line-width": 1,         
+          "line-dasharray": [
+            3,
+            3
+          ]
+        }
+      },
+      {
+        "id": "viewsheds_distance_circle_labels",
+        "type": "symbol",
+        "metadata": {},
+        "source": "viewshed",
+        "filter": [
+          "all",
+          [
+            "==",
+            "$type",
+            "Point"
+          ],
+          [
+            "==",
+            "class",
+            "Distance_Circle_Label"
+          ]
+        ],
+        "layout": {
+          "text-offset": [0, 1],
+          "text-field": "{name}",
+          "text-font": [
+            "Noto Sans Regular"
+          ],
+          "text-size": {
+            "stops": [
+              [
+                8,
+                10
+              ],
+              [
+                12,
+                14
+              ]
+            ]
+          }
+        },
+        "minzoom": 5,
+        "paint": {
+          "text-color": "#BC262C",
+          "text-halo-blur": 2,
+          "text-halo-color": "hsla(0, 0%, 100%, 0.75)",
+          "text-halo-width": 2
+        }
       },
       {
         "id": "votes_line",

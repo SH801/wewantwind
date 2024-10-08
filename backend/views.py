@@ -42,10 +42,20 @@ from django.db.models import Q, Count
 from time import sleep
 from random import randrange
 from itertools import islice
+from osgeo import gdal, osr, ogr
+from PIL import Image
+import numpy as np
+import json
+from turfpy.misc import line_arc
+from geojson import Feature as GeoJSONFeature, Point as GeoJSONPoint
+
+gdal.DontUseExceptions()
 
 from .models import Site, Vote, Message, Boundary, EventLog
 
 # Create your views here.
+
+cwd = os.path.dirname(os.path.realpath(__file__))
 
 COORDINATE_PRECISION = 5
 LOCAL_DISTANCE = 10 # miles
@@ -53,7 +63,10 @@ LOCAL_DISTANCE = 10 # miles
 RESTART_SCRIPT = os.environ.get("RESTART_SCRIPT")
 GOOGLE_RECAPTCHA_SECRET_KEY = os.environ.get("GOOGLE_RECAPTCHA_SECRET_KEY")
 
-cwd = os.path.dirname(os.path.realpath(__file__))
+VIEWSHED_MAX_CIRCULAR_RANGE = float(60000)
+VIEWSHED_MAX_DISTANCE = float((2 * (VIEWSHED_MAX_CIRCULAR_RANGE ** 2)) ** 0.5)
+
+TERRAIN_FILE = cwd + '/terrain/terrain_lowres_withfeatures.tif'
 
 constraintslist = [
     {
@@ -741,6 +754,7 @@ def NearestTurbineReport(request):
     type = request.GET.get('type','word')
     lat = float(request.GET.get('lat', 51))
     lng = float(request.GET.get('lng',0))
+
     site = GetNearestTurbine(lat, lng)
  
     return GetReport(type, site.centre.coords[1], site.centre.coords[0])
@@ -1077,3 +1091,236 @@ def RemoveMailingList(request, uidb64, token):
 def Test(request):
     return render(request, 'backend/vote_not_confirmed.html')
 
+def returncirclesforpoint(lng, lat):
+    center = GeoJSONFeature(geometry=GeoJSONPoint((lng, lat)))
+    bearing1 = 0
+    bearing2 = 359.99999
+
+    features = []
+    steps = [5, 10, 15, 20, 25, 30]
+    stepdistance = 10
+    for step_index in range(len(steps)):
+        radius = steps[step_index]
+        feature = line_arc(center=center, radius=radius, bearing1=bearing1, bearing2=bearing2)
+        feature['properties'] = {'class': 'Distance_Circle', 'distance': str(radius) + 'km'}
+        features.append(feature)
+        feature_coordinates = feature['geometry']['coordinates']
+        point_label_coordinates = feature_coordinates[int(len(feature_coordinates) / 2)]
+        feature_point = {'type': 'Feature', 'name': str(radius) + 'km', 'properties': {'name': str(radius) + 'km', 'class': 'Distance_Circle_Label'}, 'geometry': {'type': 'Point', 'coordinates': point_label_coordinates}}
+        features.append(feature_point)
+
+    return features
+
+def getelevationforpoint(lon, lat):
+    global TERRAIN_FILE
+    # With thanks to https://stackoverflow.com/questions/74026802/get-elevation-from-lat-long-of-geotiff-data-in-gdal
+    ds = gdal.OpenEx(TERRAIN_FILE)
+    raster_proj = ds.GetProjection()
+    gt = ds.GetGeoTransform()
+    ds = None
+    source_srs = osr.SpatialReference()
+    source_srs.ImportFromWkt(osr.GetUserInputAsWKT("urn:ogc:def:crs:OGC:1.3:CRS84"))
+    target_srs = osr.SpatialReference()
+    target_srs.ImportFromWkt(raster_proj)
+    ct = osr.CoordinateTransformation(source_srs, target_srs)
+    mapx, mapy, *_ = ct.TransformPoint(lon, lat)
+    gt_inv = gdal.InvGeoTransform(gt) 
+    px, py = gdal.ApplyGeoTransform(gt_inv, mapx, mapy)
+    py = int(py)
+    px = int(px)
+    ds = gdal.OpenEx(TERRAIN_FILE)
+    elevation_value = ds.ReadAsArray(px, py, 1, 1)
+    ds = None
+    elevation = elevation_value[0][0]
+    return elevation, mapx, mapy
+
+def cropGeoTIFF(lon, lat, distance, inputfile, outputfile):
+    ds = gdal.OpenEx(inputfile)
+    raster_proj = ds.GetProjection()
+    gt = ds.GetGeoTransform()
+    ds = None
+    source_srs = osr.SpatialReference()
+    source_srs.ImportFromWkt(osr.GetUserInputAsWKT("urn:ogc:def:crs:OGC:1.3:CRS84"))
+    target_srs = osr.SpatialReference()
+    target_srs.ImportFromWkt(raster_proj)
+    ct = osr.CoordinateTransformation(source_srs, target_srs)
+    mapx, mapy, *_ = ct.TransformPoint(lon, lat)
+
+    upper_left_x = mapx - distance
+    upper_left_y = mapy + distance
+    lower_right_x = mapx + distance
+    lower_right_y = mapy - distance
+    window = (upper_left_x,upper_left_y,lower_right_x,lower_right_y)
+
+    gdal.Translate(outputfile, inputfile, projWin = window)
+
+def subtractimage(image_main, image_to_subtract):
+    image = Image.open(image_main)
+    subtractimage = Image.open(image_to_subtract)
+    buffer1    = np.asarray(image)
+    buffer2    = np.asarray(subtractimage)
+    buffer3    = buffer1 - buffer2
+    image     = Image.fromarray(buffer3)
+    image.save(image_main)
+
+def createcolourizedtransparentPNG(inputfile, outputfile, new_color, clippingimage=None):
+    image = Image.open(inputfile)
+    if clippingimage is not None:
+        subtractimage = Image.open(clippingimage)
+        buffer1    = np.asarray(image)
+        buffer2    = np.asarray(subtractimage)
+        buffer3    = buffer1 - buffer2
+        image     = Image.fromarray(buffer3)
+    mask = image.copy()
+    mask = mask.convert("L")
+    pixels = list(image.getdata())
+    modified_pixels = [new_color if pixel != (255, 255, 255) else pixel for pixel in pixels]
+    modified_image = Image.new("RGBA", image.size)
+    modified_image.putdata(modified_pixels)
+    modified_image.putalpha(mask)
+    modified_image.save(outputfile)
+
+def read_file(filename):
+    vsifile = gdal.VSIFOpenL(filename,'r')
+    gdal.VSIFSeekL(vsifile, 0, 2)
+    vsileng = gdal.VSIFTellL(vsifile)
+    gdal.VSIFSeekL(vsifile, 0, 0)
+    return gdal.VSIFReadL(1, vsileng, vsifile)
+
+def GetViewsheds(lon, lat, hubheight, bladeradius):
+    global TERRAIN_FILE
+
+    uniqueid = str(lon) + '_' + str(lat) + '_' + str(hubheight) + '_' + str(bladeradius)
+    groundheight, observerX, observerY = getelevationforpoint(lon, lat)
+    towerheight = groundheight + hubheight
+    turbinetip = groundheight + hubheight + bladeradius
+    towerheight_outfile = uniqueid + "_tower.tif"
+    turbinetip_outfile = uniqueid + "_tip.tif"
+    towerheight_outfile = '/vsimem/' + uniqueid + "_tower.tif"
+    turbinetip_outfile = '/vsimem/' + uniqueid + "_tip.tif"
+    # towerheight_png = uniqueid + "_tower.png"
+    # turbinetip_png = uniqueid + "_tip.png"
+    viewshedcolor_towerheight = (165, 147, 171, 50)  
+    viewshedcolor_turbinetip = (211, 207, 225, 50)  
+
+    # ds = gdal.ViewshedGenerate(
+    #     srcBand = src_ds.GetRasterBand(1),
+    #     driverName = 'GTiff',
+    #     targetRasterName = "test.tif",
+    #     creationOptions = ["INTERLEAVE=BAND"],
+    #     observerX = observerX,
+    #     observerY = observerY,
+    #     observerHeight = 1.5,
+    #     targetHeight = 0,  
+    #     visibleVal = 255,  
+    #     invisibleVal = 0,  
+    #     outOfRangeVal = 0,  
+    #     noDataVal = -1.0,  
+    #     dfCurvCoeff = 0.85714,
+    #     mode = gdal.GVM_Edge,
+    #     maxDistance = VIEWSHED_MAX_DISTANCE,
+    #     heightMode = gdal.GVOT_MIN_TARGET_HEIGHT_FROM_GROUND,
+    #     options = ["UNUSED=YES"],
+    # )
+
+    src_ds = gdal.Open(TERRAIN_FILE)
+
+    gdal.ViewshedGenerate(
+        srcBand = src_ds.GetRasterBand(1),
+        driverName = 'GTiff',
+        targetRasterName = towerheight_outfile,
+        creationOptions = [],
+        observerX = observerX,
+        observerY = observerY,
+        observerHeight = 1.5,
+        targetHeight = int(towerheight + 0.5),
+        visibleVal = 255.0,
+        invisibleVal = 0.0,
+        outOfRangeVal = 0.0,
+        noDataVal = 0.0,
+        dfCurvCoeff = 1.0,
+        mode = 1,
+        maxDistance = VIEWSHED_MAX_DISTANCE) 
+
+    gdal.ViewshedGenerate(
+        srcBand = src_ds.GetRasterBand(1),
+        driverName = 'GTiff',
+        targetRasterName = turbinetip_outfile,
+        creationOptions = [],
+        observerX = observerX,
+        observerY = observerY,
+        observerHeight = 1.5,
+        targetHeight = int(turbinetip + 0.5),
+        visibleVal = 255.0,
+        invisibleVal = 0.0,
+        outOfRangeVal = 0.0,
+        noDataVal = 0.0,
+        dfCurvCoeff = 1.0,
+        mode = 1,
+        maxDistance = VIEWSHED_MAX_DISTANCE) 
+
+    all_features = distancecircles = returncirclesforpoint(lon, lat)    
+    towerheight_geojson = json.loads(polygonizeraster(uniqueid, towerheight_outfile))
+    turbinetip_geojson = json.loads(polygonizeraster(uniqueid, turbinetip_outfile))
+
+    for feature_index in range(len(towerheight_geojson['features'])):
+        towerheight_geojson['features'][feature_index]['properties']['class'] = 'viewshed_towerheight'
+        all_features.append(towerheight_geojson['features'][feature_index])
+    for feature_index in range(len(turbinetip_geojson['features'])):
+        turbinetip_geojson['features'][feature_index]['properties']['class'] = 'viewshed_turbinetip'
+        all_features.append(turbinetip_geojson['features'][feature_index])
+    
+    featurecollection = {'type': 'FeatureCollection', 'features': all_features}
+
+    return featurecollection
+
+def reprojectrasterto4326(input_file, output_file):
+    warp = gdal.Warp(output_file, gdal.Open(input_file), dstSRS='EPSG:4326')
+    warp = None
+
+def polygonizeraster(uniqueid, raster_file):
+    memory_geojson = '/vsimem/' + uniqueid + ".geojson"
+    memory_transformed_raster = '/vsimem/' + uniqueid + '.tif'
+    reprojectrasterto4326(raster_file, memory_transformed_raster)
+
+    driver = ogr.GetDriverByName("GeoJSON")
+    ds = gdal.OpenEx(memory_transformed_raster)
+    raster_proj = ds.GetProjection()
+    ds = None
+    source_srs = osr.SpatialReference()
+    source_srs.ImportFromWkt(raster_proj)
+    src_ds = gdal.Open(memory_transformed_raster)
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(src_ds.GetProjection())    
+    srcband = src_ds.GetRasterBand(1)
+
+    dst_ds = driver.CreateDataSource(memory_geojson)
+    dst_layer = dst_ds.CreateLayer("viewshed", srs = source_srs)
+    newField = ogr.FieldDefn('Area', ogr.OFTInteger)
+    dst_layer.CreateField(newField)
+    polygonize = gdal.Polygonize(srcband, srcband, dst_layer, 0, [], callback=None )
+    polygonize = None
+    del dst_ds
+
+    geojson_content = read_file(memory_geojson)
+
+    return geojson_content
+
+@csrf_exempt
+def Viewshed(request):
+    """
+    Return viewshed as GeoJSON
+    """
+    try:
+        parameters = json.loads(request.body)
+    except ValueError:
+        return OutputError()
+
+    # print(json.dumps(parameters, indent=4))
+    lat = float(parameters.get('lat', 51))
+    lng = float(parameters.get('lng',0))
+    hubheight = float(parameters.get('hub', 108.3))
+    bladeradius = float(parameters.get('blade', 69.25))
+    geojson = GetViewsheds(lng, lat, hubheight, bladeradius)
+
+    return OutputJson(geojson)

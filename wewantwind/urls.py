@@ -23,6 +23,7 @@ urlpatterns = [
     path('randompoint/', views.GetRandomPoint, name='randompoint'),
     path('nearestturbine/', views.NearestTurbine, name='nearestturbine'),
     path('sitereport', views.SiteReport, name='sitereport'),
+    path('viewshed/', views.Viewshed, name='viewshed'),
     path('nearestturbinereport/', views.NearestTurbineReport, name='nearestturbinereport'),
     path('vote/', views.CastVote, name='castvote'),
     path('votes/', views.Votes, name='votes'),

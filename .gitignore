@@ -17,3 +17,4 @@ static/
 venv/
 backend/downloads/
 backend/UKboundary_complicated.geojson
+backend/terrain/

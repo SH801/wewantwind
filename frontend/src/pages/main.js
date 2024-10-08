@@ -58,6 +58,7 @@ import Toolbar from '../components/toolbar';
 import { initShaders, initVertexBuffers, renderImage } from './webgl';
 import { Spacer } from '../components/spacer';
 import { Site } from '../components/site';
+import { Visibility } from '../components/visibility';
 import { Vote } from '../components/vote';
 import { Download } from '../components/download';
 import { Message } from '../components/message';
@@ -151,6 +152,7 @@ class Main extends Component {
         showloosevote: false,
         showmarker: true,
         showsite: false,
+        showvisibility: false,
         showvote: false,
         showturbine: false,
         showdownload: false,
@@ -159,6 +161,7 @@ class Main extends Component {
         showwind: false,
         showgrid: false,
         showplanningapplications: false,
+        showtooltipvisibility: false,
         showtooltipsite: false,
         showtooltipvote: false,
         showtooltipdownload: false,
@@ -190,6 +193,7 @@ class Main extends Component {
         textimage: null,
       };
       this.data = []; 
+      this.settingbounds = false;
       this.helpIndex = 0;
       this.updatealtitude = false;
       this.ignoremovend = false;
@@ -216,6 +220,7 @@ class Main extends Component {
       }
   
       const buttons = {
+        'visibility':             new Visibility({mapcontainer: this}),
         'site':                   new Site({mapcontainer: this}),
         'vote':                   new Vote({mapcontainer: this}),
         'download':               new Download({mapcontainer: this}),
@@ -278,6 +283,45 @@ class Main extends Component {
         this.ignoremovend = true;
         this.setPage(PAGE.SHOWTURBINE);
       });            
+    }
+
+    setVisibility = (active) => {
+      if ((this.mapRef !== null) && (this.mapRef.current !== null)) {
+        var map = this.mapRef.current.getMap();
+        if (map) {
+          if (active) {
+            this.updateVisibility();
+          } else {
+            map.getSource('viewshed').setData({type: 'FeatureCollection', features: []});
+          }    
+        }
+      }
+      if ((this.submapRef !== null) && (this.submapRef.current !== null)) {
+        var submap = this.submapRef.current.getMap();
+        if (submap) {
+          if (!active) {
+            submap.getSource('viewshed').setData({type: 'FeatureCollection', features: []});
+          }    
+        }
+      }
+    }
+
+    refreshVisibility = () => {
+      this.setVisibility(this.state.showvisibility);
+    }
+
+    updateVisibility = () => {
+      if ((this.mapRef !== null) && (this.mapRef.current !== null)) {
+        var map = this.mapRef.current.getMap();
+        if (map) {
+          this.props.fetchVisibility({
+            lat: this.props.global.turbinelat, 
+            lng: this.props.global.turbinelng, 
+            hub: this.props.global.turbinetowerheight,
+            blade: this.props.global.turbinebladeradius          
+          });
+        }
+      }
     }
 
     verifyCallback(recaptchaToken) {
@@ -874,6 +918,7 @@ class Main extends Component {
           this.props.setGlobalState({turbinelat: lnglat.lat, turbinelng: lnglat.lng});
           this.setButton(map, 'share', true);
           this.setButton(map, 'download', true);
+          this.setButton(map, 'visibility', true);
           this.props.global.buttons['site'].deactivateButton();
           var zoom = map.getZoom();
           if (zoom < THREED_ZOOM)   this.setState({showsite: false, showmarker: true});
@@ -1036,10 +1081,11 @@ class Main extends Component {
         }
 
         this.props.setGlobalState({turbinelat: lnglat.lat, turbinelng: lnglat.lng}).then(() => {
-            if ((this.props.global.page === PAGE.NEARESTTURBINE) || (this.props.global.page === PAGE.SHOWTURBINE)) {
-                var map = this.mapRef.current.getMap();
-                this.reorientToTurbine(map);    
-            }
+          if (this.state.showvisibility) this.updateVisibility();
+          if ((this.props.global.page === PAGE.NEARESTTURBINE) || (this.props.global.page === PAGE.SHOWTURBINE)) {
+              var map = this.mapRef.current.getMap();
+              this.reorientToTurbine(map);    
+          }
         });          
     }
   
@@ -1053,6 +1099,9 @@ class Main extends Component {
         style: 'map-scale'
       });
       submap.addControl(scale, 'top-right');
+      this.props.setGlobalState({
+        'submapref': this.submapRef        
+      });
     }
 
     reorientToTurbine = (map) => {
@@ -1126,8 +1175,90 @@ class Main extends Component {
         this.flyingRun();
       }
     }
+  //   export const DEFAULT_MAXBOUNDS = [
+  //     [
+  //         -14.629154,
+  //         49.044464
+  //     ],
+  //     [
+  //         5.614791, 
+  //         61.250553 
+  //     ]
+  // ]
+  
+    checkBounds = () => {
+      if (this.mapRef.current !== null) {
+        var map = this.mapRef.current.getMap();
+        var currentBounds = map.getBounds();
+
+        if (this.settingbounds) {
+          this.settingbounds = false;
+          return;
+        }
+
+        console.log(currentBounds);
+
+        if ((currentBounds._sw.lng < DEFAULT_MAXBOUNDS[0][0]) || 
+            (currentBounds._sw.lat < DEFAULT_MAXBOUNDS[0][1]) || 
+            (currentBounds._ne.lng > DEFAULT_MAXBOUNDS[1][0]) ||
+            (currentBounds._ne.lat > DEFAULT_MAXBOUNDS[1][1])) {
+
+              if (parseInt(map.getZoom()) == parseInt(map.getMinZoom())) {
+                this.settingbounds = true;
+                map.fitBounds(DEFAULT_MAXBOUNDS, {animate: false});
+                return;
+              }
+              console.log("Moving outside bounds so resetting");
+              console.log(currentBounds);
+
+              const centre = map.getCenter();
+              const centrecoordinates = map.project([centre.lng, centre.lat]);
+
+              var screenCentreX = centrecoordinates.x;
+              var screenCentreY = centrecoordinates.y;
+              var maxBound_sw_Coordinates = map.project([DEFAULT_MAXBOUNDS[0][0], DEFAULT_MAXBOUNDS[0][1]]);
+              var maxBound_ne_Coordinates = map.project([DEFAULT_MAXBOUNDS[1][0], DEFAULT_MAXBOUNDS[1][1]]);
+              var currentBound_sw_Coordinates = map.project([currentBounds._sw.lng, currentBounds._sw.lat]);
+              var currentBound_ne_Coordinates = map.project([currentBounds._ne.lng, currentBounds._ne.lat]);
+
+              if (currentBounds._sw.lng < DEFAULT_MAXBOUNDS[0][0]) {
+                const deltaX = 10 + parseInt(currentBound_sw_Coordinates.x - maxBound_sw_Coordinates.x);
+                screenCentreX += deltaX;
+                console.log("Need to adjust x by", deltaX);               
+              }
+
+              if (currentBounds._sw.lat < DEFAULT_MAXBOUNDS[0][1]) {
+                const deltaY = 10 + parseInt(currentBound_sw_Coordinates.y - maxBound_sw_Coordinates.y);
+                screenCentreY -= deltaY;
+                console.log("Need to adjust y by", deltaY);               
+              }
+
+              if (currentBounds._ne.lng > DEFAULT_MAXBOUNDS[1][0]) {
+                const deltaX = 10 + parseInt(currentBound_ne_Coordinates.x - maxBound_ne_Coordinates.x);
+                screenCentreX -= deltaX;
+                console.log("Need to adjust x by", deltaX);               
+              }
+
+              if (currentBounds._ne.lat > DEFAULT_MAXBOUNDS[1][1]) {
+                const deltaY = 10 + parseInt(currentBound_ne_Coordinates.y - maxBound_ne_Coordinates.y);
+                screenCentreY -= deltaY;
+                console.log("Need to adjust y by", deltaY);               
+              }
+
+              const newCentre = map.unproject([screenCentreX, screenCentreY]);
+              console.log("currentCentre", map.getCenter(), "newCentre", newCentre);
+              
+              this.settingbounds = true;
+              map.jumpTo({center: newCentre, animate: false});
+            
+        }
+      }
+
+    }
 
     onMapMoveEnd = (event) => {
+
+        // this.checkBounds();
 
         if (this.props.global.pagetransitioning) return;
 
@@ -1220,7 +1351,7 @@ class Main extends Component {
       if ((this.props.global.page !== PAGE.NEARESTTURBINE) && (this.props.global.page !== PAGE.SHOWTURBINE)) return;
 
       // console.log("updateHelp", this.helpIndex);
-      const links = ['intro', 'vote', 'download', 'message', 'share', 'fly', 'record'];
+      const links = ['intro', 'vote', 'download', 'message', 'share', 'visibility', 'fly', 'record'];
 
       if (this.helpIndex > (links.length)) this.helpStop();
       else {
@@ -1252,7 +1383,7 @@ class Main extends Component {
     helpStop = () => {
       if (this.props.global.helpInterval !== null) {
         clearInterval(this.props.global.helpInterval);
-        this.setState({'showtooltipsite': false, 'showtooltipvote': false, 'showtooltipdownload': false, 'showtooltipmessage': false, 'showtooltipshare': false, 'showtooltipfly': false, 'showtooltiprecord': false});
+        this.setState({'showtooltipvisibility': false, 'showtooltipsite': false, 'showtooltipvote': false, 'showtooltipdownload': false, 'showtooltipmessage': false, 'showtooltipshare': false, 'showtooltipfly': false, 'showtooltiprecord': false});
         this.props.setGlobalState({helpInterval: null});
         this.helpIndex = 0;
       }
@@ -1738,7 +1869,9 @@ class Main extends Component {
     }
 
     setTurbine = () => {
-      this.props.setGlobalState({windturbine: this.state.windturbine, turbinetowerheight: this.state.hubheight, turbinebladeradius: (this.state.turbineparameters['Rotor diameter'] / 2)});
+      this.props.setGlobalState({windturbine: this.state.windturbine, turbinetowerheight: this.state.hubheight, turbinebladeradius: (this.state.turbineparameters['Rotor diameter'] / 2)}).then(() => {
+        this.refreshVisibility();
+      });
       this.setState({showturbine: false});
     }
 
@@ -2363,6 +2496,7 @@ class Main extends Component {
                               mapStyle={this.explorelayer}
                               terrain={{source: "terrainSource", exaggeration: 1.1 }}
                               attributionControl={false}
+                              minZoom="5"
                               maxBounds={DEFAULT_MAXBOUNDS}
                               initialViewState={{
                               longitude: this.props.global.currentlng,
@@ -2370,6 +2504,7 @@ class Main extends Component {
                               maxPitch: 85
                               }} >
                                 <Tooltip id="ctrlpanel-tooltip" place="right" variant="light" style={{fontSize: "120%"}} />
+                                <Tooltip id="ctrlpanel-tooltip-visibility" isOpen={this.state.showtooltipvisibility} place="right" variant="light" style={{fontSize: "120%"}} />
                                 <Tooltip id="ctrlpanel-tooltip-site" isOpen={this.state.showtooltipsite} place="right" variant="light" style={{fontSize: "120%"}} />
                                 <Tooltip id="ctrlpanel-tooltip-vote" isOpen={this.state.showtooltipvote} place="right" variant="light" style={{fontSize: "120%"}} />
                                 <Tooltip id="ctrlpanel-tooltip-download" isOpen={this.state.showtooltipdownload} place="right" variant="light" style={{fontSize: "120%"}} />
@@ -2510,6 +2645,9 @@ export const mapDispatchToProps = (dispatch, ownProps) => {
         },
         fetchRandomPoint: () => {
             return dispatch(global.fetchRandomPoint());
+        },
+        fetchVisibility: (params) => {
+          return dispatch(global.fetchVisibility(params));
         },
         castVote: (voteparameters) => {
             return dispatch(global.castVote(voteparameters));

@@ -67,21 +67,21 @@ export const PAGE = {
 export const PAGEBUTTONS = [
     [],
     [],
-    ['vote', 'download', 'message', 'share', 'fly', 'video'],
-    ['site', 'vote', 'download', 'message', 'share', 'fly', 'video', 'wind', 'planning', 'grid', 'planningapplications'],
+    ['vote', 'download', 'message', 'share', 'visibility', 'fly', 'video'],
+    ['site', 'vote', 'download', 'message', 'share',  'visibility', 'fly', 'video', 'wind', 'planning', 'grid', 'planningapplications'],
     [],
-    ['vote', 'download', 'message', 'share', 'fly', 'video'],
+    ['vote', 'download', 'message', 'share', 'visibility', 'fly', 'video'],
 ]
 
 // Default maxbounds 
 export const DEFAULT_MAXBOUNDS = [
     [
-        -14.629154,
-        49.044464
+        -12.456802770948485,
+        48.921496099104246
     ],
     [
-        5.614791, 
-        61.250553 
+        3.5121541807384062, 
+        61.59071211434002 
     ]
 ]
 

@@ -110,6 +110,48 @@ export const fetchNearestTurbine = (position, history, location) => {
   }
 }
 
+/**
+ * fetchVisibility
+ * 
+ * Fetches visibility GeoJSON for supplied point, turbine height and blade radius
+ * 
+ * @param {*} params
+ */
+export const fetchVisibility = (params) => {
+  return (dispatch, getState) => {
+    const { mapref, submapref } = getState().global;
+    let headers = {"Content-Type": "application/json"};
+    let body = JSON.stringify(params);
+    return fetch(API_URL + "/viewshed/", {headers, method: "POST", body})
+      .then(res => {
+        if (res.status < 500) {
+          return res.json().then(data => {
+            return {status: res.status, data};
+          })
+        } else {
+          console.log("Server Error!");
+          throw res;
+        }
+      })
+      .then(res => {
+        if (res.status === 200) {
+
+          // Update GeoJSON layers
+          if ((mapref !== null) && (mapref.current !== null)) {
+            var map = mapref.current.getMap();
+            map.getSource('viewshed').setData(res.data);
+          }
+          if ((submapref !== null) && (submapref.current !== null)) {
+            var submap = submapref.current.getMap();
+            submap.getSource('viewshed').setData(res.data);
+          }
+    
+          return dispatch({type: 'FETCH_VISIBILITY', randompoint: res.data});
+        }         
+      })
+  }
+}
+
 
 /**
  * castVote

@@ -14,7 +14,8 @@
 import { 
     PAGE,
     TURBINETOWERHEIGHT_DEFAULT,
-    TURBINEBLADERADIUS_DEFAULT
+    TURBINEBLADERADIUS_DEFAULT,
+    DEFAULT_CENTRE
  } from '../constants';
 
 // Set up initial state of some global variables using constants
@@ -29,6 +30,7 @@ export const initialStateGlobal = {
     turbinebladeradius: TURBINEBLADERADIUS_DEFAULT,
     windturbine: 'WeWantWind Average Turbine',
     mapref: null,
+    submapref: null,
     startinglat: null,
     startinglng: null,
     currentlat: null,
@@ -61,6 +63,7 @@ export const initialStateGlobal = {
     },
     buttons: null,
     buttonsstate: {
+        'visibility':           false,
         'site':                 false,
         'vote':                 false,
         'download':             false,
