@@ -68,6 +68,9 @@ VIEWSHED_MAX_DISTANCE = float((2 * (VIEWSHED_MAX_CIRCULAR_RANGE ** 2)) ** 0.5)
 
 TERRAIN_FILE = cwd + '/terrain/terrain_lowres_withfeatures.tif'
 
+DEFAULT_HUB_HEIGHT = 108.3
+DEFAULT_BLADE_RADIUS = 69.25
+
 constraintslist = [
     {
         'heading': 'All constraints',
@@ -192,7 +195,7 @@ def SendErrorEmail(messagecontent):
     """
     Send message to sysadmin in event of error
     """
-    message = EmailMessage("wewantwind.org - Error message", messagecontent, from_email="info@wewantwind.org", to=[os.environ.get("ERROR_EMAIL")])
+    message = EmailMessage("WeWantWind.org - Error message", messagecontent, from_email="info@wewantwind.org", to=[os.environ.get("ERROR_EMAIL")])
     message.send()
 
 def home(request):
@@ -372,9 +375,10 @@ def RestartRenderer(request):
     shelloutput = subprocess.run(RESTART_SCRIPT, encoding="utf8", capture_output=True, text=True, universal_newlines=True) 
     return OutputJson({'result': shelloutput.stderr})
 
-def processimages(id, coordinates, constraintslist, parameters):
+def processimages(id, coordinates, constraintslist, parameters, hubheight, bladeradius):
     with open(cwd + '/styles/planningconstraint.json', encoding='utf-8') as fp: planningconstraint = json.load(fp)
     with open(cwd + '/styles/planningconstraints_osmstyle.json', encoding='utf-8') as fp: planningconstraints = json.load(fp)
+    with open(cwd + '/styles/viewshed_osmstyle.json', encoding='utf-8') as fp: viewshed = json.load(fp)
     # with open(cwd + '/styles/planningconstraints.json', encoding='utf-8') as fp: planningconstraints = json.load(fp)
 
     imagedirectory = cwd + '/downloads/' + id
@@ -415,6 +419,36 @@ def processimages(id, coordinates, constraintslist, parameters):
     background.paste(windturbine, (int((int(threedimensionsparameters['width']) * 3 / 2) - (windturbine.size[0] / 2)), int(int(threedimensionsparameters['height']) * 3 / 2) - windturbine.size[1]), windturbine)
 
     background.save(imagepath)
+
+    viewshedparameters = {'width': '600', 'height': '600', 'ratio': '3', 'zoom': '8.8', 'pitch': '0', 'bearing': '0', 'center': str(coordinates[0]) + ',' + str(coordinates[1])}
+    viewshedgeojson = GetViewsheds(coordinates[0], coordinates[1], hubheight, bladeradius)
+
+    if 'viewshed' in viewshed['style']['sources']:
+        viewshed['style']['sources']['viewshed']['data'] = viewshedgeojson
+
+    if 'customgeojson' in viewshed['style']['sources']:
+        viewshed['style']['sources']['customgeojson'] = {
+            "type": "geojson",
+            "data": {"type": "FeatureCollection", "features": [{
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": coordinates
+                }
+            }]}
+        }      
+
+    for key in viewshedparameters: viewshed[key] = viewshedparameters[key]
+
+    try:
+        r = requests.post('http://localhost:81/render', json=viewshed, stream=True)
+        if r.status_code == 200:
+            imagepath = imagedirectory + '/viewshed.png'
+            with open(imagepath, 'wb') as f:
+                r.raw.decode_content = True
+                shutil.copyfileobj(r.raw, f)
+    except requests.exceptions.ConnectionError:
+        SendErrorEmail("Couldn't connect to tilerenderer server")
 
     # Modify planningconstraint template according to constraint color and duplicating for each listed layer
     for constraint in constraintslist:
@@ -528,7 +562,7 @@ def get_or_create_hyperlink_style(d):
     return "Hyperlink"
 
 
-def createworddoc(wordpath, readableposition, imagedirectory):
+def createworddoc(wordpath, readableposition, imagedirectory, hubheight, bladeradius):
     """
     Creates word document containing constraints images downloaded to 'imagedirectory'
     """
@@ -573,7 +607,7 @@ def createworddoc(wordpath, readableposition, imagedirectory):
 
     p = document.add_paragraph(style='Heading 1')
     p.paragraph_format.space_before = Pt(0)
-    run = p.add_run('wewantwind.org Turbine Siting Report')
+    run = p.add_run('WeWantWind.org Turbine Siting Report')
     run.font.color.rgb = RGBColor.from_string('000000')
     p = document.add_paragraph(style='Heading 3')
     p.paragraph_format.space_before = Pt(0)
@@ -585,6 +619,43 @@ def createworddoc(wordpath, readableposition, imagedirectory):
     document.add_picture(image, width=Cm(19))
     p = document.add_paragraph(style='Attribution')
     run = p.add_run('Satellite images © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community, ESRI')
+    p.paragraph_format.space_before = Pt(0)
+    p.paragraph_format.space_after = Pt(0)
+    document.add_page_break()
+
+    p = document.add_paragraph(style='Heading 1')
+    p.paragraph_format.space_before = Pt(0)
+    run = p.add_run('WeWantWind.org Turbine Siting Report')
+    run.font.color.rgb = RGBColor.from_string('000000')
+    p = document.add_paragraph(style='Heading 3')
+    p.paragraph_format.space_before = Pt(0)
+    run = p.add_run('Position: ' + readableposition)
+    p.paragraph_format.space_after = Pt(30)
+    run.font.color.rgb = RGBColor.from_string('000000')
+
+    p = document.add_paragraph(style='Heading 2')
+    run = p.add_run("Visibility map")
+    run.font.color.rgb = RGBColor.from_string('000000')
+    p = document.add_paragraph(style='List Bullet')
+    run = p.add_run("Turbine hub viewable - hub height: " + str(hubheight) + "m")
+    rgbarray = colors.to_rgb("#813FCB")
+    run.font.color.rgb = RGBColor(int(255 * rgbarray[0]), int(255 * rgbarray[1]), int(255 * rgbarray[2]))
+    p = document.add_paragraph(style='List Bullet')
+
+    # p = document.add_paragraph(style='List Bullet 2')
+    run = p.add_run("Turbine tip viewable - blade radius: " + str(bladeradius) + "m")
+    rgbarray = colors.to_rgb("#B199CC")
+    run.font.color.rgb = RGBColor(int(255 * rgbarray[0]), int(255 * rgbarray[1]), int(255 * rgbarray[2]))
+
+    image = imagedirectory + '/viewshed.png'
+    document.add_picture(image, width=Cm(19))
+    p = document.add_paragraph(style='Attribution')
+    run = p.add_run(" © ")
+    add_hyperlink(p, 'OpenMapTiles', "https://www.openmaptiles.org")
+    run = p.add_run(" © ")
+    add_hyperlink(p, 'OpenStreetMap ', "https://www.openstreetmap.org/copyright")
+    run = p.add_run("contributors")
+    run.font.color.rgb = RGBColor.from_string('000000')
     p.paragraph_format.space_before = Pt(0)
     p.paragraph_format.space_after = Pt(0)
     document.add_page_break()
@@ -635,24 +706,24 @@ def createworddoc(wordpath, readableposition, imagedirectory):
 
     document.save(wordpath)
 
-def createpdfdoc(pdfpath, readableposition, imagedirectory):
+def createpdfdoc(pdfpath, readableposition, imagedirectory, hubheight, bladeradius):
     """
     Creates pdf document containing constraints images downloaded to 'imagedirectory'
     """
 
     canvas = Canvas(pdfpath, pagesize=A4)
-    canvas.setTitle("wewantwind.org Turbine Siting Report - " + readableposition)
+    canvas.setTitle("WeWantWind.org Turbine Siting Report - " + readableposition)
 
     pdfmetrics.registerFont(TTFont('OpenSansLt', cwd + '/Open_Sans/static/OpenSans-Light.ttf'))
     pdfmetrics.registerFont(TTFont('OpenSans', cwd + '/Open_Sans/static/OpenSans-Medium.ttf'))
     pdfmetrics.registerFont(TTFont('OpenSansBd', cwd + '/Open_Sans/static/OpenSans-SemiBold.ttf'))
     pdfmetrics.registerFont(TTFont('OpenSansExtraBd', cwd + '/Open_Sans/static/OpenSans-ExtraBold.ttf'))
 
+    # Cover page
     canvas.setFont("OpenSansExtraBd", 25) #choose your font type and font size
-    canvas.drawString(40, 11*72, "wewantwind.org Turbine Siting Report")
+    canvas.drawString(40, 11*72, "WeWantWind.org Turbine Siting Report")
     canvas.setFont("OpenSansLt", 23) #choose your font type and font size
     canvas.drawString(40, 10.5*72, "Position: " + readableposition)
-
     image = imagedirectory + '/3d.png'
     canvas.drawInlineImage(image, 40 , 155, width=72*7,height=int(600 * 420 / 500))
     canvas.setFont("OpenSansLt", 8) #choose your font type and font size
@@ -660,10 +731,36 @@ def createpdfdoc(pdfpath, readableposition, imagedirectory):
     canvas.drawString(40, 130, 'and the GIS User Community, ESRI')
     canvas.showPage()
 
+    # Viewshed
+    canvas.setFont("OpenSansExtraBd", 25) #choose your font type and font size
+    canvas.drawString(40, 11*72, "WeWantWind.org Turbine Siting Report")
+    canvas.setFont("OpenSansLt", 23) #choose your font type and font size
+    canvas.drawString(40, 10.5*72, "Position: " + readableposition)
+    canvas.setFont("OpenSansExtraBd", 15) #choose your font type and font size
+    canvas.drawString(40, 9.8*72, "Visibility map")
+    vpos = 9.5*72
+    canvas.setFont("OpenSansExtraBd", 11)
+    rgbarray = colors.to_rgb("#813FCB")
+    canvas.setFillColorRGB(rgbarray[0], rgbarray[1], rgbarray[2])    
+    canvas.drawString(40, vpos, "• Turbine hub viewable - hub height: " + str(hubheight) + "m")
+    vpos -= 16
+    canvas.setFont("OpenSansExtraBd", 11)
+    rgbarray = colors.to_rgb("#B199CC")
+    canvas.setFillColorRGB(rgbarray[0], rgbarray[1], rgbarray[2])    
+    canvas.drawString(40, vpos, "• Turbine tip viewable - blade radius: " + str(bladeradius) + "m")
+    vpos -= 16
+    image = imagedirectory + '/viewshed.png'
+    canvas.drawInlineImage(image, 40 , 155, width=72*7,height=int(600 * 420 / 500))
+    canvas.setFillColorRGB(0,0,0)
+    canvas.setFont("OpenSansLt", 8) #choose your font type and font size
+    canvas.drawString(40, vpos - (48 * 7) - 173, '© OpenMapTiles https://www.openmaptiles.org © OpenStreetMap contributors https://www.openstreetmap.org/copyright')
+    canvas.showPage()
+
+    # Constraints
     lastcontraint = constraintslist[-1]
     for constraint in constraintslist:
         canvas.setFont("OpenSansExtraBd", 25) #choose your font type and font size
-        canvas.drawString(40, 11*72, "wewantwind.org Turbine Siting Report")
+        canvas.drawString(40, 11*72, "WeWantWind.org Turbine Siting Report")
         canvas.setFont("OpenSansLt", 23) #choose your font type and font size
         canvas.drawString(40, 10.5*72, "Position: " + readableposition)
         canvas.setFont("OpenSansExtraBd", 15) #choose your font type and font size
@@ -697,27 +794,27 @@ def createpdfdoc(pdfpath, readableposition, imagedirectory):
 
     canvas.save()
 
-def GetReport(type, lat, lng):
+def GetReport(type, lat, lng, hubheight, bladeradius):
     """
     Return report object for specific type, lat, lng
     """
 
     id = str(uuid.uuid4())
     lat, lng = round(lat, COORDINATE_PRECISION), round(lng, COORDINATE_PRECISION)
-    filestem = str(lat) + "_" + str(lng)
+    filestem = str(lat) + "_" + str(lng) + "_" + str(hubheight) + "_" + str(bladeradius)
     readableposition = str(lat) + "°N, " + str(lng) + "°E"
     downloadsdirectory = cwd + '/downloads/'
     pdfpath = downloadsdirectory + filestem + '.pdf'
     wordpath = downloadsdirectory + filestem + '.docx'
     # if True:
     if (os.path.isfile(wordpath) is False) or (os.path.isfile(pdfpath) is False):
-        imagedirectory = processimages(id, [lng, lat], constraintslist, {'width': '600', 'height': '500', 'ratio': '3', 'zoom': '12', 'center': str(lng) + ',' + str(lat)})
-        if os.path.isfile(wordpath) is False: createworddoc(wordpath, readableposition, imagedirectory)
-        if os.path.isfile(pdfpath) is False: createpdfdoc(pdfpath, readableposition, imagedirectory)
+        imagedirectory = processimages(id, [lng, lat], constraintslist, {'width': '600', 'height': '500', 'ratio': '3', 'zoom': '12', 'center': str(lng) + ',' + str(lat)}, hubheight, bladeradius)
+        if os.path.isfile(wordpath) is False: createworddoc(wordpath, readableposition, imagedirectory, hubheight, bladeradius)
+        if os.path.isfile(pdfpath) is False: createpdfdoc(pdfpath, readableposition, imagedirectory, hubheight, bladeradius)
         shutil.rmtree(imagedirectory)
 
     returnfile = wordpath
-    filestem = "wewantwind.org Report - " + readableposition
+    filestem = "WeWantWind.org Report - " + readableposition
     mimetype = 'application/msword'
     filename = filestem + ".docx"
     if type == 'pdf': 
@@ -746,18 +843,22 @@ def SiteReport(request):
     type = request.GET.get('type','word')
     lat = float(request.GET.get('lat', 51))
     lng = float(request.GET.get('lng',0))
+    hubheight = float(request.GET.get('hub', DEFAULT_HUB_HEIGHT))
+    bladeradius = float(request.GET.get('blade', DEFAULT_BLADE_RADIUS))
 
-    return GetReport(type, lat, lng)
+    return GetReport(type, lat, lng, hubheight, bladeradius)
 
 @csrf_exempt
 def NearestTurbineReport(request):
     type = request.GET.get('type','word')
     lat = float(request.GET.get('lat', 51))
     lng = float(request.GET.get('lng',0))
+    hubheight = float(request.GET.get('hub', DEFAULT_HUB_HEIGHT))
+    bladeradius = float(request.GET.get('blade', DEFAULT_BLADE_RADIUS))
 
     site = GetNearestTurbine(lat, lng)
  
-    return GetReport(type, site.centre.coords[1], site.centre.coords[0])
+    return GetReport(type, site.centre.coords[1], site.centre.coords[0], hubheight, bladeradius)
 
 @csrf_exempt
 def CreateGeoJSON(request):
@@ -768,7 +869,7 @@ def CreateGeoJSON(request):
         "features": [
             {
             "type": "Feature",
-            "name": "wewantwind.org Turbine",
+            "name": "WeWantWind.org Turbine",
             "geometry": {
                 "type": "Point",
                 "coordinates": [lng, lat]
@@ -818,8 +919,8 @@ def CastVote(request):
             token=token)
         provisionalvote.save()
         # Attempt to send email
-        from_email = '"wewantwind.org" <info@wewantwind.org>'
-        subject = "wewantwind.org: Confirm your wind turbine vote"
+        from_email = '"WeWantWind.org" <info@wewantwind.org>'
+        subject = "WeWantWind.org: Confirm your wind turbine vote"
         current_site = get_current_site(request)
         parameters['domain'] = current_site.domain
         parameters['uid'] = urlsafe_base64_encode(force_bytes(provisionalvote.pk))
@@ -945,8 +1046,8 @@ def SendMessage(request):
             token=token)
         provisionalmessage.save()
         # Attempt to send email
-        from_email = '"wewantwind.org" <info@wewantwind.org>'
-        subject = "wewantwind.org: Confirm your message request"
+        from_email = '"WeWantWind.org" <info@wewantwind.org>'
+        subject = "WeWantWind.org: Confirm your message request"
         current_site = get_current_site(request)
         parameters['domain'] = current_site.domain
         parameters['uid'] = urlsafe_base64_encode(force_bytes(provisionalmessage.pk))
@@ -986,8 +1087,8 @@ def SendShare(request):
 
     if result['success']:
         # Attempt to send email
-        from_email = '"wewantwind.org" <info@wewantwind.org>'
-        subject = "wewantwind.org: Someone has shared a wind turbine site link with you"
+        from_email = '"WeWantWind.org" <info@wewantwind.org>'
+        subject = "WeWantWind.org: Someone has shared a wind turbine site link with you"
         current_site = get_current_site(request)
         parameters['domain'] = current_site.domain
         message = render_to_string('backend/share.html', parameters)        
@@ -1003,8 +1104,8 @@ def ProcessMessageQueue(request):
     """
 
     current_site = get_current_site(request)
-    from_email = '"wewantwind.org" <info@wewantwind.org>'
-    subject = "wewantwind.org: Introductory email from user(s) wanting to connect with other users"
+    from_email = '"WeWantWind.org" <info@wewantwind.org>'
+    subject = "WeWantWind.org: Introductory email from user(s) wanting to connect with other users"
     pendingmessages = Message.objects.filter(sent=False)
     outboundqueue = {}
     for pendingmessage in pendingmessages:
@@ -1319,8 +1420,9 @@ def Viewshed(request):
     # print(json.dumps(parameters, indent=4))
     lat = float(parameters.get('lat', 51))
     lng = float(parameters.get('lng',0))
-    hubheight = float(parameters.get('hub', 108.3))
-    bladeradius = float(parameters.get('blade', 69.25))
+    hubheight = float(parameters.get('hub', DEFAULT_HUB_HEIGHT))
+    bladeradius = float(parameters.get('blade', DEFAULT_BLADE_RADIUS))
     geojson = GetViewsheds(lng, lat, hubheight, bladeradius)
 
     return OutputJson(geojson)
+

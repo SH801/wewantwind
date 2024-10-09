@@ -266,7 +266,7 @@ class Main extends Component {
       var startingposition = params.startingposition;
       var turbineposition = params.turbineposition;
       let urlparams = queryString.parse(this.props.location.search);
-      if ((urlparams.vlat !== undefined) && (urlparams.vlng !== undefined)) {
+      if ((urlparams.vlat !== undefined) && (urlparams.vlng !== undefined) && (urlparams.vlat !== 'NaN') && (urlparams.vlng !== 'NaN')) {
         currentposition = {latitude: parseFloat(urlparams.vlat), longitude: parseFloat(urlparams.vlng)};
       } else {
         var currentposition = JSON.parse(JSON.stringify(params.turbineposition));
@@ -1505,7 +1505,9 @@ class Main extends Component {
       const anchor = document.createElement("a");
       var lat = this.props.global.turbinelat;
       var lng = this.props.global.turbinelng;
-      
+      var hub = this.props.global.turbinetowerheight;
+      var blade = this.props.global.turbinebladeradius;
+
       const precision = 5
       lat = lat.toFixed(precision);
       lng = lng.toFixed(precision);
@@ -1526,7 +1528,7 @@ class Main extends Component {
       };
       
       // const timesuffix = now.toISOString().substring(0,19).replaceAll('T', ' ').replaceAll(':', '-');
-      anchor.download = "wewantwind.org - " + readableposition;
+      anchor.download = "WeWantWind.org - " + readableposition;
   
       switch (type) {
         case 'qgis':
@@ -1560,7 +1562,7 @@ class Main extends Component {
           } else {
             anchor.download += '.docx';
           }
-          const docurl = DOMAIN_BASEURL + '/sitereport?type=' + type + '&lat=' + String(lat) + '&lng=' + String(lng);
+          const docurl = DOMAIN_BASEURL + '/sitereport?type=' + type + '&lat=' + String(lat) + '&lng=' + String(lng) + '&hub=' + String(hub) + '&blade=' + String(blade);
           this.setState({generatingfile: true, progress: 0});
           var timer = setInterval(() => {
             var currentstep = this.state.progress;
@@ -1568,7 +1570,7 @@ class Main extends Component {
               currentstep += 5;
               this.setState({progress: currentstep});  
             }
-          }, 1800);
+          }, 2000);
           fetch (docurl)
           .then(r => r.blob())
           .then(binarydoc => {
