@@ -62,7 +62,7 @@ LOCAL_DISTANCE = 10 # miles
 RESTART_SCRIPT = os.environ.get("RESTART_SCRIPT")
 GOOGLE_RECAPTCHA_SECRET_KEY = os.environ.get("GOOGLE_RECAPTCHA_SECRET_KEY")
 
-VIEWSHED_MAX_CIRCULAR_RANGE = float(60000)
+VIEWSHED_MAX_CIRCULAR_RANGE = float(50000)
 VIEWSHED_MAX_DISTANCE = float((2 * (VIEWSHED_MAX_CIRCULAR_RANGE ** 2)) ** 0.5)
 
 TERRAIN_FILE = cwd + '/terrain/terrain_lowres_withfeatures.tif'
@@ -419,7 +419,7 @@ def processimages(id, coordinates, constraintslist, parameters, hubheight, blade
 
     background.save(imagepath)
 
-    viewshedparameters = {'width': '600', 'height': '600', 'ratio': '3', 'zoom': '8.8', 'pitch': '0', 'bearing': '0', 'center': str(coordinates[0]) + ',' + str(coordinates[1])}
+    viewshedparameters = {'width': '600', 'height': '600', 'ratio': '3', 'zoom': '8.3', 'pitch': '0', 'bearing': '0', 'center': str(coordinates[0]) + ',' + str(coordinates[1])}
     viewshedgeojson = GetViewsheds(coordinates[0], coordinates[1], hubheight, bladeradius)
 
     if 'viewshed' in viewshed['style']['sources']:
@@ -1197,7 +1197,7 @@ def returncirclesforpoint(lng, lat):
     bearing2 = 359.99999
 
     features = []
-    steps = [5, 10, 15, 20, 25, 30]
+    steps = [5, 10, 15, 20, 25, 30, 35, 40]
     stepdistance = 10
     for step_index in range(len(steps)):
         radius = steps[step_index]
