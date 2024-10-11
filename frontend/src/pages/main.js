@@ -537,9 +537,8 @@ class Main extends Component {
       mutex = true;
       var map = this.mapRef.current.getMap();
       var { lng, lat, altitude, pitch, bearing } = camPos;
-      // const correctaltitude = map.terrain.getElevationForLngLatZoom({lat: lat, lng: lng}, 15);
-      // console.log(correctaltitude);
-      // altitude += map.queryTerrainElevation({lat: lat, lng: lng}) || 0;
+      // Seems to provide correct figure as we've centered the turbine in the viewport
+      altitude += map.queryTerrainElevation({lat: lat, lng: lng}) || 0;
       const pitch_ = pitch * Math.PI / 180;
       const cameraToCenterDistance = 0.5 / Math.tan(map.transform._fov / 2) * map.transform.height;
       const pixelAltitude = Math.abs(Math.cos(pitch_) * cameraToCenterDistance);
@@ -558,12 +557,7 @@ class Main extends Component {
       mutex = false;
     }
 
-    onStyleData = (event) => {
-
-      var map = event.target;
-      var props = this.props;
-      var currentwindturbines = this.state.currentwindturbines;
-
+    add3DLayer = (map, props) => {
       if (!map.getLayer("3d-model")) {
             
         // configuration of the custom layer for a 3D model per the CustomLayerInterface
@@ -576,9 +570,6 @@ class Main extends Component {
                 this.scene = new THREE.Scene();
                 this.props = props;
                 this.blades = null;
-                this.lastcentre = map.getCenter();
-                this.currentwindturbines = currentwindturbines;
-                this.renderedforlastcentre = false;
 
                 // this.scene.scale.multiply(new THREE.Vector3(1, 1, -1));
                 this.scene.scale.multiply(new THREE.Vector3(25, 25, -25));
@@ -652,7 +643,9 @@ class Main extends Component {
                 if ((this.props.global.turbinelat !== null) && (this.props.global.turbinelng !== null)) {
                   currentwindturbines.push([this.props.global.turbinelng, this.props.global.turbinelat])        
                 }
-                
+                // Need to reload this layer every time tubinelat/lng changes as seems to use one-time copy of global variables
+                // console.log("3D Layer", currentwindturbines.length, this.props.global.turbinelng);
+
                 for(var i = 0; i < currentwindturbines.length; i++) {
                   const currturbine = currentwindturbines[i];
                   const offsetFromCenterElevation = map.queryTerrainElevation(currturbine) || 0;
@@ -677,8 +670,15 @@ class Main extends Component {
         };
     
         map.addLayer(customLayer);
+      }      
+    }
 
-      }
+    onStyleData = (event) => {
+
+      var map = event.target;
+      var props = this.props;
+
+      this.add3DLayer(map, props);
     }
 
     onMapLoad = (event) => {
@@ -807,6 +807,8 @@ class Main extends Component {
         if (!isiOS) setTimeout(this.animateIcons, 1000);
 
         map.addControl(new maplibregl.AttributionControl(), 'bottom-left');
+
+        // this.add3DLayer(map, this.props);
     }
     
     isiOS = () => {
@@ -1024,12 +1026,10 @@ class Main extends Component {
     }
 
     setButton = (map, buttonname, state) => {
-      var newbuttonsstate = JSON.parse(JSON.stringify(this.props.global.buttonsstate));
       if (this.props.global.buttonsstate[buttonname] !== state) {
-        newbuttonsstate[buttonname] = state;
-        if (state) map.addControl(this.props.global.buttons[buttonname], 'top-left'); 
+        if (state) map.addControl(this.props.global.buttons[buttonname], 'top-left');
         else map.removeControl(this.props.global.buttons[buttonname]);
-        this.props.setGlobalState({buttonsstate: newbuttonsstate});
+        this.props.setButtonState(buttonname, state);        
       }      
     }
 
@@ -1797,6 +1797,10 @@ class Main extends Component {
                 this.props.fetchNearestTurbine({lat: this.props.global.startinglat, lng: this.props.global.startinglng}).then(() => {
                   this.setState({calculatingnearestturbine: false});
                   this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
+                  if (this.mapRef.current !== null) {
+                    const map = this.mapRef.current.getMap();
+                    this.updateCurrentWindTurbines(map);
+                  }
                 })
             } else {
                 if (navigator.geolocation) {
@@ -1823,6 +1827,10 @@ class Main extends Component {
           //   turbinelat: this.props.global.turbinelat,
           //   turbinelng: this.props.global.turbinelng,
           // })
+          if (this.mapRef.current !== null) {
+            const map = this.mapRef.current.getMap();
+            this.updateCurrentWindTurbines(map);
+          }
           this.setState({calculatingnearestturbine: false});
           this.setPage(PAGE.NEARESTTURBINE_OVERVIEW);
         })
@@ -2723,6 +2731,9 @@ export const mapDispatchToProps = (dispatch, ownProps) => {
         setGlobalState: (globalstate) => {
             return dispatch(global.setGlobalState(globalstate, ownProps.history, ownProps.location));
         },  
+        setButtonState: (buttonname, buttonstate) => {
+          return dispatch(global.setButtonState(buttonname, buttonstate));
+        },
         setPage: (page) => {
             return dispatch(global.setPage(page));
         },  

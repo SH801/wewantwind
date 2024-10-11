@@ -30,14 +30,30 @@ export const setGlobalState = (object, history, location) => {
     if ((object.turbinelat !== undefined) && (object.turbinelng !== undefined)) {
       setURLState({ 'lat': object.turbinelat, 'lng': object.turbinelng}, history, location);
     }
-    if ((object.currentlat !== undefined) && (object.currentlng !== undefined)) {
-      setURLState({ 'vlat': object.currentlat, 'vlng': object.currentlng}, history, location);
-    }
+    // if ((object.currentlat !== undefined) && (object.currentlng !== undefined)) {
+    //   setURLState({ 'vlat': object.currentlat, 'vlng': object.currentlng}, history, location);
+    // }
     
     dispatch({type: 'GLOBAL_SET_STATE', object: object});
     return Promise.resolve(true);
   }
 }
+
+/**
+ * setButtonState
+ * 
+ * Sets global state of specific button using name/value pair
+ * 
+ * @param {*} buttonname
+ * @param {*} buttonstate
+*/
+export const setButtonState = (buttonname, buttonstate) => {
+  return (dispatch, getState) => {    
+    dispatch({type: 'GLOBAL_SET_BUTTONSTATE', buttonname: buttonname, buttonstate: buttonstate});
+    return Promise.resolve(true);
+  }
+}
+
 
 /**
  * setPage

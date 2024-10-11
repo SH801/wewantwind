@@ -145,7 +145,7 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
         const northEast = [turbinelng + deltalng, turbinelat + deltalat];
         map.setPitch(0);
         map.setBearing(0);
-        console.log("fitBounds", [southWest, northEast])
+        // console.log("fitBounds", [southWest, northEast])
         map.fitBounds([southWest, northEast], {animate: true, padding: {top: 150, bottom: 210, left: 30, right: 30}}); 
       }
       break;
@@ -165,7 +165,7 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
     case PAGE.SHOWTURBINE:
       map.jumpTo({center: {lng: turbinelng, lat: turbinelat}, zoom: 16, pitch: 85, animate: false});
       var pointbearing = getBearing({lat: currentlat, lng: currentlng}, {lat: turbinelat, lng: turbinelng});
-      // setCameraPosition(map, {lng: currentlng, lat: currentlat, altitude: 50, pitch: 80, bearing: pointbearing});
+      setCameraPosition(map, {lng: currentlng, lat: currentlat, altitude: 50, pitch: 80, bearing: pointbearing});
       map.setLayoutProperty('votes', 'visibility', 'none');
       map.setLayoutProperty('votes_line', 'visibility', 'none');
       map.setPaintProperty('background', 'raster-brightness-min', 0.1);

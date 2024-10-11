@@ -54,6 +54,14 @@ export default function selector(state=initialStateGlobal, action) {
                     
             return newState;
 
+        case 'GLOBAL_SET_BUTTONSTATE':
+            var buttonsstate = {...newState['buttonsstate']};
+            const buttonname = action.buttonname;
+            const buttonstate = action.buttonstate;
+            buttonsstate[buttonname] = buttonstate;
+            newState = {...newState, buttonsstate: buttonsstate};
+            return newState;
+
         case 'FETCH_NEARESTTURBINE':
             newState = {...newState,             
                 startinglat: action.data.currentlat,
