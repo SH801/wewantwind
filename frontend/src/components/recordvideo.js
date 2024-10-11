@@ -42,7 +42,7 @@ export class RecordVideo extends Component{
           const canvas = _this._map.getCanvas();
           const data = []; 
           const stream = canvas.captureStream(25); 
-          const mediaRecorder = new MediaRecorder(stream, {videoBitsPerSecond: 10000000});        
+          const mediaRecorder = new MediaRecorder(stream, {videoBitsPerSecond: 100000000});     
           _this._mapcontainer.setState({mediarecorder: mediaRecorder});
           mediaRecorder.ondataavailable = (e) => data.push(e.data);
           mediaRecorder.onstop = (e) => {

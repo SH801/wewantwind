@@ -1882,7 +1882,8 @@
             "visibility": "visible"
         },             
         "paint": {
-            "fill-extrusion-color": "darkgray",                
+            "fill-extrusion-color": "#c7c3d0",   
+            "fill-extrusion-opacity": 0.9,             
             "fill-extrusion-height": ["get", "render_height"],
             "fill-extrusion-base": ["case",
                 [">=", ["get", "zoom"], 12],

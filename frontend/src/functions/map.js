@@ -139,12 +139,13 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
       mapRefreshPlanningApplications(false, map);
       mapRefreshPlanningConstraints(true, {all: true}, map);      
       if ((startinglat !== null) && (startinglng !== null) && (turbinelat !== null) && (turbinelng !== null)) {
-        const deltalat = turbinelat - startinglat;
-        const deltalng = turbinelng - startinglng;
+        const deltalat = Math.abs(turbinelat - startinglat);
+        const deltalng = Math.abs(turbinelng - startinglng);
         const southWest = [turbinelng - deltalng, turbinelat - deltalat];
         const northEast = [turbinelng + deltalng, turbinelat + deltalat];
         map.setPitch(0);
         map.setBearing(0);
+        console.log("fitBounds", [southWest, northEast])
         map.fitBounds([southWest, northEast], {animate: true, padding: {top: 150, bottom: 210, left: 30, right: 30}}); 
       }
       break;
@@ -156,14 +157,15 @@ export function initializeMap(map, page, planningconstraints, buttons, buttonsst
       map.setLayoutProperty('renewables_windturbine', 'visibility', 'none');
       mapRefreshPlanningApplications(false, map);
       mapRefreshPlanningConstraints(false, planningconstraints, map);      
-      var pointbearing = getBearing({lat: startinglat, lng: startinglng}, {lat: turbinelat, lng: turbinelng});
-      setCameraPosition(map, {lng: startinglng, lat: startinglat, altitude: 50, pitch: 85, bearing: pointbearing});
-      map.flyTo({center: map.getCenter(), animate: true});
+      map.flyTo({center: {lng: startinglng, lat: startinglat}, zoom: 16, pitch: 85, animate: true});
+      // var pointbearing = getBearing({lat: startinglat, lng: startinglng}, {lat: turbinelat, lng: turbinelng});
+      // setCameraPosition(map, {lng: startinglng, lat: startinglat, altitude: 50, pitch: 85, bearing: pointbearing});
+      // map.flyTo({center: map.getCenter(), animate: true});
       break;
     case PAGE.SHOWTURBINE:
-      map.jumpTo({center: {lng: turbinelng, lat: turbinelat}, zoom: 17, pitch: 85, animate: false});
+      map.jumpTo({center: {lng: turbinelng, lat: turbinelat}, zoom: 16, pitch: 85, animate: false});
       var pointbearing = getBearing({lat: currentlat, lng: currentlng}, {lat: turbinelat, lng: turbinelng});
-      setCameraPosition(map, {lng: currentlng, lat: currentlat, altitude: 50, pitch: 85, bearing: pointbearing});
+      // setCameraPosition(map, {lng: currentlng, lat: currentlat, altitude: 50, pitch: 80, bearing: pointbearing});
       map.setLayoutProperty('votes', 'visibility', 'none');
       map.setLayoutProperty('votes_line', 'visibility', 'none');
       map.setPaintProperty('background', 'raster-brightness-min', 0.1);

@@ -1,4 +1,4 @@
-import React, { Component, useMemo } from 'react';
+import React, { Component, useMemo, useRef, useState } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
@@ -31,12 +31,15 @@ import toast, { Toaster } from 'react-hot-toast';
 import queryString from "query-string";
 import { point, centroid, bearing, buffer, bbox, destination } from '@turf/turf';
 import { useLoader, useFrame } from "@react-three/fiber";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { DoubleSide } from "three";
 import 'maplibre-gl/dist/maplibre-gl.css';
 import Map, { Popup, Marker, GeolocateControl } from 'react-map-gl/maplibre';
-import { Canvas, Coordinates } from "react-three-map/maplibre";
+// import { Canvas, Coordinates } from "react-three-map/maplibre";
+// import { Canvas } from "@react-three/fiber";
 import { v4 as uuidv4 } from 'uuid';
-import maplibregl from '!maplibre-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+import maplibregl, {LngLat} from '!maplibre-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+import * as THREE from 'three';
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 import { 
     DOMAIN_BASEURL, 
@@ -74,7 +77,8 @@ import {
   TILESERVER_BASEURL
 } from "../constants";
 
-var turf = require('@turf/turf');
+var turf, { distance } = require('@turf/turf');
+// const distance = require('@turf/distance').default;
 
 window.Ionic = {
   config: {
@@ -110,6 +114,8 @@ function WindTurbine(props) {
   return (
     <>
     <mesh onClick={props.container.onClickMarker} position={[0, 0, 0]} rotation-y={4 * Math.PI / 4} scale={1}>
+      <meshStandardMaterial color="white" />
+
       <mesh position={[0, 0, 0]}>
         <primitive object={tower_gltf_clone} scale={props.container.props.global.turbinetowerheight / 100} />
       </mesh>
@@ -143,7 +149,6 @@ class Main extends Component {
         iconsloaded_white: false,
         icons_grey: [],
         iconsloaded_grey: false,    
-        altitude: null, 
         flying: false, 
         flyingcentre: null, 
         draggablesubmap: true,
@@ -189,13 +194,11 @@ class Main extends Component {
         hubheight: null,
         hubheights: [],
         currentwindturbines: [],
-        currentaltitudes: [],
         textimage: null,
       };
       this.data = []; 
       this.settingbounds = false;
       this.helpIndex = 0;
-      this.updatealtitude = false;
       this.ignoremovend = false;
       this.loadingurl = false;
       this.mapRef = React.createRef();
@@ -265,8 +268,9 @@ class Main extends Component {
     showTurbine = (params) => {
       var startingposition = params.startingposition;
       var turbineposition = params.turbineposition;
+      var currentposition = {latitude: null, longitude: null};
       let urlparams = queryString.parse(this.props.location.search);
-      if ((urlparams.vlat !== undefined) && (urlparams.vlng !== undefined) && (urlparams.vlat !== 'NaN') && (urlparams.vlng !== 'NaN')) {
+      if (!isNaN(urlparams.vlat) && !isNaN(urlparams.vlng)) {
         currentposition = {latitude: parseFloat(urlparams.vlat), longitude: parseFloat(urlparams.vlng)};
       } else {
         var currentposition = JSON.parse(JSON.stringify(params.turbineposition));
@@ -290,7 +294,7 @@ class Main extends Component {
         var map = this.mapRef.current.getMap();
         if (map) {
           if (active) {
-            this.updateVisibility();
+            this.loadVisibility();
           } else {
             map.getSource('viewshed').setData({type: 'FeatureCollection', features: []});
           }    
@@ -310,7 +314,7 @@ class Main extends Component {
       this.setVisibility(this.state.showvisibility);
     }
 
-    updateVisibility = () => {
+    loadVisibility = () => {
       if ((this.mapRef !== null) && (this.mapRef.current !== null)) {
         var map = this.mapRef.current.getMap();
         if (map) {
@@ -389,8 +393,6 @@ class Main extends Component {
         // var elevation = this.mapRef.current.getMap().queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}) || 0;
         var cameraposition = this.getCameraPosition();
         this.props.setGlobalState({currentlat: cameraposition.lat, currentlng: cameraposition.lng});
-        this.updateAltitude();
-        this.updateCurrentWindTurbines(this.mapRef.current.getMap());
       }
     }
   
@@ -517,12 +519,6 @@ class Main extends Component {
       };
       return bearing(point1, point2);
     }
-
-    loadModel = () => {
-      const gltf = useLoader(GLTFLoader, 'https://maplibre.org/maplibre-gl-js/docs/assets/34M_17/34M_17.gltf');
-      const model = gltf.scene;
-      return model;
-    }
     
     getCameraPosition = () => {
       var map = this.mapRef.current.getMap();
@@ -541,7 +537,9 @@ class Main extends Component {
       mutex = true;
       var map = this.mapRef.current.getMap();
       var { lng, lat, altitude, pitch, bearing } = camPos;
-      altitude += map.queryTerrainElevation({lat: lat, lng: lng}) || 0;
+      // const correctaltitude = map.terrain.getElevationForLngLatZoom({lat: lat, lng: lng}, 15);
+      // console.log(correctaltitude);
+      // altitude += map.queryTerrainElevation({lat: lat, lng: lng}) || 0;
       const pitch_ = pitch * Math.PI / 180;
       const cameraToCenterDistance = 0.5 / Math.tan(map.transform._fov / 2) * map.transform.height;
       const pixelAltitude = Math.abs(Math.cos(pitch_) * cameraToCenterDistance);
@@ -560,6 +558,129 @@ class Main extends Component {
       mutex = false;
     }
 
+    onStyleData = (event) => {
+
+      var map = event.target;
+      var props = this.props;
+      var currentwindturbines = this.state.currentwindturbines;
+
+      if (!map.getLayer("3d-model")) {
+            
+        // configuration of the custom layer for a 3D model per the CustomLayerInterface
+        const customLayer = {
+            id: '3d-model',
+            type: 'custom',
+            renderingMode: '3d',
+            onAdd (map, gl) {
+                this.camera = new THREE.Camera();
+                this.scene = new THREE.Scene();
+                this.props = props;
+                this.blades = null;
+                this.lastcentre = map.getCenter();
+                this.currentwindturbines = currentwindturbines;
+                this.renderedforlastcentre = false;
+
+                // this.scene.scale.multiply(new THREE.Vector3(1, 1, -1));
+                this.scene.scale.multiply(new THREE.Vector3(25, 25, -25));
+
+                this.scene.rotation.x = Math.PI / 2;
+                this.scene.rotation.y = 3 * Math.PI / 2;
+
+                const ambientLight = new THREE.AmbientLight();
+                const pointLight = new THREE.PointLight();
+                const pointLight2 = new THREE.PointLight();
+                const hemisphereLight = new THREE.HemisphereLight();
+                ambientLight.intensity = (Math.PI / 6);
+                pointLight.position.set(800, -400, 400);
+                pointLight.decay = 0;
+                pointLight.intensity = (0.08 * Math.PI);
+                pointLight2.position.set(-8000, -400, 400);
+                pointLight2.decay = 0;
+                pointLight2.intensity = (0.04 * Math.PI);
+                hemisphereLight.args = ["#ffffff", "#60666C"];
+                hemisphereLight.intensity = 0.1;
+                hemisphereLight.position.set(1, 4.5, 3);
+                this.scene.add(ambientLight);
+                this.scene.add(pointLight);
+                this.scene.add(pointLight2);
+                this.scene.add(hemisphereLight);
+
+                const loader = new GLTFLoader();
+                loader.load('./static/models/windturbine_tower.gltf', (gltf) => {
+                    gltf.scene.position.set(0, 0, 0);
+                    gltf.scene.scale.set((this.props.global.turbinetowerheight / 100), (this.props.global.turbinetowerheight / 100), (this.props.global.turbinetowerheight / 100));
+                    this.scene.add(gltf.scene);
+                  }
+                );
+
+                loader.load('./static/models/windturbine_blades.gltf', (gltf) => {
+                  this.blades = gltf;
+                  gltf.scene.position.set(0, (3.42 * this.props.global.turbinetowerheight / 100), 0);
+                  gltf.scene.rotation.x = (6.1 * Math.PI / 4);
+                  gltf.scene.scale.set(1 * this.props.global.turbinetowerheight / 100, 2.385 * this.props.global.turbinebladeradius / 100, 2.385 * this.props.global.turbinebladeradius / 100);
+                  this.scene.add(gltf.scene);
+                  }
+                );
+
+                this.map = map;
+    
+                // use the MapLibre GL JS map canvas for three.js
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: map.getCanvas(),
+                    context: gl,
+                    antialias: true
+                });
+    
+                this.renderer.autoClear = false;
+            },
+            render (gl, mercatorMatrix) {
+
+                if (this.blades !== null) {
+                  const a = (performance.now() / 1000);
+                  this.blades.scene.rotation.x = (1.5 * a);              
+                }
+
+                // `queryTerrainElevation` gives us the elevation of a point on the terrain
+                // **relative to the elevation of `center`**,
+                // where `center` is the point on the terrain that the middle of the camera points at.
+                // If we didn't account for that offset, and the scene lay on a point on the terrain that is
+                // below `center`, then the scene would appear to float in the air.
+
+                const windturbines = map.queryRenderedFeatures({layers: ['renewables_windturbine']});
+                var currentwindturbines = [];
+                for(var i = 0; i < windturbines.length; i++) currentwindturbines.push(windturbines[i].geometry.coordinates);
+                if ((this.props.global.turbinelat !== null) && (this.props.global.turbinelng !== null)) {
+                  currentwindturbines.push([this.props.global.turbinelng, this.props.global.turbinelat])        
+                }
+                
+                for(var i = 0; i < currentwindturbines.length; i++) {
+                  const currturbine = currentwindturbines[i];
+                  const offsetFromCenterElevation = map.queryTerrainElevation(currturbine) || 0;
+                  const sceneOriginMercator = maplibregl.MercatorCoordinate.fromLngLat(currturbine, offsetFromCenterElevation);
+                  const sceneTransform = {
+                      translateX: sceneOriginMercator.x,
+                      translateY: sceneOriginMercator.y,
+                      translateZ: sceneOriginMercator.z,
+                      scale: sceneOriginMercator.meterInMercatorCoordinateUnits()
+                  };                  
+                  const m = new THREE.Matrix4().fromArray(mercatorMatrix);
+                  const l = new THREE.Matrix4()
+                      .makeTranslation(sceneTransform.translateX, sceneTransform.translateY, sceneTransform.translateZ)
+                      .scale(new THREE.Vector3(sceneTransform.scale, -sceneTransform.scale, sceneTransform.scale));
+                  this.camera.projectionMatrix = m.multiply(l);
+                  this.renderer.resetState();
+                  this.renderer.render(this.scene, this.camera);
+                }
+
+                map.triggerRepaint();
+            }
+        };
+    
+        map.addLayer(customLayer);
+
+      }
+    }
+
     onMapLoad = (event) => {
         
         this.helpStart();
@@ -570,6 +691,15 @@ class Main extends Component {
           maxWidth: 2000,
           unit: 'metric',
           style: 'map-scale'
+        });
+
+        map.setSky({
+          'sky-color': '#b7d0c8',
+          'sky-horizon-blend': 1,
+          'horizon-color': '#f8f8ee',
+          'horizon-fog-blend': 0.1,
+          'fog-color': '#f8f8ee',
+          'fog-ground-blend': 0.6 // 0 is maximum blend, 1 is zero blend (non-existent)
         });
 
         // map.addControl(scale, 'bottom-left');
@@ -915,7 +1045,10 @@ class Main extends Component {
 
         if (this.state.showsite) {
           if (lnglat.lng < -180) lnglat.lng += 360;
-          this.props.setGlobalState({turbinelat: lnglat.lat, turbinelng: lnglat.lng});
+          this.props.setGlobalState({turbinelat: lnglat.lat, turbinelng: lnglat.lng}).then(() => {
+            this.updateCurrentWindTurbines(map);
+            this.refreshVisibility();
+          });
           this.setButton(map, 'share', true);
           this.setButton(map, 'download', true);
           this.setButton(map, 'visibility', true);
@@ -974,7 +1107,6 @@ class Main extends Component {
           this.setState({centreset: true});
 
           if (event.features[0].source === 'renewables') {
-            console.log(event.features[0].properties);
 
             // Replaced the following fetchEntity with using centre/bound properties on every feature
             // this.props.fetchEntity(entityid);
@@ -1081,11 +1213,12 @@ class Main extends Component {
         }
 
         this.props.setGlobalState({turbinelat: lnglat.lat, turbinelng: lnglat.lng}).then(() => {
-          if (this.state.showvisibility) this.updateVisibility();
+          var map = this.mapRef.current.getMap();
           if ((this.props.global.page === PAGE.NEARESTTURBINE) || (this.props.global.page === PAGE.SHOWTURBINE)) {
-              var map = this.mapRef.current.getMap();
               this.reorientToTurbine(map);    
           }
+          this.updateCurrentWindTurbines(map);
+          this.refreshVisibility();
         });          
     }
   
@@ -1120,7 +1253,7 @@ class Main extends Component {
           (this.props.global.turbinelat < currBounds._sw.lat) ||
           (this.props.global.turbinelng > currBounds._ne.lng) ||
           (this.props.global.turbinelng < currBounds._sw.lng)) {
-          var pointdistance = turf.distance(point([this.props.global.currentlng, this.props.global.currentlat]), point([this.props.global.turbinelng, this.props.global.turbinelat]), {units: 'degrees'});
+          var pointdistance = distance(point([this.props.global.currentlng, this.props.global.currentlat]), point([this.props.global.turbinelng, this.props.global.turbinelat]), {units: 'degrees'});
           const southWest = [this.props.global.turbinelng - pointdistance, this.props.global.turbinelat - pointdistance];
           const northEast = [this.props.global.turbinelng + pointdistance, this.props.global.turbinelat + pointdistance];
           const boundingBox = [southWest, northEast];
@@ -1165,26 +1298,11 @@ class Main extends Component {
     }
     
     onIdle = () => {
-      if (this.updatealtitude) {
-        this.updatealtitude = false;
-        this.updateAltitude();
-      }
-
       if (this.state.flying) {
         console.log("onIdle, triggering flyaround");
         this.flyingRun();
       }
     }
-  //   export const DEFAULT_MAXBOUNDS = [
-  //     [
-  //         -14.629154,
-  //         49.044464
-  //     ],
-  //     [
-  //         5.614791, 
-  //         61.250553 
-  //     ]
-  // ]
   
     checkBounds = () => {
       if (this.mapRef.current !== null) {
@@ -1258,93 +1376,58 @@ class Main extends Component {
 
     onMapMoveEnd = (event) => {
 
-        // this.checkBounds();
+      var map = this.mapRef.current.getMap();
 
-        if (this.props.global.pagetransitioning) return;
+      if (this.props.global.pagetransitioning) return;
+      if (this.state.flying) return;
 
-        if (this.state.flying) return;
+      switch (this.props.global.page) {
+          case PAGE.NEARESTTURBINE_OVERVIEW:
+              this.setState({showmarker: true});
+              break;
+          case PAGE.EXPLORE:
 
-        switch (this.props.global.page) {
-            case PAGE.NEARESTTURBINE_OVERVIEW:
-                this.setState({showmarker: true});
-                break;
-            case PAGE.EXPLORE:
-
-                this.updatealtitude = true;
-                if (this.mapRef.current !== null) {
-                  var map = this.mapRef.current.getMap();
-                  var zoom = map.getZoom();
-                  var pitch = map.getPitch();
-                  var bearing = map.getBearing();
-                  if (zoom < THREED_ZOOM) {
-                      this.setState({showmarker: true});
-                      // if ((pitch !== 0) || (bearing !== 0)) map.jumpTo({pitch: 0, bearing: 0, duration: 0})
-                      if (pitch === 85) map.jumpTo({pitch: 0, duration: 0, bearing: 0});
-                    } else {
-                      this.setState({showmarker: false});
-                      if (pitch < 80) map.easeTo({pitch: 85, duration: 1000});
-                  }
-
-                  this.updateCurrentWindTurbines(map);
+              if (this.mapRef.current !== null) {
+                var map = this.mapRef.current.getMap();
+                var zoom = map.getZoom();
+                var pitch = map.getPitch();
+                var bearing = map.getBearing();
+                if (zoom < THREED_ZOOM) {
+                    this.setState({showmarker: true});
+                    // if ((pitch !== 0) || (bearing !== 0)) map.jumpTo({pitch: 0, bearing: 0, duration: 0})
+                    if (pitch === 85) map.jumpTo({pitch: 0, duration: 0, bearing: 0});
+                  } else {
+                    this.setState({showmarker: false});
+                    if (pitch < 80) map.easeTo({pitch: 85, duration: 1000});
                 }
+              }
 
-                break;
-            case PAGE.NEARESTTURBINE:
-            case PAGE.SHOWTURBINE:
-                this.updatealtitude = true;
+              break;
+          case PAGE.NEARESTTURBINE:
+          case PAGE.SHOWTURBINE:
 
-                if (this.ignoremovend) {
-                    this.ignoremovend = false;
-                    return;
-                }
+              if (this.ignoremovend) {
+                  this.ignoremovend = false;
+                  return;
+              }
 
-                if ((this.mapRef.current !== null) && (this.submapRef.current !== null)) {
-                    const targetmap = event.target;
-                    const cameraposition = this.getCameraPosition();
-                    const submap = this.submapRef.current.getMap();
-                    this.props.setGlobalState({currentlng: cameraposition.lng, currentlat: cameraposition.lat}).then(() => {
-                        this.ignoremovend = true;
-                        this.reorientToTurbine(targetmap);
-                        this.reloadSubmap(submap);
-                    });
-                }
+              if ((this.mapRef.current !== null) && (this.submapRef.current !== null)) {
+                  const targetmap = event.target;
+                  const cameraposition = this.getCameraPosition();
+                  const submap = this.submapRef.current.getMap();
+                  this.props.setGlobalState({currentlng: cameraposition.lng, currentlat: cameraposition.lat}).then(() => {
+                      this.ignoremovend = true;
+                      this.reorientToTurbine(targetmap);
+                      this.reloadSubmap(submap);
+                  });
+              }
 
-                break;
-        }
-    }
-
-    updateAltitude = () => {
-      if (this.mapRef.current !== null) {
-        const map = this.mapRef.current.getMap();
-        var altitude = map.queryTerrainElevation({lat: this.props.global.turbinelat, lng: this.props.global.turbinelng}, { exaggerated: false }) || 0;
-        // console.log("Altitude", altitude);
-        // if (altitude < 0) altitude = 0;
-        this.setState({altitude: altitude});
+              break;
       }
     }
 
     updateCurrentWindTurbines = (map) => {
-      const windturbines = map.queryRenderedFeatures(
-        {layers: ['renewables_windturbine']}
-      );
-      var currentwindturbines = [];
-      for(var i = 0; i < windturbines.length; i++) {
-        currentwindturbines.push(windturbines[i].geometry.coordinates);
-      }
-      this.updateCurrentAltitudes(currentwindturbines);
-      this.setState({currentwindturbines: currentwindturbines});
-    }
-
-    updateCurrentAltitudes = (currentwindturbines) => {
-      if (this.mapRef.current !== null) {
-        const map = this.mapRef.current.getMap();
-        var currentaltitudes = [];
-        for(var i = 0; i < currentwindturbines.length; i++) {
-          var altitude = map.queryTerrainElevation({lat: currentwindturbines[i][1], lng: currentwindturbines[i][0]}, { exaggerated: false }) || 0;
-          currentaltitudes.push(altitude);
-        }
-        this.setState({currentaltitudes: currentaltitudes});
-      }
+      if (map.getLayer("3d-model")) map.removeLayer("3d-model");
     }
 
     updateHelp = () => {
@@ -1391,25 +1474,23 @@ class Main extends Component {
 
     flyingStart = () => {
       if (!this.state.flying) {
-        this.setState({flying: true, draggablesubmap: false, preflightposition: {lat: this.props.global.currentlat, lng: this.props.global.currentlng }}, () => {          
+        var map = this.mapRef.current.getMap();
+        this.setState({flying: true, draggablesubmap: false, preflightposition: map.getCenter()}, () => {          
 
           this.submapInterval = setInterval(this.updateSubmapPosition, 200);
 
           if ((this.props.global.page === PAGE.NEARESTTURBINE) || (this.props.global.page === PAGE.SHOWTURBINE)) {
             // Start camera from specific position high up and certain bearing from wind turbine
             var turbinepos = point([this.props.global.turbinelng, this.props.global.turbinelat]);
-            var viewingdistance = 0.6;
+            var viewingdistance = 0.7;
             var viewingbearing = -180;
             var options = {units: 'kilometres'};
             var viewingpos = destination(turbinepos, viewingdistance, viewingbearing, options);
-            var map = this.mapRef.current.getMap();
-            this.setCameraPosition({lng: viewingpos['geometry']['coordinates'][0], lat: viewingpos['geometry']['coordinates'][1], altitude: 600, pitch: 45, bearing: 180 + viewingbearing});
-            // this.updateAltitude();
-            // this.flyingRun();
+            this.setCameraPosition({lng: viewingpos['geometry']['coordinates'][0], lat: viewingpos['geometry']['coordinates'][1], altitude: 400, pitch: 60, bearing: 180 + viewingbearing});
+            this.flyingRun();
           }
 
           if (this.props.global.page === PAGE.EXPLORE) {
-            var map = this.mapRef.current.getMap();
             var mapcentre = map.getCenter();
             var centre = [mapcentre.lng, mapcentre.lat];
             var zoom = map.getZoom();
@@ -1419,16 +1500,14 @@ class Main extends Component {
               zoom = this.props.global.zoom;
             } 
             this.props.setGlobalState({centre: centre, zoom: zoom}).then(() => {  
-              console.log(centre);
               var turbinepos = point(centre);
-              var viewingdistance = 2;
+              var viewingdistance = 4;
               var viewingbearing = -180;
               var options = {units: 'kilometres'};
               var viewingpos = destination(turbinepos, viewingdistance, viewingbearing, options);
               var map = this.mapRef.current.getMap();
               this.setCameraPosition({lng: viewingpos['geometry']['coordinates'][0], lat: viewingpos['geometry']['coordinates'][1], altitude: (400 * viewingdistance / 0.6), pitch: 60, bearing: 180 + viewingbearing});
-              // this.updateAltitude();
-              // this.flyingRun();
+              this.flyingRun();
             });  
           }
         });
@@ -1453,7 +1532,7 @@ class Main extends Component {
             var map = this.mapRef.current.getMap();
             var centre = map.getCenter();
             var pointbearing = this.getBearing({lat: this.props.global.currentlat, lng: this.props.global.currentlng}, {lat: centre.lat, lng: centre.lng});
-            map.jumpTo({center: centre, animate: false});
+            map.jumpTo({center: {lat: this.state.preflightposition.lat, lng: this.state.preflightposition.lng }, animate: false});
           }
         })
       }
@@ -1873,6 +1952,8 @@ class Main extends Component {
     setTurbine = () => {
       this.props.setGlobalState({windturbine: this.state.windturbine, turbinetowerheight: this.state.hubheight, turbinebladeradius: (this.state.turbineparameters['Rotor diameter'] / 2)}).then(() => {
         this.refreshVisibility();
+        var map = this.mapRef.current.getMap();
+        this.updateCurrentWindTurbines(map);
       });
       this.setState({showturbine: false});
     }
@@ -2482,6 +2563,7 @@ class Main extends Component {
                             </div>
                             ) : null}
 
+
                             <Map ref={this.mapRef}
                               width="100vw"
                               height="100vh"
@@ -2491,7 +2573,8 @@ class Main extends Component {
                               onMouseLeave={this.onMouseLeave}   
                               onClick={this.onClick}    
                               onDrag={this.onDrag}
-                              onRender={this.onRender}
+                              onStyleData={this.onStyleData}
+                              // onRender={this.onRender}
                               onMoveEnd={this.onMapMoveEnd}
                               onIdle={this.onIdle}
                               interactiveLayerIds={this.interactivelayers}
@@ -2520,8 +2603,10 @@ class Main extends Component {
                                 ) : null}
                                 <Popup longitude={0} latitude={0} ref={this.popupRef} closeButton={false} closeOnClick={false} />
 
-                                <Canvas dpr={[1, 2]} ref={this.threeRef} latitude={50} longitude={-5} altitude={0}>
+                                {/* <Canvas dpr={[1, 2]} ref={this.threeRef} latitude={50} longitude={-5} altitude={0}>
                                     <Coordinates latitude={this.props.global.turbinelat} longitude={this.props.global.turbinelng} altitude={this.state.altitude}>
+                                      <ambientLight intensity={Math.PI / 8} />
+                                      <pointLight position={[-200, -200, 400]} decay={0} intensity={0.3 * Math.PI} />
                                       <hemisphereLight args={["#ffffff", "#60666C"]} position={[1, 4.5, 3]}/>
                                       <object3D visible={(this.props.global.page !== PAGE.NEARESTTURBINE_OVERVIEW)} scale={25} rotation={[0, 1, 0]}>
                                           <WindTurbine container={this}/>
@@ -2530,6 +2615,8 @@ class Main extends Component {
                                     {this.state.currentwindturbines.map((turbine, index) => 
                                       (
                                         <Coordinates key={index} latitude={turbine[1]} longitude={turbine[0]} altitude={this.state.currentaltitudes[index]}>
+                                          <ambientLight intensity={Math.PI / 8} />
+                                          <pointLight position={[-200, -200, 400]} decay={0} intensity={0.3 * Math.PI} />
                                           <hemisphereLight args={["#ffffff", "#60666C"]} position={[1, 4.5, 3]}/>
                                           <object3D visible="true" scale={25} rotation={[0, 1, 0]}>
                                               <WindTurbine container={this}/>
@@ -2537,7 +2624,7 @@ class Main extends Component {
                                         </Coordinates>
                                       )
                                     )}
-                                </Canvas>
+                                </Canvas> */}
 
                                 <Marker 
                                     style={{display: (this.showMarkers(this.props.global.page) && (this.state.showmarker)) ? 'block': 'none'}} 

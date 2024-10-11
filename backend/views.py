@@ -43,7 +43,6 @@ from time import sleep
 from random import randrange
 from itertools import islice
 from osgeo import gdal, osr, ogr
-from PIL import Image
 import numpy as np
 import json
 from turfpy.misc import line_arc
@@ -1412,16 +1411,24 @@ def Viewshed(request):
     """
     Return viewshed as GeoJSON
     """
+    parameters, lat, lng = None, None, None
+
     try:
         parameters = json.loads(request.body)
+        lat = float(parameters.get('lat', 51))
+        lng = float(parameters.get('lng',0))
+        hubheight = float(parameters.get('hub', DEFAULT_HUB_HEIGHT))
+        bladeradius = float(parameters.get('blade', DEFAULT_BLADE_RADIUS))
     except ValueError:
-        return OutputError()
+        lat = request.GET.get('lat', None)
+        lng = request.GET.get('lng', None)        
+        if (lat is None) or (lng is None):
+            return OutputError()
+        lat = float(lat)
+        lng = float(lng)
+        hubheight = float(request.GET.get('hub', DEFAULT_HUB_HEIGHT))
+        bladeradius = float(request.GET.get('blade', DEFAULT_BLADE_RADIUS))        
 
-    # print(json.dumps(parameters, indent=4))
-    lat = float(parameters.get('lat', 51))
-    lng = float(parameters.get('lng',0))
-    hubheight = float(parameters.get('hub', DEFAULT_HUB_HEIGHT))
-    bladeradius = float(parameters.get('blade', DEFAULT_BLADE_RADIUS))
     geojson = GetViewsheds(lng, lat, hubheight, bladeradius)
 
     return OutputJson(geojson)
