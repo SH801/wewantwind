@@ -145,10 +145,6 @@ class Main extends Component {
         positionerror: false,
         locationnotenabled: false,
         locationinitialized: false,
-        icons_white: [],
-        iconsloaded_white: false,
-        icons_grey: [],
-        iconsloaded_grey: false,    
         flying: false, 
         flyingcentre: null, 
         draggablesubmap: true,
@@ -749,61 +745,7 @@ class Main extends Component {
         var isiOS = this.isiOS();
   
         // isiOS = true;
-
-        console.log("Attempting to load point icons");
-        url = process.env.PUBLIC_URL + "/static/icons/point_green.png";
-        map.loadImage(url, (error, image) => {
-            if (error) throw error;
-            map.addImage('point_green', image);    
-        });            
-
-        url = process.env.PUBLIC_URL + "/static/icons/point_orange.png";
-        map.loadImage(url, (error, image) => {
-            if (error) throw error;
-            map.addImage('point_orange', image);    
-        });            
-
-        url = process.env.PUBLIC_URL + "/static/icons/point_red.png";
-        map.loadImage(url, (error, image) => {
-            if (error) throw error;
-            map.addImage('point_red', image);    
-        });            
-        
-        if (!isiOS) {
-          console.log("Initializing images...");
-
-          var url = null;
-          for(let i = 1; i < 6; i++) {
-            url = process.env.PUBLIC_URL + "/static/icons/windturbine_white_animated_" + i.toString() + ".png";
-            map.loadImage(url, (error, image) => {
-                if (error) throw error;
-                var icons_white = this.state.icons_white;
-                icons_white[i] = image;
-                this.setState({icons_white: icons_white});
-                if (i === 5) {
-                  console.log("Loaded turbine images (white)");
-                  this.setState({iconsloaded_white: true});
-                }
-            });            
-          }
-  
-          for(let i = 1; i < 6; i++) {
-            url = process.env.PUBLIC_URL + "/static/icons/windturbine_grey_animated_" + i.toString() + ".png";
-            map.loadImage(url, (error, image) => {
-                if (error) throw error;
-                var icons_grey = this.state.icons_grey;
-                icons_grey[i] = image;
-                this.setState({icons_grey: icons_grey});
-                if (i === 5) {
-                  console.log("Loaded turbine images (grey)");
-                  this.setState({loading: false, iconsloaded_grey: true});
-                }
-            });            
-          }
-        } else {
-          this.setState({loading: false});
-        }
-  
+          
         if (!isiOS) setTimeout(this.animateIcons, 1000);
 
         map.addControl(new maplibregl.AttributionControl(), 'bottom-left');
@@ -851,32 +793,17 @@ class Main extends Component {
         const numframes = 5;
         const totalduration = numframes * ANIMATION_INTERVAL;
         setTimeout(this.animateIcons, ANIMATION_INTERVAL);
-    
-        if ((this.state.iconsloaded_white) && (this.state.iconsloaded_grey)) {
-          const currentDate = new Date();
-          const milliseconds = currentDate.getTime(); 
-          const deltamsecs = milliseconds % totalduration;
-          const animationindex = 1 + parseInt(deltamsecs / ANIMATION_INTERVAL);
-          if ((this.mapRef !== null) && (this.mapRef.current !== null)) {
-            var map = this.mapRef.current.getMap();
-            if (map) {
-              if ((this.state.icons_white[animationindex] !== undefined) && 
-                  (this.state.icons_grey[animationindex] !== undefined)) {
-                try {
-                  map.removeImage('windturbine_grey');
-                }
-                catch(err) {
-                  console.log(err);
-                }    
-                if (map.getZoom() > THREED_ZOOM) {
-                  map.addImage('windturbine_grey', this.state.icons_white[animationindex]);    
-                } else {
-                  map.addImage('windturbine_grey', this.state.icons_grey[animationindex]);    
-                }
-              }
-            }
+
+        const currentDate = new Date();
+        const milliseconds = currentDate.getTime(); 
+        const deltamsecs = milliseconds % totalduration;
+        const animationindex = 1 + parseInt(deltamsecs / ANIMATION_INTERVAL);
+        if ((this.mapRef !== null) && (this.mapRef.current !== null)) {
+          var map = this.mapRef.current.getMap();
+          if (map) {
+            map.setLayoutProperty('renewables_windturbine', 'icon-image', 'windturbine_grey_animated_' + String(animationindex));
           }
-        }  
+        }      
     } 
   
     capitalizeFirstLetter(string) {
