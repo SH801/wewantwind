@@ -792,7 +792,6 @@ class Main extends Component {
         // const intervalmsecs = 250;
         const numframes = 5;
         const totalduration = numframes * ANIMATION_INTERVAL;
-        setTimeout(this.animateIcons, ANIMATION_INTERVAL);
 
         const currentDate = new Date();
         const milliseconds = currentDate.getTime(); 
@@ -804,6 +803,8 @@ class Main extends Component {
             map.setLayoutProperty('renewables_windturbine', 'icon-image', 'windturbine_grey_animated_' + String(animationindex));
           }
         }      
+
+        setTimeout(this.animateIcons, ANIMATION_INTERVAL);
     } 
   
     capitalizeFirstLetter(string) {
