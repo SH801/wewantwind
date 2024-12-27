@@ -35,7 +35,7 @@
       <customproperties>
         <Option/>
       </customproperties>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/windspeed/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Inadequate wind" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Windspeed_c12e6286_3f6b_44a3_acce_2e2d21622028" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/windspeed/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Inadequate wind" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Windspeed_c12e6286_3f6b_44a3_acce_2e2d21622028" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
@@ -260,7 +260,7 @@
       <customproperties>
         <Option/>
       </customproperties>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/openmaptiles/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Residential areas - UK - 400m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___OpenMapTiles_b125aef6_4e68_47c0_b36f_8f726e058b24" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/openmaptiles/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Residential areas - UK - 400m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___OpenMapTiles_b125aef6_4e68_47c0_b36f_8f726e058b24" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
@@ -424,13 +424,13 @@
         <customproperties>
           <Option/>
         </customproperties>
-        <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="LNR - UK" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_3fd8c94d_466f_47e9_afa7_d8497e8e1c65" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+        <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="LNR - UK" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_3fd8c94d_466f_47e9_afa7_d8497e8e1c65" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
           <customproperties>
             <Option/>
           </customproperties>
         </layer-tree-layer>
       </layer-tree-group>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Hedgerows - UK - 50m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_0ee23e10_880b_46e4_9960_8cbfae25d986" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Hedgerows - UK - 50m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_0ee23e10_880b_46e4_9960_8cbfae25d986" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
@@ -440,37 +440,37 @@
       <customproperties>
         <Option/>
       </customproperties>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Public roads - UK - 150m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_8392e97a_7af2_41be_ae27_6b5c6fe14d05" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Public roads - UK - 150m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_8392e97a_7af2_41be_ae27_6b5c6fe14d05" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
       </layer-tree-layer>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Railway lines - UK - 150m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_b5175f57_4da9_4d08_b192_68b741194a57" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Railway lines - UK - 150m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_b5175f57_4da9_4d08_b192_68b741194a57" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
       </layer-tree-layer>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Inland waters - UK - 150m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_feb3a17c_8a2b_443e_87e5_ad2fe7b244db" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Inland waters - UK - 150m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_feb3a17c_8a2b_443e_87e5_ad2fe7b244db" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
       </layer-tree-layer>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Pipelines - UK - 150m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_8410489b_746e_469b_bbe4_3425b2182880" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Pipelines - UK - 150m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_8410489b_746e_469b_bbe4_3425b2182880" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
       </layer-tree-layer>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Power lines - UK - 150m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_a6a69e5d_47de_4fc1_904c_1eb4e35b5b2c" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Power lines - UK - 150m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_a6a69e5d_47de_4fc1_904c_1eb4e35b5b2c" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
       </layer-tree-layer>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Public footpaths - UK - 150m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_4125ba2a_ac8d_460c_a0f3_7b4b1a07376c" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Public footpaths - UK - 150m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_4125ba2a_ac8d_460c_a0f3_7b4b1a07376c" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
       </layer-tree-layer>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Bridleways - UK - 200m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_f4a2f357_c701_4e46_a309_48137f40e54b" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Bridleways - UK - 200m buffer" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_f4a2f357_c701_4e46_a309_48137f40e54b" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
@@ -480,17 +480,17 @@
       <customproperties>
         <Option/>
       </customproperties>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Airspace - UK" patch_size="-1,-1" providerKey="vectortile" id="Danger_areas___UK_e04655c3_4bc8_4c71_908b_34b9231c79f3" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Airspace - UK" patch_size="-1,-1" providerKey="vectortile" id="Danger_areas___UK_e04655c3_4bc8_4c71_908b_34b9231c79f3" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
       </layer-tree-layer>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Danger areas - UK" patch_size="-1,-1" providerKey="vectortile" id="Military___UK_432243a3_a404_4bcf_b91c_2a95947ea1f1" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Danger areas - UK" patch_size="-1,-1" providerKey="vectortile" id="Military___UK_432243a3_a404_4bcf_b91c_2a95947ea1f1" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
       </layer-tree-layer>
-      <layer-tree-layer source="type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Military - UK" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_copy_638ab424_96ef_4232_9e0d_327643a30c0f" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
+      <layer-tree-layer source="type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=" legend_exp="" name="Military - UK" patch_size="-1,-1" providerKey="vectortile" id="Positive_Places___Planning_constraints___UK_copy_638ab424_96ef_4232_9e0d_327643a30c0f" checked="Qt::Checked" expanded="1" legend_split_behavior="0">
         <customproperties>
           <Option/>
         </customproperties>
@@ -8938,7 +8938,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Danger_areas___UK_e04655c3_4bc8_4c71_908b_34b9231c79f3</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -12968,7 +12968,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Military___UK_432243a3_a404_4bcf_b91c_2a95947ea1f1</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -22650,7 +22650,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Positive_Places___OpenMapTiles_b125aef6_4e68_47c0_b36f_8f726e058b24</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/openmaptiles/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/openmaptiles/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -22992,7 +22992,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Positive_Places___Planning_constraints___UK_0ee23e10_880b_46e4_9960_8cbfae25d986</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -23350,7 +23350,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Positive_Places___Planning_constraints___UK_3fd8c94d_466f_47e9_afa7_d8497e8e1c65</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -23692,7 +23692,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Positive_Places___Planning_constraints___UK_4125ba2a_ac8d_460c_a0f3_7b4b1a07376c</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -24050,7 +24050,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Positive_Places___Planning_constraints___UK_8392e97a_7af2_41be_ae27_6b5c6fe14d05</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -24408,7 +24408,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Positive_Places___Planning_constraints___UK_8410489b_746e_469b_bbe4_3425b2182880</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -24766,7 +24766,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Positive_Places___Planning_constraints___UK_a6a69e5d_47de_4fc1_904c_1eb4e35b5b2c</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -25124,7 +25124,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Positive_Places___Planning_constraints___UK_b5175f57_4da9_4d08_b192_68b741194a57</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -25482,7 +25482,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Positive_Places___Planning_constraints___UK_copy_638ab424_96ef_4232_9e0d_327643a30c0f</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -25824,7 +25824,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Positive_Places___Planning_constraints___UK_f4a2f357_c701_4e46_a309_48137f40e54b</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -26182,7 +26182,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Positive_Places___Planning_constraints___UK_feb3a17c_8a2b_443e_87e5_ad2fe7b244db</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/planningconstraints/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
@@ -26540,7 +26540,7 @@ def my_form_open(dialog, layer, feature):
         <ymax>85.05112877980657515</ymax>
       </wgs84extent>
       <id>Positive_Places___Windspeed_c12e6286_3f6b_44a3_acce_2e2d21622028</id>
-      <datasource>type=xyz&amp;url=https://tiles.positiveplaces.org/data/windspeed/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
+      <datasource>type=xyz&amp;url=https://tiles.wewantwind.org/data/windspeed/%7Bz%7D/%7Bx%7D/%7By%7D.pbf&amp;zmax=14&amp;zmin=0&amp;http-header:referer=</datasource>
       <keywordList>
         <value></value>
       </keywordList>
