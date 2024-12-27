@@ -38,7 +38,10 @@ from django.contrib.gis.geos import Point
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_bytes
+from django.shortcuts import redirect
 from django.db.models import Q, Count
+from django.http import HttpResponse
+from django.utils.encoding import iri_to_uri
 from time import sleep
 from random import randrange
 from itertools import islice
@@ -1190,6 +1193,20 @@ def RemoveMailingList(request, uidb64, token):
 @csrf_exempt
 def Test(request):
     return render(request, 'backend/vote_not_confirmed.html')
+
+class HttpResponseTemporaryRedirect(HttpResponse):
+    status_code = 307
+
+    def __init__(self, redirect_to):
+        HttpResponse.__init__(self)
+        self['Location'] = iri_to_uri(redirect_to)
+
+class IntentSchemeRedirect(HttpResponseTemporaryRedirect):
+    allowed_schemes = ['intent']
+
+@csrf_exempt
+def Shortcode(request, code):
+    return IntentSchemeRedirect("intent://#Intent;S.data=https://wewantwind.org/static/geojson/dummyturbine3.geojson;scheme=windview;package=org.wewantwind.windview;end")
 
 def returncirclesforpoint(lng, lat):
     center = GeoJSONFeature(geometry=GeoJSONPoint((lng, lat)))
