@@ -9,6 +9,8 @@ import uuid
 import urllib
 import geojson
 import subprocess
+import psycopg2
+from psycopg2.extensions import AsIs
 from turfpy.transformation import intersect
 from turfpy.measurement import points_within_polygon
 from geojson import Point as GeoJSONPoint, Feature, FeatureCollection, Polygon
@@ -244,8 +246,64 @@ def GetRandomPoint(request):
             # print("Point not within UK", point)
         else: return OutputJson({'lng': point[0], 'lat': point[1]})
 
+def postgisGetResultsAsDict(sql_text, sql_parameters=None):
+    """
+    Runs database query and returns results
+    """
+
+    POSTGRES_DB = os.environ['POSTGRES_DB']
+    POSTGRES_USER = os.environ['POSTGRES_USER']
+    POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
+
+    conn = psycopg2.connect(dbname=POSTGRES_DB, user=POSTGRES_USER, password=POSTGRES_PASSWORD)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    if sql_parameters is None: cur.execute(sql_text)
+    else: cur.execute(sql_text, sql_parameters)
+    results = cur.fetchall()
+    conn.close()
+    return results
 
 def GetNearestTurbine(lat, lng):
+    """
+    Get nearest optimal wind turbine site to specified point
+    """
+
+    sites = postgisGetResultsAsDict("""  
+    SELECT 
+    id,
+    ST_X(centre) turbinelng,
+    ST_Y(centre) turbinelat,
+    ST_Distance(ST_Transform(ST_SetSRID(ST_MakePoint(%s, %s), 4326), 3857), ST_Transform(centre, 3857)) distance, 
+    ST_Area(ST_Transform(geometry, 3857)) area 
+    FROM backend_site 
+    ORDER BY distance LIMIT 50;
+    """, (AsIs(lng), AsIs(lat), ))
+    if len(sites) == 0: return None
+
+    largestarea, largestindex, num_to_check = None, 0, 5
+    sites = sites[0:num_to_check]
+    for i in range(num_to_check):
+        site = sites[i]
+        area_square_meters = site['area']
+        if ((largestarea is None) or (area_square_meters > largestarea)):
+            largestindex = i
+            largestarea = area_square_meters
+
+    site = sites[largestindex]
+
+    site['currentlng'] = lng
+    site['currentlat'] = lat
+    site['turbinelng'] = site['turbinelng']
+    site['turbinelat'] = site['turbinelat']
+    site['distance_mi'] = (site['distance'] * 0.621371) / 1000
+    site['distance_km'] = site['distance'] / 1000
+    site['distance_m'] = site['distance']
+
+    return site
+
+# *** Potentially broken install of GeoDjango
+
+def GetNearestTurbine_Broken(lat, lng):
     """
     Get nearest optimal wind turbine site to specified point
     """
@@ -293,14 +351,16 @@ def NearestTurbine(request):
     site = GetNearestTurbine(latlng['lat'], latlng['lng'])
     if site is None: return OutputError()
 
-    results = {}
-    results['currentlng'] = latlng['lng']
-    results['currentlat'] = latlng['lat']
-    results['turbinelat'] = site.centre.coords[1]
-    results['turbinelng'] = site.centre.coords[0]
-    results['distance_mi'] = site.distance.mi
-    results['distance_km'] = site.distance.km
-    results['distance_m'] = site.distance.m
+#    results = {}
+#    results['currentlng'] = latlng['lng']
+#    results['currentlat'] = latlng['lat']
+#    results['turbinelng'] = site.centre.coords[0]
+#    results['turbinelat'] = site.centre.coords[1]
+#    results['distance_mi'] = site.distance.mi
+#    results['distance_km'] = site.distance.km
+#    results['distance_m'] = site.distance.m
+
+    results = site
 
     ip, is_routable = get_client_ip(request)
     eventlog = EventLog(name='NearestTurbine', content=json.dumps(results, indent=2), ip=ip)
@@ -860,7 +920,7 @@ def NearestTurbineReport(request):
 
     site = GetNearestTurbine(lat, lng)
  
-    return GetReport(type, site.centre.coords[1], site.centre.coords[0], hubheight, bladeradius)
+    return GetReport(type, site['turbinelat'], site['turbinelng'], hubheight, bladeradius)
 
 @csrf_exempt
 def CreateGeoJSON(request):
